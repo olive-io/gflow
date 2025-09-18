@@ -16,17 +16,23 @@
 coverage.*
 *.coverprofile
 profile.cov
+*.tar
+*.gz
+*.bz2
 
 # Dependency directories (remove the comment below to include it)
-# vendor/
+vendor/
+
+# _output directories
+_output
 
 # Go workspace file
-go.work
-go.work.sum
+#go.work
+#go.work.sum
 
 # env file
 .env
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
