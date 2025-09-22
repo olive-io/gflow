@@ -1,0 +1,81 @@
+package logutil
+
+import (
+	"slices"
+	"time"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+)
+
+// CreateDefaultZapLogger creates a logger with default zap configuration
+func CreateDefaultZapLogger(level zapcore.Level) (*zap.Logger, error) {
+	lcfg := DefaultZapLoggerConfig
+	lcfg.Level = zap.NewAtomicLevelAt(level)
+	c, err := lcfg.Build()
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+// DefaultZapLoggerConfig defines default zap logger configuration.
+var DefaultZapLoggerConfig = zap.Config{
+	Level: zap.NewAtomicLevelAt(ConvertToZapLevel(DefaultLogLevel)),
+
+	Development: false,
+	Sampling: &zap.SamplingConfig{
+		Initial:    100,
+		Thereafter: 100,
+	},
+
+	Encoding: DefaultLogFormat,
+
+	// copied from "zap.NewProductionEncoderConfig" with some updates
+	EncoderConfig: zapcore.EncoderConfig{
+		TimeKey:       "ts",
+		LevelKey:      "level",
+		NameKey:       "logger",
+		CallerKey:     "caller",
+		MessageKey:    "msg",
+		StacktraceKey: "stacktrace",
+		LineEnding:    DefaultLineEnding,
+		EncodeLevel: func(level zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
+			enc.AppendString(level.String())
+		},
+
+		// Custom EncodeTime function to ensure we match format and precision of historic capnslog timestamps
+		EncodeTime: func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+			enc.AppendString(t.Format("2006-01-02T15:04:05.000"))
+		},
+
+		EncodeDuration: zapcore.StringDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
+	},
+
+	// Use "/dev/null" to discard all
+	OutputPaths:      []string{"stdout"},
+	ErrorOutputPaths: []string{"stderr"},
+}
+
+// MergeOutputPaths merges logging output paths, resolving conflicts.
+func MergeOutputPaths(cfg zap.Config) zap.Config {
+	cfg.OutputPaths = mergePaths(cfg.OutputPaths)
+	cfg.ErrorOutputPaths = mergePaths(cfg.ErrorOutputPaths)
+	return cfg
+}
+
+func mergePaths(old []string) []string {
+	if len(old) == 0 {
+		// the original implementation ensures the result is non-nil
+		return []string{}
+	}
+	// use "/dev/null" to discard all
+	if slices.Contains(old, "/dev/null") {
+		return []string{"/dev/null"}
+	}
+	// clone a new one; don't modify the original, in case it matters.
+	dup := slices.Clone(old)
+	slices.Sort(dup)
+	return slices.Compact(dup)
+}

@@ -1,0 +1,306 @@
+/*
+Copyright 2023 The olive Authors
+
+This program is offered under a commercial and under the AGPL license.
+For AGPL licensing, see below.
+
+AGPL licensing:
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+syntax = "proto3";
+
+package rpc;
+
+import "types/bpmn.proto";
+// for grpc-gateway
+import "google/api/annotations.proto";
+
+import "validate/validate.proto";
+
+option go_package = "github.com/olive-io/olive/api/rpc;rpc";
+option java_multiple_files = true;
+option java_package = "io.olive.api.rpc";
+option java_outer_classname = "GFlowRPC";
+
+service SystemRPC {
+  rpc Ping(PingRequest) returns (PingResponse) {
+    option (google.api.http) = {
+      get: "/v1/ping"
+    };
+  }
+  rpc GetCluster(GetClusterRequest) returns (GetClusterResponse) {
+    option (google.api.http) = {
+      get: "/v1/cluster"
+    };
+  };
+  // Register registers runner
+  rpc Register(RegisterRequest) returns (RegisterResponse) {
+    option (google.api.http) = {
+      post: "/v1/runners/register"
+      body: "*"
+    };
+  }
+  // Disregister disregisters runner
+  rpc Disregister(DisregisterRequest) returns (DisregisterResponse) {
+    option (google.api.http) = {
+      post: "/v1/runners/disregister"
+      body: "*"
+    };
+  }
+  // Heartbeat updates runner statistic
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse) {
+    option (google.api.http) = {
+      post: "/v1/runners/heartbeat"
+      body: "*"
+    };
+  }
+  rpc ListRunners(ListRunnersRequest) returns (ListRunnersResponse) {
+    option (google.api.http) = {
+      get: "/v1/runners"
+    };
+  };
+  rpc GetRunner(GetRunnerRequest) returns (GetRunnerResponse) {
+    option (google.api.http) = {
+      get: "/v1/runners/{id}"
+    };
+  };
+  rpc RunnerConnection(stream RunnerConnectionRequest) returns (stream RunnerConnectionResponse) {};
+}
+
+message PingRequest {}
+
+message PingResponse {}
+
+message GetClusterRequest {}
+
+message GetClusterResponse {
+  types.ResponseHeader header = 1;
+  types.Monitor monitor = 2;
+}
+
+message RegisterRequest {
+  types.Runner runner = 1;
+  repeated types.Endpoint endpoints = 2;
+}
+
+message RegisterResponse {
+  types.Runner runner = 1;
+}
+
+message DisregisterRequest {
+  string id = 1;
+}
+
+message DisregisterResponse {
+  types.Runner runner = 1;
+}
+
+message HeartbeatRequest {
+  types.RunnerStat stat = 1;
+}
+
+message HeartbeatResponse {
+  types.ResponseHeader header = 1;
+}
+
+message ListRunnersRequest {}
+
+message ListRunnersResponse {
+  repeated types.Runner runners = 1;
+}
+
+message GetRunnerRequest {
+  uint64 id = 1;
+}
+
+message GetRunnerResponse {
+  types.Runner runner = 1;
+  types.RunnerStat stat = 2;
+}
+
+message HandshakeRequest {
+  string uid = 1;
+}
+
+message HandshakeResponse {}
+
+message CallTaskRequest {
+  enum Stage {
+    Commit = 0;
+    Rollback = 1;
+    Destroy = 2;
+  }
+  uint64 id = 1;
+  Stage stage = 2;
+  types.FlowNodeType flowType = 3;
+  string kind = 4;
+  string name = 5;
+  map<string, string> headers = 6;
+  map<string, string> properties = 7;
+  map<string, string> dataObjects = 8;
+  int64 timeout = 9;
+
+  uint64 uid = 100;
+}
+
+message CallTaskResponse {
+  uint64 id = 1;
+  map<string, string> results = 2;
+  map<string, string> dataObjects = 3;
+  string error = 4;
+
+  uint64 uid = 100;
+}
+
+message RunnerConnectionRequest {
+  HandshakeRequest handshake = 1;
+  CallTaskResponse callTask = 2;
+}
+
+message RunnerConnectionResponse {
+  HandshakeResponse handshake = 1;
+  CallTaskRequest callTask = 2;
+}
+
+service BpmnRPC {
+  rpc DeployDefinition(DeployDefinitionsRequest) returns (DeployDefinitionsResponse) {
+    option (google.api.http) = {
+      post: "/v1/definitions"
+      body: "*"
+    };
+  };
+  rpc ListDefinitions(ListDefinitionsRequest) returns (ListDefinitionsResponse) {
+    option (google.api.http) = {
+      get: "/v1/definitions"
+    };
+  };
+  rpc GetDefinitions(GetDefinitionsRequest) returns (GetDefinitionsResponse) {
+    option (google.api.http) = {
+      get: "/v1/definitions/{uid}"
+    };
+  };
+  rpc GetDefinitionsSnapshots(GetDefinitionsSnapshotsRequest) returns (GetDefinitionsSnapshotsResponse) {
+    option (google.api.http) = {
+      get: "/v1/definitions/{uid}/snapshots"
+    };
+  };
+  rpc RemoveDefinitions(RemoveDefinitionsRequest) returns (RemoveDefinitionsResponse) {
+    option (google.api.http) = {
+      delete: "/v1/definitions/{uid}"
+    };
+  };
+  rpc ExecuteProcess(ExecuteProcessRequest) returns (ExecuteProcessResponse) {
+    option (google.api.http) = {
+      post: "/v1/processes/execute"
+      body: "*"
+    };
+  };
+  rpc ListProcess(ListProcessRequest) returns (ListProcessResponse) {
+    option (google.api.http) = {
+      get: "/v1/processes"
+    };
+  }
+  rpc GetProcess(GetProcessRequest) returns (GetProcessResponse) {
+    option (google.api.http) = {
+      get: "/v1/processes/{id}"
+    };
+  }
+}
+
+message DeployDefinitionsRequest {
+  map<string, string> metadata = 1;
+
+  bytes content = 2;
+
+  string description = 3 [(validate.rules).string.min_len = 10];
+}
+
+message DeployDefinitionsResponse {
+  types.Definitions definitions = 1;
+}
+
+message ListDefinitionsRequest {
+  int32 page = 1 [(validate.rules).int32.gt = 0];
+  int32 size = 2 [(validate.rules).int32.gt = 0];
+}
+
+message ListDefinitionsResponse {
+  repeated types.Definitions definitions_list = 1;
+  int64 total = 2;
+}
+
+message GetDefinitionsRequest {
+  string uid = 1;
+  uint64 version = 2;
+}
+
+message GetDefinitionsResponse {
+  types.Definitions definitions = 1;
+}
+
+message GetDefinitionsSnapshotsRequest {
+  string uid = 1;
+  int32 page = 2 [(validate.rules).int32.gt = 0];
+  int32 size = 3 [(validate.rules).int32.gt = 0];
+}
+
+message GetDefinitionsSnapshotsResponse {
+  repeated types.DefinitionsSnapshot snapshots = 1;
+  int64 total = 2;
+}
+
+message RemoveDefinitionsRequest {
+  string uid = 1;
+  uint64 version = 2;
+}
+
+message RemoveDefinitionsResponse {
+  types.Definitions definitions = 1;
+}
+
+message ExecuteProcessRequest {
+  string name = 1;
+  int64 definitionsId = 2;
+  uint64 definitionsVersion = 3;
+  int64 priority = 4;
+  map<string, string> headers = 5;
+  map<string, string> properties = 6;
+  map<string, string> dataObjects = 7;
+}
+
+message ExecuteProcessResponse {
+  types.Process process = 1;
+}
+
+message ListProcessRequest {
+  int32 page = 1 [(validate.rules).int32.gt = 0];
+  int32 size = 2 [(validate.rules).int32.gt = 0];
+  int64 definitionsId = 3;
+  uint64 definitionsVersion = 4;
+}
+
+message ListProcessResponse {
+  repeated types.Process processes = 1;
+  int64 total = 2;
+}
+
+message GetProcessRequest {
+  int64 id = 1;
+}
+
+message GetProcessResponse {
+  types.Process process = 1;
+  repeated types.FlowNode activities = 2;
+}

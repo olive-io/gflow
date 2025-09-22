@@ -1,0 +1,231 @@
+/*
+Copyright 2025 The olive Authors
+
+This program is offered under a commercial and under the AGPL license.
+For AGPL licensing, see below.
+
+AGPL licensing:
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+syntax = "proto3";
+
+package types;
+
+import "tagger/tagger.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/olive-io/gflow/apis/types;types";
+option java_multiple_files = true;
+option java_package = "io.olive.apis.types";
+option java_outer_classname = "OliveTypes";
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+option (gogoproto.goproto_getters_all) = false;
+
+enum FlowNodeType {
+  UnknownNode = 0;
+  StartEvent = 1;
+  EndEvent = 2;
+  BoundaryEvent = 3;
+  IntermediateCatchEvent = 4;
+
+  Task = 11;
+  SendTask = 12;
+  ReceiveTask = 13;
+  ServiceTask = 14;
+  UserTask = 15;
+  ScriptTask = 16;
+  ManualTask = 17;
+  CallActivity = 18;
+  BusinessRuleTask = 19;
+  SubProcess = 20;
+
+  EventBasedGateway = 31;
+  ExclusiveGateway = 32;
+  InclusiveGateway = 33;
+  ParallelGateway = 34;
+}
+
+message Value {
+  enum Type {
+    String = 0;
+    Integer = 1;
+    Float = 2;
+    Boolean = 3;
+    Array = 4;
+    Object = 5;
+  }
+
+  Type type = 1;
+  string value = 2;
+  string default = 3;
+}
+
+message Endpoint {
+  FlowNodeType type = 1;
+  string kind = 2;
+  string name = 3;
+  string description = 4;
+  string httpURL = 5;
+
+  // request data
+  map<string, string> headers = 11;
+  map<string, Value> parameters = 12;
+  // response data
+  map<string, Value> results = 13;
+}
+
+// Definitions bpmn Definition
+message Definitions {
+  int64 id = 1 [(tagger.tags) = "gorm:\"primary\""];
+
+  int64 createAt = 2 [(tagger.tags) = "gorm:\"autoCreateTime\""];
+
+  int64 updateAt = 3 [(tagger.tags) = "gorm:\"autoUpdateTime\""];
+
+  string uid = 4 [(tagger.tags) = "gorm:\"index\""];
+
+  string description = 5;
+
+  map<string, string> metadata = 6 [(tagger.tags) = "gorm:\"serializer:json\""];
+
+  string content = 7;
+
+  uint64 version = 8;
+
+  bool isExecute = 9;
+}
+
+message BpmnArgs {
+  map<string, string> headers = 1;
+
+  map<string, string> properties = 2;
+
+  map<string, string> dataObjects = 3;
+}
+
+message Process {
+  enum ProcessStage {
+    // to be 'Prepare' where Process created
+    Prepare = 0;
+    // to be 'Ready' where olive-server scheduled
+    Ready = 1;
+    Commit = 2;
+    Rollback = 3;
+    Destroy = 4;
+    Finish = 5;
+  }
+
+  enum ProcessStatus {
+    Waiting = 0;
+    Running = 1;
+    Success = 2;
+    Warn = 3;
+    Failed = 4;
+  }
+
+  int64 id = 1 [(tagger.tags) = "gorm:\"primary\""];
+
+  int64 createAt = 2 [(tagger.tags) = "gorm:\"autoCreateTime\""];
+
+  int64 updateAt = 3 [(tagger.tags) = "gorm:\"autoUpdateTime\""];
+
+  string name = 4;
+
+  string uid = 5;
+
+  map<string, string> metadata = 6 [(tagger.tags) = "gorm:\"serializer:json\""];
+
+  int64 priority = 7;
+
+  BpmnArgs args = 8 [(tagger.tags) = "gorm:\"serializer:json\""];
+
+  int64 definitionsId = 9 [(tagger.tags) = "gorm:\"index\""];
+
+  uint64 definitionsVersion = 10;
+
+  string definitionsProcess = 11;
+
+  ProcessContext context = 12 [(tagger.tags) = "gorm:\"serializer:json\""];
+
+  int32 attempts = 13;
+
+  int64 startAt = 14;
+
+  int64 endAt = 15;
+
+  ProcessStage stage = 16;
+  ProcessStatus status = 17;
+
+  string err_msg = 18;
+}
+
+message ProcessContext {
+  map<string, string> variables = 1;
+
+  map<string, string> dataObjects = 2;
+}
+
+message FlowNode {
+  enum FlowNodeStage {
+    Prepare = 0;
+    Ready = 1;
+    Commit = 2;
+    Destroy = 3;
+    Rollback = 4;
+    Finish = 5;
+  }
+
+  enum FlowNodeStatus {
+    Waiting = 0;
+    Running = 1;
+    Success = 2;
+    Warn = 3;
+    Failed = 4;
+  }
+
+  int64 id = 1 [(tagger.tags) = "gorm:\"primary\""];
+
+  int64 createAt = 2 [(tagger.tags) = "gorm:\"autoCreateTime\""];
+
+  string name = 3;
+
+  string flow_id = 4;
+
+  FlowNodeType flow_type = 5;
+
+  map<string, string> headers = 6 [(tagger.tags) = "gorm:\"serializer:json\""];
+
+  map<string, string> properties = 7 [(tagger.tags) = "gorm:\"serializer:json\""];
+
+  map<string, string> dataObjects = 8 [(tagger.tags) = "gorm:\"serializer:json\""];
+
+  map<string, string> results = 9 [(tagger.tags) = "gorm:\"serializer:json\""];
+
+  int32 retries = 10;
+
+  int64 startTime = 11;
+
+  int64 endTime = 12;
+
+  int64 process_id = 13 [(tagger.tags) = "gorm:\"index\""];
+
+  FlowNodeStage stage = 14;
+
+  FlowNodeStatus status = 15;
+
+  string err_msg = 16;
+}
