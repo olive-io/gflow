@@ -1,0 +1,102 @@
+/*
+Copyright 2025 The gflow Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+syntax = "proto3";
+
+package types;
+
+import "tagger/tagger.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/olive-io/gflow/api/types;types";
+option java_multiple_files = true;
+option java_package = "io.olive.gflow.api.types";
+option java_outer_classname = "OliveTypes";
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+option (gogoproto.goproto_getters_all) = false;
+
+// Runner means olive-runner, the runner component of olive system
+message Runner {
+  enum TransportType {
+    GRPCStream = 0;
+    GRPCEcho = 1;
+    Http = 2;
+  }
+
+  uint64 id = 1 [(tagger.tags) = "gorm:\"primary\""];
+
+  int64 create_at = 2 [(tagger.tags) = "gorm:\"autoCreateTime\""];
+
+  // Unique identified by runner
+  string uid = 3;
+
+  // Name is the human-readable name of the runner.
+  string name = 4;
+
+  // listenURL is the URL the runner is listening on.
+  string listen_url = 5;
+
+  string version = 6;
+
+  int64 heartbeat_ms = 7;
+
+  string hostname = 8;
+
+  map<string, string> metadata = 9 [(tagger.tags) = "gorm:\"serializer:json\""];
+
+  map<string, string> features = 10 [(tagger.tags) = "gorm:\"serializer:json\""];
+
+  TransportType transport = 11;
+
+  uint64 cpu = 12;
+
+  uint64 memory = 13;
+
+  int64 online_timestamp = 14;
+  int64 offline_timestamp = 15;
+  int32 online = 16;
+}
+
+message RunnerStat {
+  uint64 id = 1;
+
+  string uid = 2;
+
+  double cpuUsed = 3;
+
+  double memoryUsed = 4;
+
+  string state = 5;
+
+  string error = 6;
+
+  int64 timestamp = 7;
+
+  uint64 steps = 11;
+  uint64 commit_count = 12;
+  uint64 rollback_count = 13;
+  uint64 destroy_count = 14;
+}
+
+message ExecuteProcessMsg {
+  int64 process = 1;
+}
+
+message RunnerEvent {
+  ExecuteProcessMsg execute_process = 1;
+}

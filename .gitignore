@@ -36,3 +36,8 @@ _output
 # Editor/IDE
 .idea/
 .vscode/
+
+# Go proto
+api/rpc/**/*.pb.go
+*.pb.gw.go
+*.pb.validate.go

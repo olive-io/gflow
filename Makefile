@@ -17,7 +17,7 @@ ifeq ($(GOHOSTOS), windows)
         Git_Bash=$(subst \,/,$(subst cmd\,bin\bash.exe,$(dir $(shell where git))))
         TYPES_PROTO_FILES=$(shell $(Git_Bash) -c "find api/types -name *.proto")
         RPC_PROTO_FILES=$(shell $(Git_Bash) -c "find api/rpc -name *.proto")
-        OPENAPI_PROTO_FILES=$(shell $(Git_Bash) -c "find api/rpc/consolepb -name *.proto")
+        #OPENAPI_PROTO_FILES=$(shell $(Git_Bash) -c "find api/rpc/consolepb -name *.proto")
 else
         TYPES_PROTO_FILES=$(shell find api/types -name *.proto)
         RPC_PROTO_FILES=$(shell find api/rpc -name *.proto)
@@ -49,16 +49,16 @@ install:
 
 apis:
 	protoc --proto_path=./api \
-			--proto_path=./third_party \
+			--proto_path=./third-party \
 			--gofast_out=paths=source_relative:./api \
 			$(TYPES_PROTO_FILES)
 	protoc --proto_path=. \
     		--proto_path=./api \
-    		--proto_path=./third_party \
+    		--proto_path=./third-party \
     		--gotag_out=paths=source_relative:. \
     		$(TYPES_PROTO_FILES)
 	protoc --proto_path=./api \
-    		--proto_path=./third_party \
+    		--proto_path=./third-party \
     		--go_out=paths=source_relative:./api \
     		--go-grpc_out=paths=source_relative:./api \
     		--validate_out=paths=source_relative,lang=go:./api \

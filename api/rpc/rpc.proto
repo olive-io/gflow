@@ -1,22 +1,17 @@
 /*
-Copyright 2023 The olive Authors
+Copyright 2025 The gflow Authors
 
-This program is offered under a commercial and under the AGPL license.
-For AGPL licensing, see below.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-AGPL licensing:
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 
 syntax = "proto3";
@@ -24,14 +19,15 @@ syntax = "proto3";
 package rpc;
 
 import "types/bpmn.proto";
+import "types/internal.proto";
 // for grpc-gateway
 import "google/api/annotations.proto";
 
 import "validate/validate.proto";
 
-option go_package = "github.com/olive-io/olive/api/rpc;rpc";
+option go_package = "github.com/olive-io/gflow/api/rpc;rpc";
 option java_multiple_files = true;
-option java_package = "io.olive.api.rpc";
+option java_package = "io.olive.gflow.api.rpc";
 option java_outer_classname = "GFlowRPC";
 
 service SystemRPC {
@@ -40,11 +36,6 @@ service SystemRPC {
       get: "/v1/ping"
     };
   }
-  rpc GetCluster(GetClusterRequest) returns (GetClusterResponse) {
-    option (google.api.http) = {
-      get: "/v1/cluster"
-    };
-  };
   // Register registers runner
   rpc Register(RegisterRequest) returns (RegisterResponse) {
     option (google.api.http) = {
@@ -59,13 +50,6 @@ service SystemRPC {
       body: "*"
     };
   }
-  // Heartbeat updates runner statistic
-  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse) {
-    option (google.api.http) = {
-      post: "/v1/runners/heartbeat"
-      body: "*"
-    };
-  }
   rpc ListRunners(ListRunnersRequest) returns (ListRunnersResponse) {
     option (google.api.http) = {
       get: "/v1/runners"
@@ -76,18 +60,13 @@ service SystemRPC {
       get: "/v1/runners/{id}"
     };
   };
-  rpc RunnerConnection(stream RunnerConnectionRequest) returns (stream RunnerConnectionResponse) {};
+  rpc RunnerDispatch(stream RunnerDispatchRequest) returns (stream RunnerDispatchResponse) {};
 }
 
 message PingRequest {}
 
-message PingResponse {}
-
-message GetClusterRequest {}
-
-message GetClusterResponse {
-  types.ResponseHeader header = 1;
-  types.Monitor monitor = 2;
+message PingResponse {
+  string reply = 1;
 }
 
 message RegisterRequest {
@@ -105,14 +84,6 @@ message DisregisterRequest {
 
 message DisregisterResponse {
   types.Runner runner = 1;
-}
-
-message HeartbeatRequest {
-  types.RunnerStat stat = 1;
-}
-
-message HeartbeatResponse {
-  types.ResponseHeader header = 1;
 }
 
 message ListRunnersRequest {}
@@ -164,12 +135,12 @@ message CallTaskResponse {
   uint64 uid = 100;
 }
 
-message RunnerConnectionRequest {
+message RunnerDispatchRequest {
   HandshakeRequest handshake = 1;
   CallTaskResponse callTask = 2;
 }
 
-message RunnerConnectionResponse {
+message RunnerDispatchResponse {
   HandshakeResponse handshake = 1;
   CallTaskRequest callTask = 2;
 }
@@ -189,11 +160,6 @@ service BpmnRPC {
   rpc GetDefinitions(GetDefinitionsRequest) returns (GetDefinitionsResponse) {
     option (google.api.http) = {
       get: "/v1/definitions/{uid}"
-    };
-  };
-  rpc GetDefinitionsSnapshots(GetDefinitionsSnapshotsRequest) returns (GetDefinitionsSnapshotsResponse) {
-    option (google.api.http) = {
-      get: "/v1/definitions/{uid}/snapshots"
     };
   };
   rpc RemoveDefinitions(RemoveDefinitionsRequest) returns (RemoveDefinitionsResponse) {
@@ -250,17 +216,6 @@ message GetDefinitionsResponse {
   types.Definitions definitions = 1;
 }
 
-message GetDefinitionsSnapshotsRequest {
-  string uid = 1;
-  int32 page = 2 [(validate.rules).int32.gt = 0];
-  int32 size = 3 [(validate.rules).int32.gt = 0];
-}
-
-message GetDefinitionsSnapshotsResponse {
-  repeated types.DefinitionsSnapshot snapshots = 1;
-  int64 total = 2;
-}
-
 message RemoveDefinitionsRequest {
   string uid = 1;
   uint64 version = 2;
@@ -272,8 +227,8 @@ message RemoveDefinitionsResponse {
 
 message ExecuteProcessRequest {
   string name = 1;
-  int64 definitionsId = 2;
-  uint64 definitionsVersion = 3;
+  string definitions_uid = 2;
+  uint64 definitions_version = 3;
   int64 priority = 4;
   map<string, string> headers = 5;
   map<string, string> properties = 6;
@@ -287,8 +242,8 @@ message ExecuteProcessResponse {
 message ListProcessRequest {
   int32 page = 1 [(validate.rules).int32.gt = 0];
   int32 size = 2 [(validate.rules).int32.gt = 0];
-  int64 definitionsId = 3;
-  uint64 definitionsVersion = 4;
+  string definitions_uid = 3;
+  uint64 definitions_version = 4;
 }
 
 message ListProcessResponse {
