@@ -28,9 +28,9 @@ import (
 	"time"
 
 	"github.com/olive-io/bpmn/schema"
-	bpmn "github.com/olive-io/bpmn/v2"
+	"github.com/olive-io/bpmn/v2"
 	"github.com/olive-io/bpmn/v2/pkg/tracing"
-	ants "github.com/panjf2000/ants/v2"
+	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 
 	"github.com/olive-io/gflow/api/types"
@@ -248,6 +248,11 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 	}
 
 	defer func() {
+		rctx := ctx
+		if rctx.Err() != nil {
+			rctx = sch.ctx
+		}
+
 		if err != nil {
 			stat.Stage = types.Process_Rollback
 			sch.setProcess(stat.Process)
@@ -259,7 +264,7 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 
 				lg.Infof("rollback task [%s][%s]", pid, node.FlowId)
 
-				//TODO: do task rollback stage
+				_ = sch.doTask(rctx, node)
 			}
 		}
 
@@ -273,7 +278,7 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 
 			lg.Infof("destroy task [%s][%s]", pid, node.FlowId)
 
-			//TODO: do task commit stage
+			_ = sch.doTask(rctx, node)
 
 			node.Stage = types.FlowNode_Finish
 			sch.setFlowNode(node)
@@ -413,14 +418,12 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 					flowNode.Stage = types.FlowNode_Commit
 					sch.setFlowNode(flowNode)
 
-					var taskErr error
-					//TODO: handle task commit
-
 					doOptions := make([]bpmn.DoOption, 0)
 					flowNode.Status = types.FlowNode_Success
-					if taskErr != nil {
+					doErr := sch.doTask(ctx, flowNode)
+					if doErr != nil {
 						flowNode.Status = types.FlowNode_Failed
-						flowNode.ErrMsg = taskErr.Error()
+						flowNode.ErrMsg = doErr.Error()
 						doOptions = append(doOptions, bpmn.DoWithErr(err))
 					}
 
@@ -466,6 +469,10 @@ func (sch *Scheduler) destroy() {
 	sch.lg.Debug("release scheduler execute pool")
 	sch.executePool.Release()
 	sch.lg.Debug("released scheduler execute pool")
+}
+
+func (sch *Scheduler) doTask(ctx context.Context, node *types.FlowNode) error {
+	return nil
 }
 
 func (sch *Scheduler) setProcess(process *types.Process) {

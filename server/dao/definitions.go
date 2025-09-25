@@ -130,3 +130,13 @@ func (dao *DefinitionsDao) CreateDefinitions(ctx context.Context, definitions *t
 
 	return tx.RowsAffected, nil
 }
+
+func (dao *DefinitionsDao) UpdateDefinitions(ctx context.Context, definitions *types.Definitions) error {
+	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Definitions{})
+	err := tx.Where("id = ?", definitions.Id).Updates(definitions).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

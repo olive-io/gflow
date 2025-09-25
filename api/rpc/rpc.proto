@@ -102,10 +102,16 @@ message GetRunnerResponse {
 }
 
 message HandshakeRequest {
-  string uid = 1;
+  types.Runner runner = 1;
 }
 
 message HandshakeResponse {}
+
+message HeartBeatRequest {
+  types.RunnerStat stat = 1;
+}
+
+message HeartBeatResponse {}
 
 message CallTaskRequest {
   enum Stage {
@@ -137,12 +143,14 @@ message CallTaskResponse {
 
 message RunnerDispatchRequest {
   HandshakeRequest handshake = 1;
-  CallTaskResponse callTask = 2;
+  HeartBeatRequest heartbeat = 2;
+  CallTaskResponse callTask = 3;
 }
 
 message RunnerDispatchResponse {
   HandshakeResponse handshake = 1;
-  CallTaskRequest callTask = 2;
+  HeartBeatResponse HeartBeat = 2;
+  CallTaskRequest callTask = 3;
 }
 
 service BpmnRPC {

@@ -99,3 +99,39 @@ func (in *FlowNode) DeepCopy() *FlowNode {
 	in.DeepCopyInto(out)
 	return out
 }
+
+func (in *Runner) DeepCopyInto(out *Runner) {
+	*out = *in
+	if in.Metadata != nil {
+		for k, v := range in.Metadata {
+			out.Metadata[k] = v
+		}
+	}
+	if in.Features != nil {
+		for k, v := range in.Features {
+			out.Features[k] = v
+		}
+	}
+}
+
+func (in *Runner) DeepCopy() *Runner {
+	if in == nil {
+		return nil
+	}
+	out := new(Runner)
+	in.DeepCopyInto(out)
+	return out
+}
+
+func (in *RunnerStat) DeepCopyInto(out *RunnerStat) {
+	*out = *in
+}
+
+func (in *RunnerStat) DeepCopy() *RunnerStat {
+	if in == nil {
+		return nil
+	}
+	out := new(RunnerStat)
+	in.DeepCopyInto(out)
+	return out
+}

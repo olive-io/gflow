@@ -74,7 +74,7 @@ message Endpoint {
   string kind = 2;
   string name = 3;
   string description = 4;
-  string httpURL = 5;
+  string http_url = 5;
 
   // request data
   map<string, string> headers = 11;
@@ -160,9 +160,9 @@ message Process {
 
   int32 attempts = 13;
 
-  int64 startAt = 14;
+  int64 start_at = 14;
 
-  int64 endAt = 15;
+  int64 end_at = 15;
 
   ProcessStage stage = 16;
   ProcessStatus status = 17;

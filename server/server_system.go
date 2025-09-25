@@ -152,16 +152,23 @@ func (sgs *systemGRPCServer) RunnerDispatch(stream pb.SystemRPC_RunnerDispatchSe
 	}
 
 	handshake := rsp.Handshake
-	if handshake == nil {
+	if handshake == nil || handshake.Runner == nil {
 		return status.Errorf(codes.InvalidArgument, "missing handshake message")
 	}
 
-	runner, err := sgs.runnerDao.GetRunner(ctx, 0, handshake.Uid)
+	runnerMsg := handshake.Runner
+	runner, err := sgs.runnerDao.GetRunner(ctx, 0, runnerMsg.Uid)
 	if err != nil {
-		return status.Error(codes.NotFound, err.Error())
+		if !dao.IsNotFound(err) {
+			return status.Error(codes.Internal, err.Error())
+		}
+		runner = runnerMsg
+		runner.ListenUrl = listenURL
+		_ = sgs.runnerDao.CreateRunner(ctx, runner)
+	} else {
+		runner.ListenUrl = listenURL
+		_ = sgs.runnerDao.UpdateRunner(ctx, runner)
 	}
-	runner.ListenUrl = listenURL
-	_ = sgs.runnerDao.UpdateRunner(ctx, runner)
 
 	reply := &pb.RunnerDispatchResponse{
 		Handshake: &pb.HandshakeResponse{},
@@ -170,15 +177,31 @@ func (sgs *systemGRPCServer) RunnerDispatch(stream pb.SystemRPC_RunnerDispatchSe
 		lg.Error("returns handshake response", zap.Error(err))
 	}
 
-	lg.Info("add new pipe",
+	lg.Info("add runner dispatch",
 		zap.String("uid", runner.Uid),
 		zap.String("listen-url", runner.ListenUrl),
 		zap.String("hostname", runner.Hostname),
 	)
 
-	//err = p.start()
+LOOP:
+	for {
+		recv, rerr := stream.Recv()
+		if rerr != nil {
+			if rerr == io.EOF {
+				err = nil
+			}
+			break LOOP
+		}
 
-	lg.Info("remove pipe",
+		switch {
+		case recv.Heartbeat != nil:
+
+		case recv.CallTask != nil:
+
+		}
+	}
+
+	lg.Info("remove runner dispatch",
 		zap.String("uid", runner.Uid),
 		zap.String("listen-url", runner.ListenUrl),
 		zap.String("hostname", runner.Hostname),

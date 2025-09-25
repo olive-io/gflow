@@ -43,7 +43,7 @@ message Runner {
   int64 create_at = 2 [(tagger.tags) = "gorm:\"autoCreateTime\""];
 
   // Unique identified by runner
-  string uid = 3;
+  string uid = 3 ;
 
   // Name is the human-readable name of the runner.
   string name = 4;
@@ -73,30 +73,20 @@ message Runner {
 }
 
 message RunnerStat {
-  uint64 id = 1;
+  string uid = 1;
 
-  string uid = 2;
+  double cpuUsed = 2;
 
-  double cpuUsed = 3;
+  double memoryUsed = 3;
 
-  double memoryUsed = 4;
+  string state = 4;
 
-  string state = 5;
+  string error = 5;
 
-  string error = 6;
-
-  int64 timestamp = 7;
+  int64 timestamp = 6;
 
   uint64 steps = 11;
   uint64 commit_count = 12;
   uint64 rollback_count = 13;
   uint64 destroy_count = 14;
-}
-
-message ExecuteProcessMsg {
-  int64 process = 1;
-}
-
-message RunnerEvent {
-  ExecuteProcessMsg execute_process = 1;
 }

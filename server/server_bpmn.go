@@ -123,7 +123,13 @@ func (bgs *bpmnGRPCServer) DeployDefinition(ctx context.Context, req *pb.DeployD
 	if req.Description != "" {
 		definitions.Description = req.Description
 	}
-	definitions.Content = string(req.Content)
+	if len(req.Content) != 0 {
+		definitions.Content = string(req.Content)
+		definitions.Version = definitions.Version + 1
+	}
+	if err = bgs.definitionsDao.UpdateDefinitions(ctx, definitions); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
 	bgs.lg.Info("deploy definition",
 		zap.String("uid", uid),
