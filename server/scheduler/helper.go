@@ -1,48 +1,66 @@
 /*
 Copyright 2025 The gflow Authors
 
-This program is offered under a commercial and under the AGPL license.
-For AGPL licensing, see below.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-AGPL licensing:
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 
 package scheduler
 
 import (
-	"encoding/json"
-	"strconv"
-
 	"github.com/olive-io/bpmn/schema"
 	"github.com/olive-io/bpmn/v2"
 
 	"github.com/olive-io/gflow/api/types"
 )
 
-func jsonValueToString(value any) string {
-	switch v := value.(type) {
-	case string:
-		return v
-	case bool:
-		return strconv.FormatBool(v)
-	case []byte:
-		return string(v)
-	default:
-		data, _ := json.Marshal(value)
-		return string(data)
+func toSchemaValue(value *types.Value) *schema.Value {
+	sv := &schema.Value{ItemValue: value.Value}
+	switch value.Type {
+	case types.Value_String:
+		sv.ItemType = schema.ItemTypeString
+	case types.Value_Integer:
+		sv.ItemType = schema.ItemTypeInteger
+	case types.Value_Boolean:
+		sv.ItemType = schema.ItemTypeBoolean
+	case types.Value_Float:
+		sv.ItemType = schema.ItemTypeFloat
+	case types.Value_Array:
+		sv.ItemType = schema.ItemTypeArray
+	case types.Value_Object:
+		sv.ItemType = schema.ItemTypeObject
 	}
+	return sv
+}
+
+func fromSchemaValue(sv *schema.Value) *types.Value {
+	tv := &types.Value{
+		Value: sv.ItemValue,
+	}
+	switch sv.ItemType {
+	case schema.ItemTypeString:
+		tv.Type = types.Value_String
+	case schema.ItemTypeInteger:
+		tv.Type = types.Value_Integer
+	case schema.ItemTypeBoolean:
+		tv.Type = types.Value_Boolean
+	case schema.ItemTypeFloat:
+		tv.Type = types.Value_Float
+	case schema.ItemTypeArray:
+		tv.Type = types.Value_Array
+	case schema.ItemTypeObject:
+		tv.Type = types.Value_Object
+	}
+	return tv
 }
 
 func parseTaskType(at bpmn.ActivityType) types.FlowNodeType {

@@ -1,22 +1,17 @@
 /*
 Copyright 2025 The gflow Authors
 
-This program is offered under a commercial and under the AGPL license.
-For AGPL licensing, see below.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-AGPL licensing:
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 
 package dao
@@ -47,6 +42,18 @@ func NewRunnerDao(db *gorm.DB) (*RunnerDao, error) {
 	}
 
 	return dao, nil
+}
+
+func (dao *RunnerDao) FindRunners(ctx context.Context) ([]*types.Runner, error) {
+	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Runner{})
+
+	runners := make([]*types.Runner, 0)
+	err := tx.Order("id desc").Find(&runners).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return runners, nil
 }
 
 func (dao *RunnerDao) ListRunners(ctx context.Context, page, size int32) ([]*types.Runner, int64, error) {

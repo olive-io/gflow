@@ -33,6 +33,7 @@ import (
 
 	pb "github.com/olive-io/gflow/api/rpc"
 	"github.com/olive-io/gflow/server/dao"
+	"github.com/olive-io/gflow/server/dispatch"
 )
 
 var _ pb.SystemRPCServer = (*systemGRPCServer)(nil)
@@ -44,14 +45,17 @@ type systemGRPCServer struct {
 	lg  *zap.Logger
 
 	runnerDao *dao.RunnerDao
+
+	dispatcher *dispatch.Dispatcher
 }
 
-func newSystemGRPCServer(ctx context.Context, lg *zap.Logger, runnerDao *dao.RunnerDao) *systemGRPCServer {
+func newSystemGRPCServer(ctx context.Context, lg *zap.Logger, runnerDao *dao.RunnerDao, dispatcher *dispatch.Dispatcher) *systemGRPCServer {
 	server := &systemGRPCServer{
 		ctx: ctx,
 		lg:  lg,
 
-		runnerDao: runnerDao,
+		runnerDao:  runnerDao,
+		dispatcher: dispatcher,
 	}
 
 	return server
@@ -80,7 +84,6 @@ func (sgs *systemGRPCServer) Register(ctx context.Context, req *pb.RegisterReque
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
-
 	} else {
 		err := sgs.runnerDao.CreateRunner(ctx, runner)
 		if err != nil {
@@ -123,19 +126,29 @@ func (sgs *systemGRPCServer) Disregister(ctx context.Context, req *pb.Disregiste
 }
 
 func (sgs *systemGRPCServer) ListRunners(ctx context.Context, req *pb.ListRunnersRequest) (*pb.ListRunnersResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	runners, err := sgs.runnerDao.FindRunners(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	rsp := &pb.ListRunnersResponse{Runners: runners}
+	return rsp, nil
 }
 
 func (sgs *systemGRPCServer) GetRunner(ctx context.Context, req *pb.GetRunnerRequest) (*pb.GetRunnerResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	runner, err := sgs.runnerDao.GetRunner(ctx, req.Id, req.Uid)
+	if err != nil {
+		if dao.IsNotFound(err) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	rsp := &pb.GetRunnerResponse{Runner: runner}
+	return rsp, nil
 }
 
 func (sgs *systemGRPCServer) RunnerDispatch(stream pb.SystemRPC_RunnerDispatchServer) error {
 
 	var listenURL string
-
 	lg := sgs.lg
 	ctx := stream.Context()
 	peerInfo, ok := peer.FromContext(ctx)
@@ -183,6 +196,31 @@ func (sgs *systemGRPCServer) RunnerDispatch(stream pb.SystemRPC_RunnerDispatchSe
 		zap.String("hostname", runner.Hostname),
 	)
 
+	intput, err := sgs.dispatcher.RegisterPipe(ctx, runner.Uid)
+	if err != nil {
+		return status.Error(codes.Internal, err.Error())
+	}
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case req, allowed := <-intput:
+				if !allowed {
+					return
+				}
+				if in := req.CallTask; in != nil {
+					msg := &pb.RunnerDispatchResponse{CallTask: in}
+					if serr := stream.Send(msg); serr != nil {
+						result := &pb.CallTaskResponse{SeqId: in.SeqId, Error: serr.Error()}
+						sgs.dispatcher.Reply(&dispatch.Response{CallTask: result})
+					}
+				}
+			}
+		}
+	}()
+
 LOOP:
 	for {
 		recv, rerr := stream.Recv()
@@ -197,7 +235,7 @@ LOOP:
 		case recv.Heartbeat != nil:
 
 		case recv.CallTask != nil:
-
+			sgs.dispatcher.Reply(&dispatch.Response{CallTask: recv.CallTask})
 		}
 	}
 

@@ -14,27 +14,4 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package scheduler
-
-import (
-	"runtime"
-
-	"go.uber.org/zap"
-)
-
-var (
-	DefaultExecutePoolSize = runtime.NumCPU() * 10
-)
-
-type Options struct {
-	Logger          *zap.Logger
-	ExecutePoolSize int
-}
-
-func NewOptions(lg *zap.Logger) *Options {
-	options := &Options{
-		Logger:          lg,
-		ExecutePoolSize: DefaultExecutePoolSize,
-	}
-	return options
-}
+package plugin

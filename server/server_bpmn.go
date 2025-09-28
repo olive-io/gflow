@@ -199,8 +199,8 @@ func (bgs *bpmnGRPCServer) ExecuteProcess(ctx context.Context, req *pb.ExecutePr
 		DefinitionsUid:     definitionUID,
 		DefinitionsVersion: version,
 		Context: &types.ProcessContext{
-			Variables:   map[string]string{},
-			DataObjects: map[string]string{},
+			Variables:   map[string]*types.Value{},
+			DataObjects: map[string]*types.Value{},
 		},
 	}
 

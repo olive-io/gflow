@@ -39,6 +39,7 @@ import (
 	pb "github.com/olive-io/gflow/api/rpc"
 	"github.com/olive-io/gflow/server/config"
 	"github.com/olive-io/gflow/server/dao"
+	"github.com/olive-io/gflow/server/dispatch"
 	"github.com/olive-io/gflow/server/scheduler"
 )
 
@@ -132,8 +133,10 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 		return nil, fmt.Errorf("create scheduler: %w", err)
 	}
 
+	dispatcher := dispatch.NewDispatcher()
+
 	bpmnHandler := newBpmnServer(ctx, lg, sch, definitionsDao, processDao)
-	systemHandler := newSystemGRPCServer(ctx, lg, runnerDao)
+	systemHandler := newSystemGRPCServer(ctx, lg, runnerDao, dispatcher)
 
 	kaep := keepalive.EnforcementPolicy{
 		MinTime:             5 * time.Second,

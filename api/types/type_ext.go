@@ -36,13 +36,26 @@ func (in *Endpoint) URL() string {
 	return url
 }
 
+func (in *Value) DeepCopyInto(out *Value) {
+	*out = *in
+}
+
+func (in *Value) DeepCopy() *Value {
+	if in == nil {
+		return nil
+	}
+	out := new(Value)
+	in.DeepCopyInto(out)
+	return out
+}
+
 func (in *ProcessContext) DeepCopyInto(out *ProcessContext) {
 	*out = *in
 	for k, v := range in.DataObjects {
-		out.DataObjects[k] = v
+		out.DataObjects[k] = v.DeepCopy()
 	}
 	for k, v := range in.Variables {
-		out.Variables[k] = v
+		out.Variables[k] = v.DeepCopy()
 	}
 }
 
@@ -81,12 +94,12 @@ func (in *FlowNode) DeepCopyInto(out *FlowNode) {
 	}
 	if in.Properties != nil {
 		for k, v := range in.Properties {
-			out.Properties[k] = v
+			out.Properties[k] = v.DeepCopy()
 		}
 	}
 	if in.DataObjects != nil {
 		for k, v := range in.DataObjects {
-			out.DataObjects[k] = v
+			out.DataObjects[k] = v.DeepCopy()
 		}
 	}
 }

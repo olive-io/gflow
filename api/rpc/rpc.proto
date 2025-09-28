@@ -94,6 +94,7 @@ message ListRunnersResponse {
 
 message GetRunnerRequest {
   uint64 id = 1;
+  string uid = 2;
 }
 
 message GetRunnerResponse {
@@ -119,7 +120,7 @@ message CallTaskRequest {
     Rollback = 1;
     Destroy = 2;
   }
-  uint64 id = 1;
+  uint64 seq_id = 1;
   Stage stage = 2;
   types.FlowNodeType flowType = 3;
   string kind = 4;
@@ -133,7 +134,7 @@ message CallTaskRequest {
 }
 
 message CallTaskResponse {
-  uint64 id = 1;
+  uint64 seq_id = 1;
   map<string, string> results = 2;
   map<string, string> dataObjects = 3;
   string error = 4;
@@ -239,8 +240,8 @@ message ExecuteProcessRequest {
   uint64 definitions_version = 3;
   int64 priority = 4;
   map<string, string> headers = 5;
-  map<string, string> properties = 6;
-  map<string, string> dataObjects = 7;
+  map<string, types.Value> properties = 6;
+  map<string, types.Value> dataObjects = 7;
 }
 
 message ExecuteProcessResponse {

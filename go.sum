@@ -94,10 +94,10 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/muyo/sno v1.2.1 h1:YHAkhS192rFym+9WoHjXrNyPggjgKtDByCFawPi5Ve8=
 github.com/muyo/sno v1.2.1/go.mod h1:Hjr5WzLleYD7bJYvQGo5UK7hpE2kSvMbihc0bMWF2bU=
-github.com/olive-io/bpmn/schema v1.6.1 h1:V2Ky8NTLotiXEUWGo3YDLC9mf9EG/PUtNz+4oc+rixw=
-github.com/olive-io/bpmn/schema v1.6.1/go.mod h1:I+gdW8VEI52SZ/uhIrMuUgX0k8mEzLxbRBGsVyBMAww=
-github.com/olive-io/bpmn/v2 v2.6.2 h1:cNTxiC70X1a8QTfrFrNonlQFnvJR1mRvMW14ud3/aOI=
-github.com/olive-io/bpmn/v2 v2.6.2/go.mod h1:leSK+z8O5wUVUtw6F9uJ29bPzYdPIhktVX1VlRZiCo4=
+github.com/olive-io/bpmn/schema v1.6.2 h1:tCkWo27F66J7mefXhu2ZSKgMbWxDf2mDst07pT1vkTE=
+github.com/olive-io/bpmn/schema v1.6.2/go.mod h1:I+gdW8VEI52SZ/uhIrMuUgX0k8mEzLxbRBGsVyBMAww=
+github.com/olive-io/bpmn/v2 v2.6.3 h1:iL/9aiN9Yn+YOQ1jA5RC0cmiSbd5x7BlmWSEd8nY46A=
+github.com/olive-io/bpmn/v2 v2.6.3/go.mod h1:leSK+z8O5wUVUtw6F9uJ29bPzYdPIhktVX1VlRZiCo4=
 github.com/panjf2000/ants/v2 v2.11.3 h1:AfI0ngBoXJmYOpDh9m516vjqoUu2sLrIVgppI9TZVpg=
 github.com/panjf2000/ants/v2 v2.11.3/go.mod h1:8u92CYMUc6gyvTIw8Ru7Mt7+/ESnJahz5EVtqfrilek=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=

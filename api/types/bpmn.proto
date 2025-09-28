@@ -65,8 +65,9 @@ message Value {
   }
 
   Type type = 1;
-  string value = 2;
-  string default = 3;
+  string kind = 2;
+  string value = 3;
+  string default = 4;
 }
 
 message Endpoint {
@@ -109,9 +110,9 @@ message Definitions {
 message BpmnArgs {
   map<string, string> headers = 1;
 
-  map<string, string> properties = 2;
+  map<string, Value> properties = 2;
 
-  map<string, string> dataObjects = 3;
+  map<string, Value> dataObjects = 3;
 }
 
 message Process {
@@ -171,9 +172,9 @@ message Process {
 }
 
 message ProcessContext {
-  map<string, string> variables = 1;
+  map<string, Value> variables = 1;
 
-  map<string, string> dataObjects = 2;
+  map<string, Value> dataObjects = 2;
 }
 
 message FlowNode {
@@ -206,11 +207,11 @@ message FlowNode {
 
   map<string, string> headers = 6 [(tagger.tags) = "gorm:\"serializer:json\""];
 
-  map<string, string> properties = 7 [(tagger.tags) = "gorm:\"serializer:json\""];
+  map<string, Value> properties = 7 [(tagger.tags) = "gorm:\"serializer:json\""];
 
-  map<string, string> data_objects = 8 [(tagger.tags) = "gorm:\"serializer:json\""];
+  map<string, Value> data_objects = 8 [(tagger.tags) = "gorm:\"serializer:json\""];
 
-  map<string, string> results = 9 [(tagger.tags) = "gorm:\"serializer:json\""];
+  map<string, Value> results = 9 [(tagger.tags) = "gorm:\"serializer:json\""];
 
   int32 retries = 10;
 
