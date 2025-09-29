@@ -33,6 +33,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/utils"
+
+	"github.com/olive-io/gflow/server/config"
 )
 
 type gormLogger struct {
@@ -101,7 +103,7 @@ func (glog gormLogger) Trace(ctx context.Context, begin time.Time, fc func() (sq
 	}
 }
 
-func openLocalDB(lg *zap.Logger, dataDir string) (*gorm.DB, error) {
+func openLocalDB(lg *zap.Logger, dbCfg *config.DatabaseConfig) (*gorm.DB, error) {
 	var (
 		traceStr     = "%s\n[%.3fms] [rows:%v] %s"
 		traceWarnStr = "%s %s\n[%.3fms] [rows:%v] %s"
@@ -121,6 +123,7 @@ func openLocalDB(lg *zap.Logger, dataDir string) (*gorm.DB, error) {
 		traceStr:     traceStr,
 	}
 
+	dataDir := dbCfg.DataRoot
 	dbPath := filepath.Join(dataDir, "gflow.db")
 	dbPath += "?_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)"
 	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{

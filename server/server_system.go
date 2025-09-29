@@ -196,7 +196,7 @@ func (sgs *systemGRPCServer) RunnerDispatch(stream pb.SystemRPC_RunnerDispatchSe
 		zap.String("hostname", runner.Hostname),
 	)
 
-	intput, err := sgs.dispatcher.RegisterPipe(ctx, runner.Uid)
+	input, err := sgs.dispatcher.Register(ctx, runner.Uid)
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
@@ -206,7 +206,7 @@ func (sgs *systemGRPCServer) RunnerDispatch(stream pb.SystemRPC_RunnerDispatchSe
 			select {
 			case <-ctx.Done():
 				return
-			case req, allowed := <-intput:
+			case req, allowed := <-input:
 				if !allowed {
 					return
 				}

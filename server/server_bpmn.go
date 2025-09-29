@@ -272,7 +272,7 @@ func (bgs *bpmnGRPCServer) process(wch *scheduler.WatchChan) {
 
 		rsp := wch.Next()
 		if rsp.Err != nil {
-
+			continue
 		}
 		if p := rsp.Process; p != nil {
 			err := bgs.processDao.UpdateProcess(ctx, p)

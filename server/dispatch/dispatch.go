@@ -37,8 +37,7 @@ type pipe struct {
 
 	uid string
 
-	in chan *Request
-
+	out chan *Request
 	pch chan string
 }
 
@@ -46,12 +45,13 @@ func (p *pipe) Send(req *Request) error {
 	select {
 	case <-p.ctx.Done():
 		return p.ctx.Err()
-	case p.in <- req:
+	case p.out <- req:
 		return nil
 	}
 }
 
 func (p *pipe) process() {
+	defer close(p.out)
 	for {
 		select {
 		case <-p.ctx.Done():
@@ -80,7 +80,25 @@ func NewDispatcher() *Dispatcher {
 	return dispatcher
 }
 
-func (d *Dispatcher) RegisterPipe(ctx context.Context, uid string) (chan *Request, error) {
+func (d *Dispatcher) process(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case uid := <-d.pch:
+			d.pmu.Lock()
+			delete(d.pipes, uid)
+			d.pmu.Unlock()
+		}
+	}
+}
+
+func (d *Dispatcher) Start(ctx context.Context) {
+	go d.process(ctx)
+}
+
+// Register adds new pipe
+func (d *Dispatcher) Register(ctx context.Context, uid string) (chan *Request, error) {
 	d.pmu.RLock()
 	_, ok := d.pipes[uid]
 	d.pmu.RUnlock()
@@ -93,7 +111,7 @@ func (d *Dispatcher) RegisterPipe(ctx context.Context, uid string) (chan *Reques
 	p := &pipe{
 		ctx: ctx,
 		uid: uid,
-		in:  ch,
+		out: ch,
 		pch: d.pch,
 	}
 	go p.process()

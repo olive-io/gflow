@@ -63,7 +63,7 @@ func (s *Server) Start(ctx context.Context) error {
 	cfg := s.cfg
 	lg := s.cfg.Logger()
 
-	listenAddress := cfg.Listen
+	listenAddress := cfg.Server.Listen
 	lg.Info("listening on " + listenAddress)
 	ln, err := net.Listen("tcp", listenAddress)
 	if err != nil {
@@ -108,10 +108,9 @@ func (s *Server) Start(ctx context.Context) error {
 func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	lg := s.cfg.Logger()
 
-	dataDir := s.cfg.DataRoot
-	db, err := openLocalDB(lg, dataDir)
+	db, err := openLocalDB(lg, &s.cfg.Database)
 	if err != nil {
-		return nil, fmt.Errorf("open database on %s: %w", dataDir, err)
+		return nil, fmt.Errorf("open database: %w", err)
 	}
 
 	definitionsDao, err := dao.NewDefinitionsDao(db)
@@ -134,6 +133,7 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	}
 
 	dispatcher := dispatch.NewDispatcher()
+	dispatcher.Start(ctx)
 
 	bpmnHandler := newBpmnServer(ctx, lg, sch, definitionsDao, processDao)
 	systemHandler := newSystemGRPCServer(ctx, lg, runnerDao, dispatcher)

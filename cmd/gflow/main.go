@@ -33,8 +33,7 @@ import (
 )
 
 func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
-	var cfg *config.Config
-
+	cfg := config.NewConfig()
 	app := &cobra.Command{
 		Use:     "gflow-server",
 		Short:   "the server component of olive system",

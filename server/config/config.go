@@ -43,14 +43,20 @@ type TLS struct {
 	KeyFile  string `json:"key-file" toml:"key-file"`
 }
 
+type ServerConfig struct {
+	Listen string `json:"listen" toml:"listen"`
+	TLS    *TLS   `json:"tls" toml:"tls"`
+}
+
+type DatabaseConfig struct {
+	DataRoot string `json:"data-root" toml:"data-root"`
+}
+
 type Config struct {
 	once sync.Once
 
-	Listen string `json:"listen" toml:"listen"`
-
-	TLS *TLS `json:"tls" toml:"tls"`
-
-	DataRoot string `json:"data-root" toml:"data-root"`
+	Server   ServerConfig   `json:"server" toml:"server"`
+	Database DatabaseConfig `json:"database" toml:"database"`
 
 	Log *logutil.LogConfig `json:"log" toml:"log"`
 }
@@ -58,9 +64,13 @@ type Config struct {
 func NewConfig() *Config {
 	lc := logutil.NewLogConfig()
 	cfg := &Config{
-		Listen:   DefaultListenAddr,
-		DataRoot: DefaultDataRoot,
-		Log:      &lc,
+		Server: ServerConfig{
+			Listen: DefaultListenAddr,
+		},
+		Database: DatabaseConfig{
+			DataRoot: DefaultDataRoot,
+		},
+		Log: &lc,
 	}
 
 	return cfg
@@ -85,24 +95,24 @@ func (cfg *Config) init() error {
 		return fmt.Errorf("init logger: %w", err)
 	}
 
-	if cfg.DataRoot == "" {
+	if cfg.Database.DataRoot == "" {
 		home, _ := os.UserHomeDir()
-		cfg.DataRoot = filepath.Join(home, ".olive")
-		_ = os.MkdirAll(cfg.DataRoot, 0755)
+		cfg.Database.DataRoot = filepath.Join(home, ".olive")
+		_ = os.MkdirAll(cfg.Database.DataRoot, 0755)
 	} else {
-		_, err := os.Stat(cfg.DataRoot)
+		_, err := os.Stat(cfg.Database.DataRoot)
 		if err != nil {
 			if !os.IsNotExist(err) {
 				return fmt.Errorf("read data root directory: %w", err)
 			}
-			_ = os.MkdirAll(cfg.DataRoot, 0755)
+			_ = os.MkdirAll(cfg.Database.DataRoot, 0755)
 		}
-		if strings.HasPrefix(cfg.DataRoot, "~") || strings.HasPrefix(cfg.DataRoot, "./") {
-			abs, err := filepath.Abs(cfg.DataRoot)
+		if strings.HasPrefix(cfg.Database.DataRoot, "~") || strings.HasPrefix(cfg.Database.DataRoot, "./") {
+			abs, err := filepath.Abs(cfg.Database.DataRoot)
 			if err != nil {
 				return fmt.Errorf("get data directory abs path: %w", err)
 			}
-			cfg.DataRoot = abs
+			cfg.Database.DataRoot = abs
 		}
 	}
 	return nil
