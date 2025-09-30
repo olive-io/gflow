@@ -48,12 +48,15 @@ var (
 )
 
 type Server struct {
+	name string
+
 	cfg *config.Config
 }
 
-func NewServer(cfg *config.Config) (*Server, error) {
+func NewServer(name string, cfg *config.Config) (*Server, error) {
 	server := &Server{
-		cfg: cfg,
+		name: name,
+		cfg:  cfg,
 	}
 
 	return server, nil
@@ -63,11 +66,11 @@ func (s *Server) Start(ctx context.Context) error {
 	cfg := s.cfg
 	lg := s.cfg.Logger()
 
-	listenAddress := cfg.Server.Listen
-	lg.Info("listening on " + listenAddress)
-	ln, err := net.Listen("tcp", listenAddress)
+	address := cfg.Server.Listen
+	lg.Info("listening on " + address)
+	listener, err := net.Listen("tcp", address)
 	if err != nil {
-		return fmt.Errorf("listen tcp on %s: %w", listenAddress, err)
+		return fmt.Errorf("listen tcp on %s: %w", address, err)
 	}
 
 	handler, err := s.buildHandler(ctx)
@@ -85,8 +88,9 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 
 	ech := make(chan error, 1)
+	lg.Sugar().Infof("starting %s server", s.name)
 	go func() {
-		err = hs.Serve(ln)
+		err = hs.Serve(listener)
 		if err != nil {
 			ech <- err
 		}
@@ -94,12 +98,13 @@ func (s *Server) Start(ctx context.Context) error {
 
 	select {
 	case err = <-ech:
-		return fmt.Errorf("start server: %w", err)
+		return fmt.Errorf("start %s server: %w", s.name, err)
 	case <-ctx.Done():
 	}
 
+	lg.Sugar().Infof("shutting down %s server", s.name)
 	if err = hs.Shutdown(ctx); err != nil {
-		return fmt.Errorf("shutdown server: %w", err)
+		return fmt.Errorf("shutdown %s server: %w", s.name, err)
 	}
 
 	return nil
@@ -135,8 +140,8 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	dispatcher := dispatch.NewDispatcher()
 	dispatcher.Start(ctx)
 
-	bpmnHandler := newBpmnServer(ctx, lg, sch, definitionsDao, processDao)
-	systemHandler := newSystemGRPCServer(ctx, lg, runnerDao, dispatcher)
+	bpmnRPC := newBpmnServer(ctx, lg, sch, definitionsDao, processDao)
+	systemRPC := newSystemGRPCServer(ctx, lg, runnerDao, dispatcher)
 
 	kaep := keepalive.EnforcementPolicy{
 		MinTime:             5 * time.Second,
@@ -160,14 +165,14 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	muxOpts := []gwrt.ServeMuxOption{}
 	gwmux := gwrt.NewServeMux(muxOpts...)
 
-	pb.RegisterBpmnRPCServer(gs, bpmnHandler)
-	if err = pb.RegisterBpmnRPCHandlerServer(ctx, gwmux, bpmnHandler); err != nil {
-		return nil, fmt.Errorf("setup olive bpmn handler: %w", err)
+	pb.RegisterBpmnRPCServer(gs, bpmnRPC)
+	if err = pb.RegisterBpmnRPCHandlerServer(ctx, gwmux, bpmnRPC); err != nil {
+		return nil, fmt.Errorf("register bpmn handler: %w", err)
 	}
 
-	pb.RegisterSystemRPCServer(gs, systemHandler)
-	if err = pb.RegisterSystemRPCHandlerServer(ctx, gwmux, systemHandler); err != nil {
-		return nil, fmt.Errorf("setup olive system handler: %w", err)
+	pb.RegisterSystemRPCServer(gs, systemRPC)
+	if err = pb.RegisterSystemRPCHandlerServer(ctx, gwmux, systemRPC); err != nil {
+		return nil, fmt.Errorf("register system handler: %w", err)
 	}
 
 	serveMux := mux.NewRouter()
@@ -215,5 +220,6 @@ func validateInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInf
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 	}
-	return handler(ctx, req)
+	rsp, err := handler(ctx, req)
+	return rsp, err
 }

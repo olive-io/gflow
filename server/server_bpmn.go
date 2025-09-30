@@ -1,22 +1,17 @@
 /*
 Copyright 2025 The gflow Authors
 
-This program is offered under a commercial and under the AGPL license.
-For AGPL licensing, see below.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-AGPL licensing:
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 
 package server
@@ -52,7 +47,7 @@ type bpmnGRPCServer struct {
 }
 
 func newBpmnServer(ctx context.Context, lg *zap.Logger, sch *scheduler.Scheduler, definitionsDao *dao.DefinitionsDao, processDao *dao.ProcessDao) *bpmnGRPCServer {
-	wch := sch.Watch(ctx, "gflow-system")
+	wch := sch.Watch(ctx, "bpmn-grpc-rpc")
 	server := &bpmnGRPCServer{
 		ctx:            ctx,
 		lg:             lg,
@@ -170,8 +165,7 @@ func (bgs *bpmnGRPCServer) GetDefinitions(ctx context.Context, req *pb.GetDefini
 }
 
 func (bgs *bpmnGRPCServer) RemoveDefinitions(ctx context.Context, req *pb.RemoveDefinitionsRequest) (*pb.RemoveDefinitionsResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	return &pb.RemoveDefinitionsResponse{}, nil
 }
 
 func (bgs *bpmnGRPCServer) ExecuteProcess(ctx context.Context, req *pb.ExecuteProcessRequest) (*pb.ExecuteProcessResponse, error) {
@@ -234,7 +228,6 @@ func (bgs *bpmnGRPCServer) ListProcess(ctx context.Context, req *pb.ListProcessR
 		Processes: processes,
 		Total:     total,
 	}
-
 	return rsp, nil
 }
 

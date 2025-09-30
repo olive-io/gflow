@@ -33,9 +33,10 @@ import (
 )
 
 func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
+	name := "gflow"
 	cfg := config.NewConfig()
 	app := &cobra.Command{
-		Use:     "gflow-server",
+		Use:     name,
 		Short:   "the server component of olive system",
 		Version: version.ReleaseVersion(),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
@@ -54,7 +55,7 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			return runServer(ctx, cfg)
+			return runServer(ctx, name, cfg)
 		},
 	}
 
@@ -68,7 +69,7 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 	var configPath string
 	homeDir, _ := os.UserHomeDir()
 	if homeDir != "" {
-		configPath = filepath.Join(homeDir, ".olive", "gflow.toml")
+		configPath = filepath.Join(homeDir, ".olive", name+".toml")
 	}
 
 	flags.StringP("config", "C", configPath, "path to the configuration file")
@@ -76,10 +77,10 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 	return app
 }
 
-func runServer(ctx context.Context, cfg *config.Config) error {
-	app, err := server.NewServer(cfg)
+func runServer(ctx context.Context, name string, cfg *config.Config) error {
+	app, err := server.NewServer(name, cfg)
 	if err != nil {
-		return fmt.Errorf("create gflow server: %w", err)
+		return fmt.Errorf("create %s server: %w", name, err)
 	}
 
 	ctx = signalutil.SetupSignalContext(ctx)
