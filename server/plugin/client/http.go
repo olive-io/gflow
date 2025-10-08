@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugin
+package client
 
 import (
 	"bytes"
@@ -33,14 +33,14 @@ import (
 	"github.com/olive-io/gflow/api/types"
 )
 
-type httpDelegate struct{}
+type HttpClient struct{}
 
-func New() *httpDelegate {
-	hd := &httpDelegate{}
+func New() *HttpClient {
+	hd := &HttpClient{}
 	return hd
 }
 
-func (dh *httpDelegate) Call(ctx context.Context, req *types.CallTaskRequest) (*types.CallTaskResponse, error) {
+func (dh *HttpClient) Call(ctx context.Context, req *types.CallTaskRequest) (*types.CallTaskResponse, error) {
 	timeout := time.Duration(req.Timeout) * time.Second
 	transport := &http.Transport{}
 	conn := &http.Client{
