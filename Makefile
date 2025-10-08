@@ -66,7 +66,7 @@ apis:
     		$(RPC_PROTO_FILES)
 	#protoc --proto_path=./api \
 #			--proto_path=./third_party \
-#			--openapi_out=fq_schema_naming=true,title="olive",description="olive OpenAPI3.0 Document",version=$(GIT_TAG),default_response=false:./console/docs \
+#			--openapi_out=fq_schema_naming=true,title="olive",description="Gflow OpenAPI3.0 Document",version=$(GIT_TAG),default_response=false:./console/docs \
 #			$(OPENAPI_PROTO_FILES)
 
 

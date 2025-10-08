@@ -131,14 +131,14 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 		return nil, fmt.Errorf("create runner model: %w", err)
 	}
 
+	dispatcher := dispatch.NewDispatcher()
+	dispatcher.Start(ctx)
+
 	schedulerOptions := scheduler.NewOptions(lg)
 	sch, err := scheduler.NewScheduler(ctx, schedulerOptions)
 	if err != nil {
 		return nil, fmt.Errorf("create scheduler: %w", err)
 	}
-
-	dispatcher := dispatch.NewDispatcher()
-	dispatcher.Start(ctx)
 
 	bpmnRPC := newBpmnServer(ctx, lg, sch, definitionsDao, processDao)
 	systemRPC := newSystemGRPCServer(ctx, lg, runnerDao, dispatcher)
