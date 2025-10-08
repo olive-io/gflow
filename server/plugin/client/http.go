@@ -30,7 +30,7 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/olive-io/gflow/api/rpc"
+	"github.com/olive-io/gflow/api/types"
 )
 
 type httpDelegate struct{}
@@ -40,7 +40,7 @@ func New() *httpDelegate {
 	return hd
 }
 
-func (dh *httpDelegate) Call(ctx context.Context, req *pb.CallTaskRequest) (*pb.CallTaskResponse, error) {
+func (dh *httpDelegate) Call(ctx context.Context, req *types.CallTaskRequest) (*types.CallTaskResponse, error) {
 	timeout := time.Duration(req.Timeout) * time.Second
 	transport := &http.Transport{}
 	conn := &http.Client{
@@ -95,7 +95,7 @@ func (dh *httpDelegate) Call(ctx context.Context, req *pb.CallTaskRequest) (*pb.
 		var buffer bytes.Buffer
 		writer := multipart.NewWriter(&buffer)
 		for key, value := range req.Properties {
-			_ = writer.WriteField(key, value)
+			_ = writer.WriteField(key, value.Value)
 		}
 		writer.Close()
 
@@ -103,7 +103,7 @@ func (dh *httpDelegate) Call(ctx context.Context, req *pb.CallTaskRequest) (*pb.
 	case "application/form-data":
 		form := urlpkg.Values{}
 		for key, value := range req.Properties {
-			form.Set(key, value)
+			form.Set(key, value.Value)
 		}
 
 		body = bytes.NewBufferString(form.Encode())
@@ -128,13 +128,19 @@ func (dh *httpDelegate) Call(ctx context.Context, req *pb.CallTaskRequest) (*pb.
 		return nil, fmt.Errorf("read response body: %w", err)
 	}
 
-	results := map[string]string{}
-	dataObjects := make(map[string]string)
+	results := make(map[string]*types.Value)
+	dataObjects := make(map[string]*types.Value)
 
-	results["code"] = strconv.Itoa(resp.StatusCode)
-	results["result"] = string(data)
+	results["code"] = &types.Value{
+		Type:  types.Value_Integer,
+		Value: strconv.Itoa(resp.StatusCode),
+	}
+	results["result"] = &types.Value{
+		Type:  types.Value_Object,
+		Value: string(data),
+	}
 
-	dresp := &pb.CallTaskResponse{
+	dresp := &types.CallTaskResponse{
 		Results:     results,
 		DataObjects: dataObjects,
 	}
