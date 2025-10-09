@@ -37,6 +37,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	pb "github.com/olive-io/gflow/api/rpc"
+	"github.com/olive-io/gflow/pkg/dbutil"
 	"github.com/olive-io/gflow/server/config"
 	"github.com/olive-io/gflow/server/dao"
 	"github.com/olive-io/gflow/server/dispatch"
@@ -113,7 +114,7 @@ func (s *Server) Start(ctx context.Context) error {
 func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	lg := s.cfg.Logger()
 
-	db, err := openLocalDB(lg, &s.cfg.Database)
+	db, err := dbutil.NewDB(lg, s.cfg.Database)
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
 	}
