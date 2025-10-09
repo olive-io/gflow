@@ -19,6 +19,7 @@ package config
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -29,6 +30,7 @@ import (
 	"go.uber.org/zap"
 	"sigs.k8s.io/yaml"
 
+	"github.com/olive-io/gflow/pkg/dbutil"
 	"github.com/olive-io/gflow/pkg/logutil"
 )
 
@@ -56,21 +58,20 @@ type Config struct {
 	once sync.Once
 
 	Server   ServerConfig   `json:"server" toml:"server"`
-	Database DatabaseConfig `json:"database" toml:"database"`
+	Database *dbutil.Config `json:"database" toml:"database"`
 
 	Log *logutil.LogConfig `json:"log" toml:"log"`
 }
 
 func NewConfig() *Config {
 	lc := logutil.NewLogConfig()
+	dbCfg := dbutil.NewConfig()
 	cfg := &Config{
 		Server: ServerConfig{
 			Listen: DefaultListenAddr,
 		},
-		Database: DatabaseConfig{
-			DataRoot: DefaultDataRoot,
-		},
-		Log: &lc,
+		Database: dbCfg,
+		Log:      &lc,
 	}
 
 	return cfg
@@ -89,17 +90,17 @@ func (cfg *Config) init() error {
 		lc := logutil.NewLogConfig()
 		cfg.Log = &lc
 	}
+	if cfg.Database == nil {
+		return errors.New("database config is required")
+	}
+
 	err := cfg.Log.SetupLogging()
 	cfg.Log.SetupGlobalLoggers()
 	if err != nil {
 		return fmt.Errorf("init logger: %w", err)
 	}
 
-	if cfg.Database.DataRoot == "" {
-		home, _ := os.UserHomeDir()
-		cfg.Database.DataRoot = filepath.Join(home, ".olive")
-		_ = os.MkdirAll(cfg.Database.DataRoot, 0755)
-	} else {
+	if cfg.Database.DataRoot != "" {
 		_, err := os.Stat(cfg.Database.DataRoot)
 		if err != nil {
 			if !os.IsNotExist(err) {

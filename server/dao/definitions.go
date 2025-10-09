@@ -20,16 +20,15 @@ import (
 	"context"
 	"fmt"
 
-	"gorm.io/gorm"
-
 	"github.com/olive-io/gflow/api/types"
+	"github.com/olive-io/gflow/pkg/dbutil"
 )
 
 type DefinitionsDao struct {
-	db *gorm.DB
+	db *dbutil.DB
 }
 
-func NewDefinitionsDao(db *gorm.DB) (*DefinitionsDao, error) {
+func NewDefinitionsDao(db *dbutil.DB) (*DefinitionsDao, error) {
 	err := db.AutoMigrate(
 		&types.Definitions{},
 	)
@@ -45,7 +44,7 @@ func NewDefinitionsDao(db *gorm.DB) (*DefinitionsDao, error) {
 }
 
 func (dao *DefinitionsDao) ListDefinitions(ctx context.Context, page, size int32) ([]*types.Definitions, int64, error) {
-	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Definitions{})
+	tx := dao.db.NewSession(ctx).Model(&types.Definitions{})
 
 	total := int64(0)
 	err := tx.Count(&total).Error
@@ -56,7 +55,7 @@ func (dao *DefinitionsDao) ListDefinitions(ctx context.Context, page, size int32
 	offset := int((page - 1) * size)
 	limit := int(size)
 	definitionsList := make([]*types.Definitions, 0)
-	tx = dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Definitions{})
+	tx = dao.db.NewSession(ctx).Model(&types.Definitions{})
 	if offset > 0 {
 		tx = tx.Offset(offset)
 	}
@@ -72,7 +71,7 @@ func (dao *DefinitionsDao) ListDefinitions(ctx context.Context, page, size int32
 }
 
 func (dao *DefinitionsDao) GetDefinitions(ctx context.Context, id int64, uid string) (*types.Definitions, error) {
-	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Definitions{})
+	tx := dao.db.NewSession(ctx).Model(&types.Definitions{})
 
 	var definitions types.Definitions
 
@@ -91,7 +90,7 @@ func (dao *DefinitionsDao) GetDefinitions(ctx context.Context, id int64, uid str
 }
 
 func (dao *DefinitionsDao) GetDefinitionsWithVersion(ctx context.Context, id int64, uid string, version uint64) (*types.Definitions, error) {
-	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Definitions{})
+	tx := dao.db.NewSession(ctx).Model(&types.Definitions{})
 
 	var definitions types.Definitions
 
@@ -113,7 +112,7 @@ func (dao *DefinitionsDao) GetDefinitionsWithVersion(ctx context.Context, id int
 }
 
 func (dao *DefinitionsDao) CreateDefinitions(ctx context.Context, definitions *types.Definitions) (int64, error) {
-	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Definitions{})
+	tx := dao.db.NewSession(ctx).Model(&types.Definitions{})
 
 	if definitions.Version == 0 {
 		definitions.Version = 1
@@ -127,7 +126,7 @@ func (dao *DefinitionsDao) CreateDefinitions(ctx context.Context, definitions *t
 }
 
 func (dao *DefinitionsDao) UpdateDefinitions(ctx context.Context, definitions *types.Definitions) error {
-	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Definitions{})
+	tx := dao.db.NewSession(ctx).Model(&types.Definitions{})
 	err := tx.Where("id = ?", definitions.Id).Updates(definitions).Error
 	if err != nil {
 		return err

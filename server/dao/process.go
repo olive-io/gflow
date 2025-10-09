@@ -24,6 +24,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/olive-io/gflow/api/types"
+	"github.com/olive-io/gflow/pkg/dbutil"
 )
 
 type ListProcessOptions struct {
@@ -43,10 +44,10 @@ func NewListProcessOptions(id string, version uint64) *ListProcessOptions {
 }
 
 type ProcessDao struct {
-	db *gorm.DB
+	db *dbutil.DB
 }
 
-func NewProcessDao(db *gorm.DB) (*ProcessDao, error) {
+func NewProcessDao(db *dbutil.DB) (*ProcessDao, error) {
 	err := db.AutoMigrate(
 		&types.Process{},
 		&types.FlowNode{},
@@ -62,9 +63,9 @@ func NewProcessDao(db *gorm.DB) (*ProcessDao, error) {
 }
 
 func (dao *ProcessDao) ListProcesses(ctx context.Context, page, size int32, options *ListProcessOptions) ([]*types.Process, int64, error) {
-	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Process{})
+	tx := dao.db.NewSession(ctx).Model(&types.Process{})
 
-	countTx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Process{})
+	countTx := dao.db.NewSession(ctx).Model(&types.Process{})
 	if options != nil {
 		if defId := options.DefinitionUID; defId != "" {
 			tx = tx.Where("definitions_uid = ?", defId)
@@ -109,7 +110,7 @@ func (dao *ProcessDao) ListProcesses(ctx context.Context, page, size int32, opti
 }
 
 func (dao *ProcessDao) GetProcess(ctx context.Context, id int64) (*types.Process, error) {
-	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Process{})
+	tx := dao.db.NewSession(ctx).Model(&types.Process{})
 
 	var process types.Process
 	err := tx.Where("id = ?", id).First(&process).Error
@@ -121,7 +122,7 @@ func (dao *ProcessDao) GetProcess(ctx context.Context, id int64) (*types.Process
 }
 
 func (dao *ProcessDao) ListFlowNodes(ctx context.Context, pid int64) ([]*types.FlowNode, error) {
-	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.FlowNode{})
+	tx := dao.db.NewSession(ctx).Model(&types.FlowNode{})
 
 	nodes := make([]*types.FlowNode, 0)
 	err := tx.Where("process_id = ?", pid).Find(&nodes).Error
@@ -133,7 +134,7 @@ func (dao *ProcessDao) ListFlowNodes(ctx context.Context, pid int64) ([]*types.F
 }
 
 func (dao *ProcessDao) CreateProcess(ctx context.Context, process *types.Process) error {
-	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Process{})
+	tx := dao.db.NewSession(ctx).Model(&types.Process{})
 	if err := tx.Create(process).Error; err != nil {
 		return err
 	}
@@ -141,7 +142,7 @@ func (dao *ProcessDao) CreateProcess(ctx context.Context, process *types.Process
 }
 
 func (dao *ProcessDao) UpdateProcess(ctx context.Context, process *types.Process) error {
-	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Process{})
+	tx := dao.db.NewSession(ctx).Model(&types.Process{})
 	if err := tx.Where("id = ?", process.Id).Updates(process).Error; err != nil {
 		return err
 	}
@@ -149,7 +150,7 @@ func (dao *ProcessDao) UpdateProcess(ctx context.Context, process *types.Process
 }
 
 func (dao *ProcessDao) SaveFlowNode(ctx context.Context, node *types.FlowNode) error {
-	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.FlowNode{})
+	tx := dao.db.NewSession(ctx).Model(&types.FlowNode{})
 
 	if node.FlowId != "" {
 		tx = tx.Where("flow_id = ?", node.FlowId)
@@ -162,14 +163,14 @@ func (dao *ProcessDao) SaveFlowNode(ctx context.Context, node *types.FlowNode) e
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
-		tx = dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.FlowNode{})
+		tx = dao.db.NewSession(ctx).Model(&types.FlowNode{})
 		if err = tx.Create(node).Error; err != nil {
 			return err
 		}
 		return nil
 	}
 
-	tx = dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.FlowNode{})
+	tx = dao.db.NewSession(ctx).Model(&types.FlowNode{})
 	if node.FlowId != "" {
 		tx = tx.Where("flow_id = ?", node.FlowId)
 	}

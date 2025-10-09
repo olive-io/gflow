@@ -20,16 +20,15 @@ import (
 	"context"
 	"fmt"
 
-	"gorm.io/gorm"
-
 	"github.com/olive-io/gflow/api/types"
+	"github.com/olive-io/gflow/pkg/dbutil"
 )
 
 type RunnerDao struct {
-	db *gorm.DB
+	db *dbutil.DB
 }
 
-func NewRunnerDao(db *gorm.DB) (*RunnerDao, error) {
+func NewRunnerDao(db *dbutil.DB) (*RunnerDao, error) {
 	err := db.AutoMigrate(
 		&types.Runner{},
 	)
@@ -45,7 +44,7 @@ func NewRunnerDao(db *gorm.DB) (*RunnerDao, error) {
 }
 
 func (dao *RunnerDao) FindRunners(ctx context.Context) ([]*types.Runner, error) {
-	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Runner{})
+	tx := dao.db.NewSession(ctx).Model(&types.Runner{})
 
 	runners := make([]*types.Runner, 0)
 	err := tx.Order("id desc").Find(&runners).Error
@@ -57,7 +56,7 @@ func (dao *RunnerDao) FindRunners(ctx context.Context) ([]*types.Runner, error) 
 }
 
 func (dao *RunnerDao) ListRunners(ctx context.Context, page, size int32) ([]*types.Runner, int64, error) {
-	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Runner{})
+	tx := dao.db.NewSession(ctx).Model(&types.Runner{})
 
 	total := int64(0)
 	err := tx.Count(&total).Error
@@ -68,7 +67,7 @@ func (dao *RunnerDao) ListRunners(ctx context.Context, page, size int32) ([]*typ
 	offset := int((page - 1) * size)
 	limit := int(size)
 	runners := make([]*types.Runner, 0)
-	tx = dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Runner{})
+	tx = dao.db.NewSession(ctx).Model(&types.Runner{})
 	if offset > 0 {
 		tx = tx.Offset(offset)
 	}
@@ -84,7 +83,7 @@ func (dao *RunnerDao) ListRunners(ctx context.Context, page, size int32) ([]*typ
 }
 
 func (dao *RunnerDao) GetRunner(ctx context.Context, id uint64, uid string) (*types.Runner, error) {
-	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Runner{})
+	tx := dao.db.NewSession(ctx).Model(&types.Runner{})
 
 	if id != 0 {
 		tx = tx.Where("id = ?", id)
@@ -102,7 +101,7 @@ func (dao *RunnerDao) GetRunner(ctx context.Context, id uint64, uid string) (*ty
 }
 
 func (dao *RunnerDao) CreateRunner(ctx context.Context, runner *types.Runner) error {
-	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Runner{})
+	tx := dao.db.NewSession(ctx).Model(&types.Runner{})
 
 	err := tx.Create(runner).Error
 	if err != nil {
@@ -114,7 +113,7 @@ func (dao *RunnerDao) CreateRunner(ctx context.Context, runner *types.Runner) er
 }
 
 func (dao *RunnerDao) UpdateRunner(ctx context.Context, runner *types.Runner) error {
-	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Runner{})
+	tx := dao.db.NewSession(ctx).Model(&types.Runner{})
 
 	err := tx.Where("uid = ?", runner.Uid).Updates(runner).Error
 	if err != nil {
@@ -124,7 +123,7 @@ func (dao *RunnerDao) UpdateRunner(ctx context.Context, runner *types.Runner) er
 }
 
 func (dao *RunnerDao) RemoveRunner(ctx context.Context, id uint64, uid string) error {
-	tx := dao.db.Session(&gorm.Session{}).WithContext(ctx).Model(&types.Runner{})
+	tx := dao.db.NewSession(ctx).Model(&types.Runner{})
 
 	if id != 0 {
 		tx = tx.Where("id = ?", id)
