@@ -203,3 +203,17 @@ func (in *RunnerStat) DeepCopy() *RunnerStat {
 	in.DeepCopyInto(out)
 	return out
 }
+
+// ConvertStage converts FlowNode_FlowNodeStage to CallTaskRequest_Stage
+func ConvertStage(in FlowNode_FlowNodeStage) CallTaskRequest_Stage {
+	switch in {
+	case FlowNode_Commit:
+		return CallTaskRequest_Commit
+	case FlowNode_Rollback:
+		return CallTaskRequest_Rollback
+	case FlowNode_Destroy:
+		return CallTaskRequest_Destroy
+	default:
+		return CallTaskRequest_Commit
+	}
+}

@@ -29,6 +29,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/olive-io/gflow/api/types"
+	"github.com/olive-io/gflow/server/plugin"
 )
 
 type antLogger struct {
@@ -259,7 +260,7 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 
 				lg.Infof("rollback task [%s][%s]", pid, node.FlowId)
 
-				_ = sch.doTask(rctx, node)
+				_ = sch.doTask(rctx, node, nil)
 			}
 		}
 
@@ -273,7 +274,7 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 
 			lg.Infof("destroy task [%s][%s]", pid, node.FlowId)
 
-			_ = sch.doTask(rctx, node)
+			_ = sch.doTask(rctx, node, nil)
 
 			node.Stage = types.FlowNode_Finish
 			sch.setFlowNode(node)
@@ -388,9 +389,18 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 						Stage:     types.FlowNode_Commit,
 						Status:    types.FlowNode_Running,
 					}
+
 					nodeMapping[fid] = flowNode
 					stat.FlowNodes = append(stat.FlowNodes, flowNode)
 					sch.setFlowNode(flowNode)
+				}
+
+				extension, found := act.Element().ExtensionElements()
+				if found {
+					if taskDefinition := extension.TaskDefinitionField; taskDefinition != nil {
+						flowNode.Kind = taskDefinition.Type
+						flowNode.Target = taskDefinition.Target
+					}
 				}
 
 				if flowNode.Stage != types.FlowNode_Commit &&
@@ -417,7 +427,7 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 
 					doOptions := make([]bpmn.DoOption, 0)
 					flowNode.Status = types.FlowNode_Success
-					doErr := sch.doTask(ctx, flowNode)
+					doErr := sch.doTask(ctx, flowNode, extension)
 					if doErr != nil {
 						flowNode.Status = types.FlowNode_Failed
 						flowNode.ErrMsg = doErr.Error()
@@ -468,7 +478,62 @@ func (sch *Scheduler) destroy() {
 	sch.lg.Debug("released scheduler execute pool")
 }
 
-func (sch *Scheduler) doTask(ctx context.Context, node *types.FlowNode) error {
+func (sch *Scheduler) doTask(ctx context.Context, node *types.FlowNode, extension *schema.ExtensionElements) error {
+	kind := node.Kind
+	if kind == "" {
+		return fmt.Errorf("missing task kind")
+	}
+
+	factory, err := plugin.Get(kind)
+	if err != nil {
+		return fmt.Errorf("find '%s' factory: %w", kind, err)
+	}
+
+	options := make([]plugin.Option, 0)
+	if len(node.Target) != 0 {
+		options = append(options, plugin.WithTarget(node.Target))
+	}
+
+	pluginImpl, err := factory.Create(options...)
+	if err != nil {
+		return fmt.Errorf("create plugin: %w", err)
+	}
+
+	headers := node.Headers
+	properties := node.Properties
+	dataObjects := node.DataObjects
+	req := &plugin.Request{
+		Headers:     headers,
+		Properties:  properties,
+		DataObjects: dataObjects,
+	}
+
+	stage := types.ConvertStage(node.Stage)
+	doOptions := []plugin.DoOption{
+		plugin.DoWithTaskStage(stage),
+		plugin.DoWithKind(kind),
+		plugin.DoWithName(node.Name),
+		plugin.DoWithTaskType(node.FlowType),
+	}
+	if extension != nil {
+		taskDefinition := extension.TaskDefinitionField
+		if taskDefinition != nil {
+			durations, _ := time.ParseDuration(taskDefinition.Timeout)
+			if durations > 0 {
+				doOptions = append(doOptions, plugin.DoWithTimeout(durations.Milliseconds()))
+			}
+		}
+	}
+
+	resp, err := pluginImpl.Do(ctx, req, doOptions...)
+	if err != nil {
+		return err
+	}
+
+	node.Results = resp.Results
+	node.DataObjects = resp.DataObjects
+	node.ErrMsg = resp.Error
+
 	return nil
 }
 
