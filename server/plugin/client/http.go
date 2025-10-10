@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugin
+package client
 
 import (
 	"bytes"
@@ -26,21 +26,20 @@ import (
 	"mime/multipart"
 	"net/http"
 	urlpkg "net/url"
-	"strconv"
 	"strings"
 	"time"
 
-	pb "github.com/olive-io/gflow/api/rpc"
+	"github.com/olive-io/gflow/api/types"
 )
 
-type httpDelegate struct{}
+type HttpClient struct{}
 
-func New() *httpDelegate {
-	hd := &httpDelegate{}
-	return hd
+func New() *HttpClient {
+	hc := &HttpClient{}
+	return hc
 }
 
-func (dh *httpDelegate) Call(ctx context.Context, req *pb.CallTaskRequest) (*pb.CallTaskResponse, error) {
+func (hc *HttpClient) Call(ctx context.Context, req *types.CallTaskRequest) (*types.CallTaskResponse, error) {
 	timeout := time.Duration(req.Timeout) * time.Second
 	transport := &http.Transport{}
 	conn := &http.Client{
@@ -94,16 +93,16 @@ func (dh *httpDelegate) Call(ctx context.Context, req *pb.CallTaskRequest) (*pb.
 	case "application/multipart-form-data":
 		var buffer bytes.Buffer
 		writer := multipart.NewWriter(&buffer)
-		for key, value := range req.Properties {
-			_ = writer.WriteField(key, value)
+		for name, item := range req.Properties {
+			_ = writer.WriteField(name, item.Value)
 		}
 		writer.Close()
 
 		body = &buffer
 	case "application/form-data":
 		form := urlpkg.Values{}
-		for key, value := range req.Properties {
-			form.Set(key, value)
+		for name, item := range req.Properties {
+			form.Set(name, item.Value)
 		}
 
 		body = bytes.NewBufferString(form.Encode())
@@ -128,13 +127,13 @@ func (dh *httpDelegate) Call(ctx context.Context, req *pb.CallTaskRequest) (*pb.
 		return nil, fmt.Errorf("read response body: %w", err)
 	}
 
-	results := map[string]string{}
-	dataObjects := make(map[string]string)
+	results := make(map[string]*types.Value)
+	dataObjects := make(map[string]*types.Value)
 
-	results["code"] = strconv.Itoa(resp.StatusCode)
-	results["result"] = string(data)
+	results["code"] = types.NewValue(resp.StatusCode)
+	results["result"] = types.NewValue(string(data))
 
-	dresp := &pb.CallTaskResponse{
+	dresp := &types.CallTaskResponse{
 		Results:     results,
 		DataObjects: dataObjects,
 	}

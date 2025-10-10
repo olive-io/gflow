@@ -27,6 +27,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	pb "github.com/olive-io/gflow/api/rpc"
+	"github.com/olive-io/gflow/api/types"
 	"github.com/olive-io/gflow/server/dao"
 	"github.com/olive-io/gflow/server/dispatch"
 )
@@ -179,10 +180,11 @@ func (sgs *systemGRPCServer) RunnerDispatch(stream pb.SystemRPC_RunnerDispatchSe
 	}
 
 	reply := &pb.RunnerDispatchResponse{
-		Handshake: &pb.HandshakeResponse{},
+		Handshake: &pb.HandshakeResponse{Runner: runner},
 	}
 	if err = stream.Send(reply); err != nil {
-		lg.Error("returns handshake response", zap.Error(err))
+		lg.Error("sends handshake response", zap.Error(err))
+		return err
 	}
 
 	lg.Info("add runner dispatch",
@@ -208,8 +210,9 @@ func (sgs *systemGRPCServer) RunnerDispatch(stream pb.SystemRPC_RunnerDispatchSe
 				if in := req.CallTask; in != nil {
 					msg := &pb.RunnerDispatchResponse{CallTask: in}
 					if serr := stream.Send(msg); serr != nil {
-						result := &pb.CallTaskResponse{SeqId: in.SeqId, Error: serr.Error()}
+						result := &types.CallTaskResponse{SeqId: in.SeqId, Error: serr.Error()}
 						sgs.dispatcher.Reply(&dispatch.Response{CallTask: result})
+						lg.Error("sends call task response", zap.Error(serr))
 					}
 				}
 			}
@@ -228,7 +231,10 @@ LOOP:
 
 		switch {
 		case recv.Heartbeat != nil:
-
+			msg := &pb.RunnerDispatchResponse{HeartBeat: &pb.HeartBeatResponse{}}
+			if serr := stream.Send(msg); serr != nil {
+				lg.Error("sends heartbeat response", zap.Error(serr))
+			}
 		case recv.CallTask != nil:
 			sgs.dispatcher.Reply(&dispatch.Response{CallTask: recv.CallTask})
 		}

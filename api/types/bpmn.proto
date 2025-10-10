@@ -229,3 +229,27 @@ message FlowNode {
 
   string err_msg = 17;
 }
+
+message CallTaskRequest {
+  enum Stage {
+    Commit = 0;
+    Rollback = 1;
+    Destroy = 2;
+  }
+  uint64 seq_id = 1;
+  Stage stage = 2;
+  types.FlowNodeType flowType = 3;
+  string kind = 4;
+  string name = 5;
+  map<string, string> headers = 6;
+  map<string, Value> properties = 7;
+  map<string, Value> dataObjects = 8;
+  int64 timeout = 9;
+}
+
+message CallTaskResponse {
+  uint64 seq_id = 1;
+  map<string, Value> results = 2;
+  map<string, Value> dataObjects = 3;
+  string error = 4;
+}

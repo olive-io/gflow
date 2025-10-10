@@ -21,15 +21,19 @@ import (
 	"fmt"
 	"sync"
 
-	pb "github.com/olive-io/gflow/api/rpc"
+	"github.com/olive-io/gflow/api/types"
 )
 
 type Request struct {
-	CallTask *pb.CallTaskRequest
+	CallTask *types.CallTaskRequest
 }
 
 type Response struct {
-	CallTask *pb.CallTaskResponse
+	CallTask *types.CallTaskResponse
+}
+
+type event struct {
+	callTask *types.CallTaskResponse
 }
 
 type pipe struct {
@@ -66,7 +70,7 @@ type Dispatcher struct {
 	pipes map[string]*pipe
 
 	emu    sync.RWMutex
-	events map[uint64]chan *pb.CallTaskResponse
+	events map[uint64]chan *event
 
 	pch chan string
 }
@@ -74,7 +78,7 @@ type Dispatcher struct {
 func NewDispatcher() *Dispatcher {
 	dispatcher := &Dispatcher{
 		pipes:  make(map[string]*pipe),
-		events: make(map[uint64]chan *pb.CallTaskResponse),
+		events: make(map[uint64]chan *event),
 		pch:    make(chan string, 10),
 	}
 	return dispatcher
@@ -123,54 +127,13 @@ func (d *Dispatcher) Register(ctx context.Context, uid string) (chan *Request, e
 	return ch, nil
 }
 
-func (d *Dispatcher) CallTask(ctx context.Context, req *pb.CallTaskRequest) (*pb.CallTaskResponse, error) {
-
-	var target *pipe
-	d.pmu.RLock()
-	for _, item := range d.pipes {
-		target = item
-	}
-	d.pmu.RUnlock()
-
-	if target == nil {
-		return nil, fmt.Errorf("target not found")
-	}
-
-	newId := allocId()
-	outCh := make(chan *pb.CallTaskResponse, 1)
-	d.emu.Lock()
-	d.events[newId] = outCh
-	d.emu.Unlock()
-
-	defer func() {
-		d.emu.Lock()
-		delete(d.events, newId)
-		d.emu.Unlock()
-
-		freeId(newId)
-	}()
-
-	req.SeqId = newId
-
-	if err := target.Send(&Request{CallTask: req}); err != nil {
-		return nil, err
-	}
-
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case resp := <-outCh:
-		return resp, nil
-	}
-}
-
 func (d *Dispatcher) Reply(resp *Response) {
 	if msg := resp.CallTask; msg != nil {
 		id := msg.SeqId
 		d.emu.Lock()
 		ch, ok := d.events[id]
 		if ok {
-			ch <- msg
+			ch <- &event{callTask: msg}
 		}
 		d.emu.Unlock()
 	}
