@@ -26,7 +26,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	urlpkg "net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -36,11 +35,11 @@ import (
 type HttpClient struct{}
 
 func New() *HttpClient {
-	hd := &HttpClient{}
-	return hd
+	hc := &HttpClient{}
+	return hc
 }
 
-func (dh *HttpClient) Call(ctx context.Context, req *types.CallTaskRequest) (*types.CallTaskResponse, error) {
+func (hc *HttpClient) Call(ctx context.Context, req *types.CallTaskRequest) (*types.CallTaskResponse, error) {
 	timeout := time.Duration(req.Timeout) * time.Second
 	transport := &http.Transport{}
 	conn := &http.Client{
@@ -94,16 +93,16 @@ func (dh *HttpClient) Call(ctx context.Context, req *types.CallTaskRequest) (*ty
 	case "application/multipart-form-data":
 		var buffer bytes.Buffer
 		writer := multipart.NewWriter(&buffer)
-		for key, value := range req.Properties {
-			_ = writer.WriteField(key, value.Value)
+		for name, item := range req.Properties {
+			_ = writer.WriteField(name, item.Value)
 		}
 		writer.Close()
 
 		body = &buffer
 	case "application/form-data":
 		form := urlpkg.Values{}
-		for key, value := range req.Properties {
-			form.Set(key, value.Value)
+		for name, item := range req.Properties {
+			form.Set(name, item.Value)
 		}
 
 		body = bytes.NewBufferString(form.Encode())
@@ -131,14 +130,8 @@ func (dh *HttpClient) Call(ctx context.Context, req *types.CallTaskRequest) (*ty
 	results := make(map[string]*types.Value)
 	dataObjects := make(map[string]*types.Value)
 
-	results["code"] = &types.Value{
-		Type:  types.Value_Integer,
-		Value: strconv.Itoa(resp.StatusCode),
-	}
-	results["result"] = &types.Value{
-		Type:  types.Value_Object,
-		Value: string(data),
-	}
+	results["code"] = types.NewValue(resp.StatusCode)
+	results["result"] = types.NewValue(string(data))
 
 	dresp := &types.CallTaskResponse{
 		Results:     results,

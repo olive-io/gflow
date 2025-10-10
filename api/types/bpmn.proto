@@ -205,29 +205,33 @@ message FlowNode {
 
   FlowNodeType flow_type = 5;
 
-  map<string, string> headers = 6 [(tagger.tags) = "gorm:\"serializer:json\""];
+  string kind = 6;
 
-  map<string, Value> properties = 7 [(tagger.tags) = "gorm:\"serializer:json\""];
+  string target = 7;
 
-  map<string, Value> data_objects = 8 [(tagger.tags) = "gorm:\"serializer:json\""];
+  map<string, string> headers = 8 [(tagger.tags) = "gorm:\"serializer:json\""];
 
-  map<string, Value> results = 9 [(tagger.tags) = "gorm:\"serializer:json\""];
+  map<string, Value> properties = 9 [(tagger.tags) = "gorm:\"serializer:json\""];
 
-  int32 retries = 10;
+  map<string, Value> data_objects = 10 [(tagger.tags) = "gorm:\"serializer:json\""];
 
-  int64 startTime = 11;
+  map<string, Value> results = 11 [(tagger.tags) = "gorm:\"serializer:json\""];
 
-  int64 endTime = 12;
+  int32 retries = 12;
 
-  int64 process_id = 13 [(tagger.tags) = "gorm:\"index\""];
+  int64 startTime = 13;
 
-  string process_uid = 14;
+  int64 endTime = 14;
 
-  FlowNodeStage stage = 15;
+  int64 process_id = 15 [(tagger.tags) = "gorm:\"index\""];
 
-  FlowNodeStatus status = 16;
+  string process_uid = 16;
 
-  string err_msg = 17;
+  FlowNodeStage stage = 17;
+
+  FlowNodeStatus status = 18;
+
+  string err_msg = 19;
 }
 
 message CallTaskRequest {
@@ -238,7 +242,7 @@ message CallTaskRequest {
   }
   uint64 seq_id = 1;
   Stage stage = 2;
-  FlowNodeType flowType = 3;
+  types.FlowNodeType flowType = 3;
   string kind = 4;
   string name = 5;
   map<string, string> headers = 6;

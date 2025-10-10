@@ -41,6 +41,8 @@ import (
 	"github.com/olive-io/gflow/server/config"
 	"github.com/olive-io/gflow/server/dao"
 	"github.com/olive-io/gflow/server/dispatch"
+	"github.com/olive-io/gflow/server/plugin"
+	"github.com/olive-io/gflow/server/plugin/gflow"
 	"github.com/olive-io/gflow/server/scheduler"
 )
 
@@ -121,24 +123,33 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 
 	definitionsDao, err := dao.NewDefinitionsDao(db)
 	if err != nil {
-		return nil, fmt.Errorf("create definitions model: %w", err)
+		return nil, fmt.Errorf("creates definitions model: %w", err)
 	}
 	processDao, err := dao.NewProcessDao(db)
 	if err != nil {
-		return nil, fmt.Errorf("create process model: %w", err)
+		return nil, fmt.Errorf("creates process model: %w", err)
 	}
 	runnerDao, err := dao.NewRunnerDao(db)
 	if err != nil {
-		return nil, fmt.Errorf("create runner model: %w", err)
+		return nil, fmt.Errorf("creates runner model: %w", err)
 	}
 
 	dispatcher := dispatch.NewDispatcher()
 	dispatcher.Start(ctx)
 
+	// registers plugin factories
+	gflowFactory, err := gflow.NewFactory(dispatcher)
+	if err != nil {
+		return nil, fmt.Errorf("creates gflow factory: %w", err)
+	}
+	if err = plugin.Register(gflowFactory); err != nil {
+		return nil, fmt.Errorf("registry plugin factory %s: %w", gflowFactory.Name(), err)
+	}
+
 	schedulerOptions := scheduler.NewOptions(lg)
 	sch, err := scheduler.NewScheduler(ctx, schedulerOptions)
 	if err != nil {
-		return nil, fmt.Errorf("create scheduler: %w", err)
+		return nil, fmt.Errorf("creates scheduler: %w", err)
 	}
 
 	bpmnRPC := newBpmnServer(ctx, lg, sch, definitionsDao, processDao)

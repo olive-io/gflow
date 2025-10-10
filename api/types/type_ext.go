@@ -18,6 +18,8 @@ package types
 
 import (
 	"path"
+
+	"github.com/olive-io/bpmn/schema"
 )
 
 func (in *Endpoint) URL() string {
@@ -42,6 +44,64 @@ func (in *Value) DeepCopy() *Value {
 	out := new(Value)
 	in.DeepCopyInto(out)
 	return out
+}
+
+func NewValue(value any) *Value {
+	return FromSchemaValue(schema.NewValue(value))
+}
+
+func FromSchemaValue(sv *schema.Value) *Value {
+	value := &Value{
+		Type:  fromSchemaType(sv.ItemType),
+		Value: sv.ItemValue,
+	}
+	return value
+}
+
+func (in *Value) ToSchemaValue() *schema.Value {
+	sv := &schema.Value{
+		ItemType:  toSchemaType(in.Type),
+		ItemValue: in.Value,
+	}
+	return sv
+}
+
+func fromSchemaType(st schema.ItemType) Value_Type {
+	switch st {
+	case schema.ItemTypeString:
+		return Value_String
+	case schema.ItemTypeInteger:
+		return Value_Integer
+	case schema.ItemTypeFloat:
+		return Value_Float
+	case schema.ItemTypeBoolean:
+		return Value_Boolean
+	case schema.ItemTypeArray:
+		return Value_Array
+	case schema.ItemTypeObject:
+		return Value_Object
+	default:
+		return Value_String
+	}
+}
+
+func toSchemaType(vt Value_Type) schema.ItemType {
+	switch vt {
+	case Value_String:
+		return schema.ItemTypeString
+	case Value_Integer:
+		return schema.ItemTypeInteger
+	case Value_Float:
+		return schema.ItemTypeFloat
+	case Value_Boolean:
+		return schema.ItemTypeBoolean
+	case Value_Array:
+		return schema.ItemTypeArray
+	case Value_Object:
+		return schema.ItemTypeObject
+	default:
+		return schema.ItemTypeString
+	}
 }
 
 func (in *ProcessContext) DeepCopyInto(out *ProcessContext) {
@@ -142,4 +202,18 @@ func (in *RunnerStat) DeepCopy() *RunnerStat {
 	out := new(RunnerStat)
 	in.DeepCopyInto(out)
 	return out
+}
+
+// ConvertStage converts FlowNode_FlowNodeStage to CallTaskRequest_Stage
+func ConvertStage(in FlowNode_FlowNodeStage) CallTaskRequest_Stage {
+	switch in {
+	case FlowNode_Commit:
+		return CallTaskRequest_Commit
+	case FlowNode_Rollback:
+		return CallTaskRequest_Rollback
+	case FlowNode_Destroy:
+		return CallTaskRequest_Destroy
+	default:
+		return CallTaskRequest_Commit
+	}
 }

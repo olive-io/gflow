@@ -180,9 +180,7 @@ func (sgs *systemGRPCServer) RunnerDispatch(stream pb.SystemRPC_RunnerDispatchSe
 	}
 
 	reply := &pb.RunnerDispatchResponse{
-		Handshake: &pb.HandshakeResponse{
-			Runner: runner,
-		},
+		Handshake: &pb.HandshakeResponse{Runner: runner},
 	}
 	if err = stream.Send(reply); err != nil {
 		lg.Error("sends handshake response", zap.Error(err))
@@ -214,6 +212,7 @@ func (sgs *systemGRPCServer) RunnerDispatch(stream pb.SystemRPC_RunnerDispatchSe
 					if serr := stream.Send(msg); serr != nil {
 						result := &types.CallTaskResponse{SeqId: in.SeqId, Error: serr.Error()}
 						sgs.dispatcher.Reply(&dispatch.Response{CallTask: result})
+						lg.Error("sends call task response", zap.Error(serr))
 					}
 				}
 			}
@@ -232,9 +231,7 @@ LOOP:
 
 		switch {
 		case recv.Heartbeat != nil:
-			msg := &pb.RunnerDispatchResponse{
-				HeartBeat: &pb.HeartBeatResponse{},
-			}
+			msg := &pb.RunnerDispatchResponse{HeartBeat: &pb.HeartBeatResponse{}}
 			if serr := stream.Send(msg); serr != nil {
 				lg.Error("sends heartbeat response", zap.Error(serr))
 			}

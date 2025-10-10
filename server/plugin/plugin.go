@@ -14,4 +14,124 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package plugin provides a plugin management system for gflow.
+// It allows dynamic registration and retrieval of plugins at runtime.
 package plugin
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"sync"
+
+	"github.com/olive-io/gflow/api/types"
+)
+
+var (
+	// defaultManager is the global plugin manager instance
+	defaultManager *Manager
+	// once ensures the defaultManager is initialized only once
+	once sync.Once
+)
+
+var (
+	ErrFactoryNotFound        = errors.New("plugin factory not found")
+	ErrFactoryAlreadyExists   = errors.New("plugin factory already exists")
+	ErrInvalidCreationOptions = errors.New("invalid factory creation options")
+	ErrInvalidDoOptions       = errors.New("invalid factory do options")
+	ErrDoExecution            = errors.New("plugin executes failed")
+)
+
+// init initializes the default plugin manager using sync.Once to ensure thread safety
+func init() {
+	once.Do(func() {
+		defaultManager = NewManager()
+	})
+}
+
+// Register registers a plugin factory with the default manager.
+// It returns an error if a plugin with the same name is already registered.
+func Register(factory Factory) error {
+	return defaultManager.Register(factory)
+}
+
+// Get retrieves a plugin factory by name from the default manager.
+// It returns an error if the plugin is not found.
+func Get(name string) (Factory, error) {
+	return defaultManager.Get(name)
+}
+
+// Request represents a plugin execution request containing headers, properties,
+// data objects, and timeout configuration.
+type Request struct {
+	// Headers contains HTTP-style headers for the request
+	Headers map[string]string
+	// Properties contains key-value properties for plugin configuration
+	Properties map[string]*types.Value
+	// DataObjects contains structured data objects for plugin processing
+	DataObjects map[string]*types.Value
+}
+
+// Response represents the result of plugin execution containing results and data objects.
+type Response struct {
+	// Results contains the output values from plugin execution
+	Results map[string]*types.Value
+	// DataObjects contains structured data objects returned by the plugin
+	DataObjects map[string]*types.Value
+	// Error contains the error message from plugin execution
+	Error string
+}
+
+// Plugin defines the interface that all plugins must implement.
+type Plugin interface {
+	// Do executes the plugin with the given request and returns a response
+	Do(ctx context.Context, req *Request, opts ...DoOption) (*Response, error)
+	// String returns a string representation of the plugin
+	String() string
+}
+
+// Factory defines the interface for creating plugin instances.
+// Each factory is responsible for creating plugins of a specific type.
+type Factory interface {
+	// Name returns the unique name of the plugin type
+	Name() string
+	// Create creates a new plugin instance with the given options
+	Create(opts ...Option) (Plugin, error)
+}
+
+// Manager manages plugin factories and provides registration and retrieval functionality.
+type Manager struct {
+	// factories stores registered plugin factories indexed by name
+	factories map[string]Factory
+}
+
+// NewManager creates a new plugin manager with an empty factory registry.
+func NewManager() *Manager {
+	manager := &Manager{
+		factories: make(map[string]Factory),
+	}
+
+	return manager
+}
+
+// Register registers a plugin factory with the manager.
+// It returns an error if a factory with the same name is already registered.
+func (m *Manager) Register(factory Factory) error {
+	name := factory.Name()
+	_, ok := m.factories[name]
+	if ok {
+		return fmt.Errorf("%w: %s", ErrFactoryAlreadyExists, name)
+	}
+	m.factories[name] = factory
+	return nil
+}
+
+// Get retrieves a plugin factory by name from the manager.
+// It returns an error if no factory with the given name is found.
+func (m *Manager) Get(name string) (Factory, error) {
+	factory, ok := m.factories[name]
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", ErrFactoryNotFound, name)
+	}
+	return factory, nil
+}

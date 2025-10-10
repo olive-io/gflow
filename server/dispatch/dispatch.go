@@ -32,6 +32,10 @@ type Response struct {
 	CallTask *types.CallTaskResponse
 }
 
+type event struct {
+	callTask *types.CallTaskResponse
+}
+
 type pipe struct {
 	ctx context.Context
 
@@ -66,7 +70,7 @@ type Dispatcher struct {
 	pipes map[string]*pipe
 
 	emu    sync.RWMutex
-	events map[uint64]chan *types.CallTaskResponse
+	events map[uint64]chan *event
 
 	pch chan string
 }
@@ -74,7 +78,7 @@ type Dispatcher struct {
 func NewDispatcher() *Dispatcher {
 	dispatcher := &Dispatcher{
 		pipes:  make(map[string]*pipe),
-		events: make(map[uint64]chan *types.CallTaskResponse),
+		events: make(map[uint64]chan *event),
 		pch:    make(chan string, 10),
 	}
 	return dispatcher
@@ -129,7 +133,7 @@ func (d *Dispatcher) Reply(resp *Response) {
 		d.emu.Lock()
 		ch, ok := d.events[id]
 		if ok {
-			ch <- msg
+			ch <- &event{callTask: msg}
 		}
 		d.emu.Unlock()
 	}

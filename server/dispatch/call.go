@@ -42,19 +42,18 @@ func WithUID(uid string) CallOption {
 }
 
 func (d *Dispatcher) CallTask(ctx context.Context, req *types.CallTaskRequest, opts ...CallOption) (*types.CallTaskResponse, error) {
-
 	var options CallOptions
 	for _, opt := range opts {
 		opt(&options)
 	}
 
-	target, err := d.selectOne(&options)
+	target, err := d.selectOne(options)
 	if err != nil {
 		return nil, err
 	}
 
 	newId := allocId()
-	outCh := make(chan *types.CallTaskResponse, 1)
+	outCh := make(chan *event, 1)
 	d.emu.Lock()
 	d.events[newId] = outCh
 	d.emu.Unlock()
@@ -68,26 +67,26 @@ func (d *Dispatcher) CallTask(ctx context.Context, req *types.CallTaskRequest, o
 	}()
 
 	req.SeqId = newId
-	if err = target.Send(&Request{CallTask: req}); err != nil {
-		return nil, err
+	if serr := target.Send(&Request{CallTask: req}); serr != nil {
+		return nil, serr
 	}
 
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case resp := <-outCh:
-		return resp, nil
+		return resp.callTask, nil
 	}
 }
 
-func (d *Dispatcher) selectOne(options *CallOptions) (*pipe, error) {
-	d.pmu.RLock()
-	defer d.pmu.RUnlock()
+func (d *Dispatcher) selectOne(options CallOptions) (*pipe, error) {
+	d.emu.RLock()
+	defer d.emu.RUnlock()
 
 	if uid := options.UID; uid != "" {
 		target, ok := d.pipes[uid]
 		if !ok {
-			return nil, fmt.Errorf("%w: %s", ErrNotFound, options.UID)
+			return nil, fmt.Errorf("%w: %s", ErrNotFound, uid)
 		}
 		return target, nil
 	}
