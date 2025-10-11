@@ -18,6 +18,7 @@ package scheduler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -118,7 +119,7 @@ func (sch *Scheduler) Execute(stat *ProcessStat) error {
 	lg := sch.lg
 
 	lg.Info("push new process",
-		zap.Int64("pid", stat.Id),
+		zap.Int64("id", stat.Id),
 		zap.Int64("priority", stat.Priority),
 		zap.String("status", stat.Status.String()),
 		zap.String("stage", stat.Stage.String()))
@@ -250,6 +251,9 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 		}
 
 		if err != nil {
+			lg.Errorf("execute process [%s] failed: %v", pid, err)
+
+			lg.Infof("rollback process [%s]", pid)
 			stat.Stage = types.Process_Rollback
 			sch.setProcess(stat.Process)
 
@@ -267,6 +271,7 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 		stat.Stage = types.Process_Destroy
 		sch.setProcess(stat.Process)
 
+		lg.Infof("destroy process [%s]", pid)
 		for i := len(activeStack) - 1; i >= 0; i-- {
 			node := activeStack[i]
 			node.Stage = types.FlowNode_Destroy
@@ -284,19 +289,25 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 	if stat.Status != types.Process_Running {
 		stat.Uid = pid
 		stat.StartAt = time.Now().UnixMilli()
+		stat.Status = types.Process_Running
 
 		if id, ok := bp.Element().Id(); ok {
 			stat.DefinitionsProcess = *id
 		}
-		stat.Status = types.Process_Running
 		sch.setProcess(stat.Process)
+	} else {
+		pid = stat.Uid
 	}
 
 	stat.Stage = types.Process_Commit
 	sch.setProcess(stat.Process)
 
+	lg.Infof("commit process [%s]", pid)
+
 	ech := make(chan error, 1)
+	done := make(chan struct{}, 1)
 	go func(ech chan<- error) {
+		defer close(done)
 		for {
 			var trace tracing.ITrace
 			select {
@@ -431,7 +442,7 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 					if doErr != nil {
 						flowNode.Status = types.FlowNode_Failed
 						flowNode.ErrMsg = doErr.Error()
-						doOptions = append(doOptions, bpmn.DoWithErr(err))
+						doOptions = append(doOptions, bpmn.DoWithErr(doErr))
 					}
 
 					tt.Do(doOptions...)
@@ -456,12 +467,13 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 	}(ech)
 
 	bp.WaitUntilComplete(ctx)
+
 	select {
 	case <-ctx.Done():
 		err = ctx.Err()
 		ctx = context.Background()
 	case err = <-ech:
-	default:
+	case <-done:
 	}
 
 	return err
@@ -529,10 +541,12 @@ func (sch *Scheduler) doTask(ctx context.Context, node *types.FlowNode, extensio
 	if err != nil {
 		return err
 	}
+	if len(resp.Error) != 0 {
+		return errors.New(resp.Error)
+	}
 
 	node.Results = resp.Results
 	node.DataObjects = resp.DataObjects
-	node.ErrMsg = resp.Error
 
 	return nil
 }

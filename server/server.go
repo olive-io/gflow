@@ -82,12 +82,8 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 
 	hs := &http.Server{
-		Handler:           handler,
-		ReadTimeout:       time.Minute,
-		ReadHeaderTimeout: time.Second * 30,
-		WriteTimeout:      time.Minute,
-		IdleTimeout:       time.Second * 30,
-		MaxHeaderBytes:    DefaultMaxHeaderBytes,
+		Handler:        handler,
+		MaxHeaderBytes: DefaultMaxHeaderBytes,
 	}
 
 	ech := make(chan error, 1)
@@ -155,16 +151,17 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	bpmnRPC := newBpmnServer(ctx, lg, sch, definitionsDao, processDao)
 	systemRPC := newSystemGRPCServer(ctx, lg, runnerDao, dispatcher)
 
-	kaep := keepalive.EnforcementPolicy{
-		MinTime:             5 * time.Second,
-		PermitWithoutStream: true,
+	var kaep = keepalive.EnforcementPolicy{
+		MinTime:             30 * time.Second, // If a client pings more than once every 1 minute, terminate the connection
+		PermitWithoutStream: true,             // Allow pings even when there are no active streams
 	}
-	kasp := keepalive.ServerParameters{
-		MaxConnectionIdle:     15 * time.Second,
-		MaxConnectionAge:      30 * time.Second,
-		MaxConnectionAgeGrace: 5 * time.Second,
-		Time:                  5 * time.Second,
-		Timeout:               3 * time.Second,
+
+	var kasp = keepalive.ServerParameters{
+		MaxConnectionIdle:     15 * time.Second, // If a client is idle for 15 seconds, send a GOAWAY
+		MaxConnectionAge:      30 * time.Second, // If any connection is alive for more than 30 seconds, send a GOAWAY
+		MaxConnectionAgeGrace: 15 * time.Second, // Allow 15 seconds for pending RPCs to complete before forcibly closing connections
+		Time:                  10 * time.Second, // Ping the client if it is idle for 10 seconds to ensure the connection is still active
+		Timeout:               5 * time.Second,  // Wait 5 second for the ping ack before assuming the connection is dead
 	}
 
 	sopts := []grpc.ServerOption{

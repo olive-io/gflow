@@ -1,0 +1,7 @@
+[server]
+listen = "localhost:6550"
+
+[database]
+driver = "sqlite"
+data_root = "./data"
+dbname = "gflow.db"

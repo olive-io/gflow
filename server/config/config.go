@@ -35,23 +35,18 @@ import (
 )
 
 var (
-	DefaultDataRoot   = "./data"
 	DefaultListenAddr = "localhost:6550"
 )
 
 type TLS struct {
-	CaFile   string `json:"ca-file" toml:"ca-file"`
-	CertFile string `json:"cert-file" toml:"cert-file"`
-	KeyFile  string `json:"key-file" toml:"key-file"`
+	CaFile   string `json:"ca_file" toml:"ca_file"`
+	CertFile string `json:"cert_file" toml:"cert_file"`
+	KeyFile  string `json:"key_file" toml:"key_file"`
 }
 
 type ServerConfig struct {
 	Listen string `json:"listen" toml:"listen"`
 	TLS    *TLS   `json:"tls" toml:"tls"`
-}
-
-type DatabaseConfig struct {
-	DataRoot string `json:"data-root" toml:"data-root"`
 }
 
 type Config struct {

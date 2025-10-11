@@ -18,6 +18,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"io"
 	"time"
 
@@ -187,7 +188,7 @@ func (sgs *systemGRPCServer) RunnerDispatch(stream pb.SystemRPC_RunnerDispatchSe
 		return err
 	}
 
-	lg.Info("add runner dispatch",
+	lg.Info("add runner dispatcher",
 		zap.String("uid", runner.Uid),
 		zap.String("listen-url", runner.ListenUrl),
 		zap.String("hostname", runner.Hostname),
@@ -223,8 +224,10 @@ LOOP:
 	for {
 		recv, rerr := stream.Recv()
 		if rerr != nil {
-			if rerr == io.EOF {
-				err = nil
+			if rerr == io.EOF || errors.Is(rerr, context.Canceled) {
+				lg.Error("gflow runner dispatcher disconnected", zap.Error(rerr))
+			} else {
+				lg.Error("receives runner message", zap.Error(rerr))
 			}
 			break LOOP
 		}
@@ -240,15 +243,11 @@ LOOP:
 		}
 	}
 
-	lg.Info("remove runner dispatch",
+	lg.Info("remove runner dispatcher",
 		zap.String("uid", runner.Uid),
 		zap.String("listen-url", runner.ListenUrl),
 		zap.String("hostname", runner.Hostname),
 	)
-
-	if err != nil {
-		return status.Errorf(codes.Internal, "start stream error: %v", err)
-	}
 
 	return nil
 }

@@ -173,7 +173,7 @@ message DeployDefinitionsRequest {
 
   bytes content = 2;
 
-  string description = 3 [(validate.rules).string.min_len = 10];
+  string description = 3;
 }
 
 message DeployDefinitionsResponse {

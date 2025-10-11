@@ -27,8 +27,7 @@ import (
 
 var (
 	ErrSchedulerStopped = errors.New("scheduler has been stopped")
-
-	ErrIsClosed = errors.New("watch channel closed")
+	ErrIsClosed         = errors.New("watch channel closed")
 )
 
 type WatchMessage struct {

@@ -33,11 +33,11 @@ import (
 )
 
 func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
-	name := "gflow"
+	name := "gflow-server"
 	cfg := config.NewConfig()
 	app := &cobra.Command{
 		Use:     name,
-		Short:   "the server component of olive system",
+		Short:   "the server component of gflow system",
 		Version: version.ReleaseVersion(),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 
@@ -55,7 +55,7 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			return runServer(ctx, name, cfg)
+			return startServer(ctx, name, cfg)
 		},
 	}
 
@@ -77,7 +77,7 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 	return app
 }
 
-func runServer(ctx context.Context, name string, cfg *config.Config) error {
+func startServer(ctx context.Context, name string, cfg *config.Config) error {
 	app, err := server.NewServer(name, cfg)
 	if err != nil {
 		return fmt.Errorf("create %s server: %w", name, err)

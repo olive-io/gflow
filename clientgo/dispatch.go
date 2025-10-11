@@ -18,6 +18,7 @@ package clientgo
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"sync/atomic"
 	"time"
@@ -31,7 +32,7 @@ import (
 )
 
 type Event struct {
-	Call *pb.CallTaskRequest
+	Call *types.CallTaskRequest
 	Err  error
 }
 
@@ -108,6 +109,7 @@ func (d *Dispatcher) connect(ctx context.Context) (*pb.HandshakeResponse, error)
 	if err != nil {
 		return nil, parseErr(err)
 	}
+	d.runner = out.Handshake.Runner
 	rsp := out.Handshake
 
 	d.lg.Info("connect to gflow dispatch succeeded")
@@ -116,12 +118,41 @@ func (d *Dispatcher) connect(ctx context.Context) (*pb.HandshakeResponse, error)
 }
 
 func (d *Dispatcher) Heartbeat(stat *types.RunnerStat) error {
+	if !d.connected.Load() {
+		return fmt.Errorf("gflow dispatch is not connected")
+	}
+
+	select {
+	case <-d.done:
+		return fmt.Errorf("dispatch disconnected")
+	case <-d.ctx.Done():
+		return d.ctx.Err()
+	default:
+	}
+
 	msg := &pb.RunnerDispatchRequest{
 		Heartbeat: &pb.HeartBeatRequest{Stat: stat},
 	}
 
 	err := d.stream.Send(msg)
 	return parseErr(err)
+}
+
+func (d *Dispatcher) CallReply(resp *types.CallTaskResponse) error {
+	if !d.connected.Load() {
+		return fmt.Errorf("gflow dispatch is not connected")
+	}
+
+	select {
+	case <-d.done:
+		return fmt.Errorf("dispatch disconnected")
+	case <-d.ctx.Done():
+		return d.ctx.Err()
+	default:
+	}
+
+	msg := &pb.RunnerDispatchRequest{CallTask: resp}
+	return d.stream.Send(msg)
 }
 
 func (d *Dispatcher) Next() (*Event, error) {
@@ -191,7 +222,7 @@ func (d *Dispatcher) process() {
 				if isUnavailable(err) {
 					d.lg.Error("gflow dispatch is unavailable")
 				} else {
-					d.lg.Error("connect to gflow dispatch error", zap.Error(err))
+					d.lg.Error("receives gflow dispatch error", zap.Error(err))
 					event := &Event{Err: err}
 					d.ech <- event
 				}
@@ -199,8 +230,23 @@ func (d *Dispatcher) process() {
 				break LOOP
 			}
 
-			event := &Event{Call: rsp.CallTask}
-			d.ech <- event
+			if callTask := rsp.CallTask; callTask != nil {
+				event := &Event{Call: rsp.CallTask}
+				d.ech <- event
+			}
 		}
 	}
+}
+
+func (d *Dispatcher) Close() error {
+	if err := d.stream.CloseSend(); err != nil {
+		return err
+	}
+
+	select {
+	case <-d.done:
+	default:
+		close(d.done)
+	}
+	return nil
 }

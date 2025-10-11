@@ -33,11 +33,11 @@ import (
 	"github.com/olive-io/gflow/api/types"
 )
 
-type ListDefinitionsOptions struct {
+type ListDefinitionsRequest struct {
 	Page, Size int32
 }
 
-type ExecuteProcessOptions struct {
+type ExecuteProcessRequest struct {
 	Name               string
 	DefinitionsUid     string
 	DefinitionsVersion uint64
@@ -96,15 +96,15 @@ func NewClient(cfg *Config) (*Client, error) {
 		creds = insecure.NewCredentials()
 	}
 
-	kecp := keepalive.ClientParameters{
-		Time:                time.Second * 10,
-		Timeout:             time.Second * 30,
-		PermitWithoutStream: true,
+	kacp := keepalive.ClientParameters{
+		Time:                10 * time.Second, // send pings every 10 seconds if there is no activity
+		Timeout:             5 * time.Second,  // wait 5 second for ping ack before considering the connection dead
+		PermitWithoutStream: true,             // send pings even without active streams
 	}
 
 	DialOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(creds),
-		grpc.WithKeepaliveParams(kecp),
+		grpc.WithKeepaliveParams(kacp),
 		grpc.WithIdleTimeout(DefaultTimeout),
 	}
 
@@ -119,7 +119,7 @@ func NewClient(cfg *Config) (*Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.DialTimeout)
 	defer cancel()
 
-	callOpts := []grpc.CallOption{}
+	callOpts := make([]grpc.CallOption, 0)
 	_, err = systemClient.Ping(ctx, &pb.PingRequest{}, callOpts...)
 	if err != nil {
 		return nil, parseErr(err)
@@ -194,7 +194,7 @@ func (c *Client) DeployDefinitions(ctx context.Context, definitionsXML []byte, d
 	return rsp.Definitions, nil
 }
 
-func (c *Client) ListDefinitions(ctx context.Context, options *ListDefinitionsOptions) ([]*types.Definitions, int64, error) {
+func (c *Client) ListDefinitions(ctx context.Context, options *ListDefinitionsRequest) ([]*types.Definitions, int64, error) {
 	req := &pb.ListDefinitionsRequest{
 		Page: options.Page,
 		Size: options.Size,
@@ -222,7 +222,7 @@ func (c *Client) GetDefinitions(ctx context.Context, uid string, version uint64)
 	return rsp.Definitions, nil
 }
 
-func (c *Client) ExecuteProcess(ctx context.Context, options *ExecuteProcessOptions) (*types.Process, error) {
+func (c *Client) ExecuteProcess(ctx context.Context, options *ExecuteProcessRequest) (*types.Process, error) {
 	req := &pb.ExecuteProcessRequest{
 		Name:               options.Name,
 		DefinitionsUid:     options.DefinitionsUid,
@@ -251,6 +251,6 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) buildCallOptions() []grpc.CallOption {
-	opts := []grpc.CallOption{}
+	opts := make([]grpc.CallOption, 0)
 	return opts
 }

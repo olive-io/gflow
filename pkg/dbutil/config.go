@@ -34,15 +34,15 @@ var (
 type Config struct {
 	Level                 string        `json:"level" toml:"level"`
 	Driver                string        `json:"driver" toml:"driver"`
-	DataRoot              string        `json:"data-root" toml:"data-root"`
+	DataRoot              string        `json:"data_root" toml:"data_root"`
 	Host                  string        `json:"host" toml:"host"`
 	Username              string        `json:"username" toml:"username"`
 	Password              string        `json:"password" toml:"password"`
 	Port                  int32         `json:"port" toml:"port"`
 	DBName                string        `json:"dbname" toml:"dbname"`
-	MaxIdleConnection     int           `json:"max-idle-connection" toml:"max-idle-connections"`
-	MaxOpenConnection     int           `json:"max-open-connection" toml:"max-open-connection"`
-	ConnectionMaxLifetime time.Duration `json:"connection-max-lifetime" toml:"connection-max-lifetime"`
+	MaxIdleConnection     int           `json:"max_idle_connection" toml:"max_idle_connections"`
+	MaxOpenConnection     int           `json:"max_open_connection" toml:"max_open_connection"`
+	ConnectionMaxLifetime time.Duration `json:"connection_max_lifetime" toml:"connection_max_lifetime"`
 }
 
 func NewConfig() *Config {
