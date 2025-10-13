@@ -59,7 +59,7 @@ type LogConfig struct {
 	// logger logs server-side operations. The default is nil,
 	// and "setupLogging" must be called before starting server.
 	// Do not set logger directly.
-	loggerMu *sync.RWMutex
+	loggerMu sync.RWMutex
 	logger   *zap.Logger
 }
 
@@ -79,16 +79,15 @@ type LogRotationConfig struct {
 
 func NewLogConfig() LogConfig {
 	return LogConfig{
-		Level:    DefaultLogLevel,
-		Format:   DefaultLogFormat,
-		Outputs:  []string{DefaultLogOutput},
-		loggerMu: new(sync.RWMutex),
-		logger:   zap.NewNop(),
+		Level:   DefaultLogLevel,
+		Format:  DefaultLogFormat,
+		Outputs: []string{DefaultLogOutput},
+		logger:  zap.NewNop(),
 	}
 }
 
 // GetLogger returns the logger.
-func (cfg LogConfig) GetLogger() *zap.Logger {
+func (cfg *LogConfig) GetLogger() *zap.Logger {
 	cfg.loggerMu.RLock()
 	l := cfg.logger
 	cfg.loggerMu.RUnlock()

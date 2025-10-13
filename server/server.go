@@ -87,7 +87,7 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 
 	ech := make(chan error, 1)
-	lg.Sugar().Infof("starting %s server", s.name)
+	lg.Sugar().Infof("starting %s", s.name)
 	go func() {
 		err = hs.Serve(listener)
 		if err != nil {
@@ -97,13 +97,13 @@ func (s *Server) Start(ctx context.Context) error {
 
 	select {
 	case err = <-ech:
-		return fmt.Errorf("start %s server: %w", s.name, err)
+		return fmt.Errorf("start %s: %w", s.name, err)
 	case <-ctx.Done():
 	}
 
-	lg.Sugar().Infof("shutting down %s server", s.name)
+	lg.Sugar().Infof("shutting down %s", s.name)
 	if err = hs.Shutdown(ctx); err != nil {
-		return fmt.Errorf("shutdown %s server: %w", s.name, err)
+		return fmt.Errorf("shutdown %s: %w", s.name, err)
 	}
 
 	return nil
@@ -149,7 +149,7 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	}
 
 	bpmnRPC := newBpmnServer(ctx, lg, sch, definitionsDao, processDao)
-	systemRPC := newSystemGRPCServer(ctx, lg, runnerDao, dispatcher)
+	systemRPC := newSystemGRPCServer(ctx, lg, s.cfg, runnerDao, dispatcher)
 
 	var kaep = keepalive.EnforcementPolicy{
 		MinTime:             30 * time.Second, // If a client pings more than once every 1 minute, terminate the connection

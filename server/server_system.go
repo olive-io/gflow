@@ -29,6 +29,7 @@ import (
 
 	pb "github.com/olive-io/gflow/api/rpc"
 	"github.com/olive-io/gflow/api/types"
+	"github.com/olive-io/gflow/server/config"
 	"github.com/olive-io/gflow/server/dao"
 	"github.com/olive-io/gflow/server/dispatch"
 )
@@ -40,17 +41,19 @@ type systemGRPCServer struct {
 
 	ctx context.Context
 	lg  *zap.Logger
+	cfg *config.Config
 
 	runnerDao *dao.RunnerDao
 
 	dispatcher *dispatch.Dispatcher
 }
 
-func newSystemGRPCServer(ctx context.Context, lg *zap.Logger, runnerDao *dao.RunnerDao, dispatcher *dispatch.Dispatcher) *systemGRPCServer {
+func newSystemGRPCServer(ctx context.Context, lg *zap.Logger, cfg *config.Config, runnerDao *dao.RunnerDao, dispatcher *dispatch.Dispatcher) *systemGRPCServer {
 	server := &systemGRPCServer{
 		ctx: ctx,
 		lg:  lg,
-
+		cfg: cfg,
+		
 		runnerDao:  runnerDao,
 		dispatcher: dispatcher,
 	}
@@ -73,7 +76,6 @@ func (sgs *systemGRPCServer) Register(ctx context.Context, req *pb.RegisterReque
 
 		sgs.lg.Info("runner online",
 			zap.String("uid", runner.Uid),
-			zap.String("name", runner.Name),
 			zap.String("transport", runner.Transport.String()),
 			zap.String("listen", runner.ListenUrl))
 
@@ -89,7 +91,6 @@ func (sgs *systemGRPCServer) Register(ctx context.Context, req *pb.RegisterReque
 
 		sgs.lg.Info("register new runner",
 			zap.String("uid", runner.Uid),
-			zap.String("name", runner.Name),
 			zap.String("transport", runner.Transport.String()),
 			zap.String("listen", runner.ListenUrl))
 	}
@@ -123,11 +124,15 @@ func (sgs *systemGRPCServer) Disregister(ctx context.Context, req *pb.Disregiste
 }
 
 func (sgs *systemGRPCServer) ListRunners(ctx context.Context, req *pb.ListRunnersRequest) (*pb.ListRunnersResponse, error) {
-	runners, err := sgs.runnerDao.FindRunners(ctx)
+	page, size := req.Page, req.Size
+	list, total, err := sgs.runnerDao.ListRunners(ctx, page, size)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	rsp := &pb.ListRunnersResponse{Runners: runners}
+	rsp := &pb.ListRunnersResponse{
+		Runners: list,
+		Total:   total,
+	}
 	return rsp, nil
 }
 
@@ -141,6 +146,11 @@ func (sgs *systemGRPCServer) GetRunner(ctx context.Context, req *pb.GetRunnerReq
 	}
 	rsp := &pb.GetRunnerResponse{Runner: runner}
 	return rsp, nil
+}
+
+func (sgs *systemGRPCServer) AddEndpoints(ctx context.Context, req *pb.AddEndpointsRequest) (*pb.AddEndpointsResponse, error) {
+	resp := &pb.AddEndpointsResponse{}
+	return resp, nil
 }
 
 func (sgs *systemGRPCServer) RunnerDispatch(stream pb.SystemRPC_RunnerDispatchServer) error {
@@ -180,8 +190,12 @@ func (sgs *systemGRPCServer) RunnerDispatch(stream pb.SystemRPC_RunnerDispatchSe
 		_ = sgs.runnerDao.UpdateRunner(ctx, runner)
 	}
 
+	serverID := sgs.cfg.Server.ID
 	reply := &pb.RunnerDispatchResponse{
-		Handshake: &pb.HandshakeResponse{Runner: runner},
+		Handshake: &pb.HandshakeResponse{
+			ServerID: serverID,
+			Runner:   runner,
+		},
 	}
 	if err = stream.Send(reply); err != nil {
 		lg.Error("sends handshake response", zap.Error(err))

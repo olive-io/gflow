@@ -33,6 +33,10 @@ import (
 	"github.com/olive-io/gflow/api/types"
 )
 
+type ListRunnersRequest struct {
+	Page, Size int32
+}
+
 type ListDefinitionsRequest struct {
 	Page, Size int32
 }
@@ -151,12 +155,11 @@ func (c *Client) Ping(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) Register(ctx context.Context, runner *types.Runner, endpoints []*types.Endpoint) (*types.Runner, error) {
+func (c *Client) Register(ctx context.Context, runner *types.Runner) (*types.Runner, error) {
 	opts := c.buildCallOptions()
 
 	in := &pb.RegisterRequest{
-		Runner:    runner,
-		Endpoints: endpoints,
+		Runner: runner,
 	}
 	rsp, err := c.systemClient.Register(ctx, in, opts...)
 	if err != nil {
@@ -178,6 +181,49 @@ func (c *Client) Disregister(ctx context.Context, uid string) (*types.Runner, er
 	return rsp.Runner, nil
 }
 
+func (c *Client) ListRunners(ctx context.Context, req *ListRunnersRequest) ([]*types.Runner, int64, error) {
+	opts := c.buildCallOptions()
+
+	in := &pb.ListRunnersRequest{
+		Page: req.Page,
+		Size: req.Size,
+	}
+
+	rsp, err := c.systemClient.ListRunners(ctx, in, opts...)
+	if err != nil {
+		return nil, 0, parseErr(err)
+	}
+	return rsp.Runners, rsp.Total, nil
+}
+
+func (c *Client) GetRunner(ctx context.Context, id uint64, uid string) (*types.Runner, error) {
+	opts := c.buildCallOptions()
+
+	in := &pb.GetRunnerRequest{
+		Id:  id,
+		Uid: uid,
+	}
+
+	rsp, err := c.systemClient.GetRunner(ctx, in, opts...)
+	if err != nil {
+		return nil, parseErr(err)
+	}
+	return rsp.Runner, nil
+}
+
+func (c *Client) AddEndpoints(ctx context.Context, endpoints []*types.Endpoint) error {
+	opts := c.buildCallOptions()
+
+	in := &pb.AddEndpointsRequest{
+		Endpoints: endpoints,
+	}
+	_, err := c.systemClient.AddEndpoints(ctx, in, opts...)
+	if err != nil {
+		return parseErr(err)
+	}
+	return nil
+}
+
 func (c *Client) DeployDefinitions(ctx context.Context, definitionsXML []byte, desc string, metadata map[string]string) (*types.Definitions, error) {
 	req := &pb.DeployDefinitionsRequest{
 		Metadata:    metadata,
@@ -194,10 +240,10 @@ func (c *Client) DeployDefinitions(ctx context.Context, definitionsXML []byte, d
 	return rsp.Definitions, nil
 }
 
-func (c *Client) ListDefinitions(ctx context.Context, options *ListDefinitionsRequest) ([]*types.Definitions, int64, error) {
+func (c *Client) ListDefinitions(ctx context.Context, in *ListDefinitionsRequest) ([]*types.Definitions, int64, error) {
 	req := &pb.ListDefinitionsRequest{
-		Page: options.Page,
-		Size: options.Size,
+		Page: in.Page,
+		Size: in.Size,
 	}
 
 	opts := c.buildCallOptions()

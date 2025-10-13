@@ -71,17 +71,17 @@ message Value {
 }
 
 message Endpoint {
-  FlowNodeType type = 1;
-  string kind = 2;
-  string name = 3;
-  string description = 4;
-  string http_url = 5;
+  string kind = 1;
+  string name = 2;
+  string description = 3;
+  string http_url = 4;
 
   // request data
   map<string, string> headers = 11;
-  map<string, Value> parameters = 12;
+  map<string, Value> properties = 12;
+  map<string, Value> dataObjects = 13;
   // response data
-  map<string, Value> results = 13;
+  map<string, Value> results = 14;
 }
 
 // Definitions bpmn Definition

@@ -41,6 +41,8 @@ type Dispatcher struct {
 
 	lg *zap.Logger
 
+	id string
+
 	runner *types.Runner
 
 	systemClient pb.SystemRPCClient
@@ -89,6 +91,10 @@ func (d *Dispatcher) Context() context.Context {
 	return d.ctx
 }
 
+func (d *Dispatcher) ID() string {
+	return d.id
+}
+
 func (d *Dispatcher) connect(ctx context.Context) (*pb.HandshakeResponse, error) {
 	d.lg.Info("connecting to gflow dispatch")
 	stream, err := d.systemClient.RunnerDispatch(ctx, d.callOptions...)
@@ -109,12 +115,17 @@ func (d *Dispatcher) connect(ctx context.Context) (*pb.HandshakeResponse, error)
 	if err != nil {
 		return nil, parseErr(err)
 	}
-	d.runner = out.Handshake.Runner
-	rsp := out.Handshake
+	handshake := out.Handshake
+	if handshake == nil {
+		return nil, fmt.Errorf("no handshake response")
+	}
+
+	d.id = handshake.ServerID
+	d.runner = handshake.Runner
 
 	d.lg.Info("connect to gflow dispatch succeeded")
 	d.connected.Store(true)
-	return rsp, nil
+	return handshake, nil
 }
 
 func (d *Dispatcher) Heartbeat(stat *types.RunnerStat) error {

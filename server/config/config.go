@@ -45,6 +45,7 @@ type TLS struct {
 }
 
 type ServerConfig struct {
+	ID     string `json:"id" toml:"id"`
 	Listen string `json:"listen" toml:"listen"`
 	TLS    *TLS   `json:"tls" toml:"tls"`
 }
@@ -93,6 +94,10 @@ func (cfg *Config) init() error {
 	cfg.Log.SetupGlobalLoggers()
 	if err != nil {
 		return fmt.Errorf("init logger: %w", err)
+	}
+
+	if cfg.Server.ID == "" {
+		return errors.New("server id is required")
 	}
 
 	if cfg.Database.DataRoot != "" {

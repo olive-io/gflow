@@ -34,8 +34,8 @@ option (gogoproto.goproto_getters_all) = false;
 message Runner {
   enum TransportType {
     GRPCStream = 0;
-    GRPCEcho = 1;
-    Http = 2;
+    GRPCUnary = 1;
+    HTTP = 2;
   }
 
   uint64 id = 1 [(tagger.tags) = "gorm:\"primary\""];
@@ -45,31 +45,28 @@ message Runner {
   // Unique identified by runner
   string uid = 3 ;
 
-  // Name is the human-readable name of the runner.
-  string name = 4;
-
   // listenURL is the URL the runner is listening on.
-  string listen_url = 5;
+  string listen_url = 4;
 
-  string version = 6;
+  string version = 5;
 
-  int64 heartbeat_ms = 7;
+  int64 heartbeat_ms = 6;
 
-  string hostname = 8;
+  string hostname = 7;
 
-  map<string, string> metadata = 9 [(tagger.tags) = "gorm:\"serializer:json\""];
+  map<string, string> metadata = 8 [(tagger.tags) = "gorm:\"serializer:json\""];
 
-  map<string, string> features = 10 [(tagger.tags) = "gorm:\"serializer:json\""];
+  map<string, string> features = 9 [(tagger.tags) = "gorm:\"serializer:json\""];
 
-  TransportType transport = 11;
+  TransportType transport = 10;
 
-  uint64 cpu = 12;
+  uint64 cpu = 11;
 
-  uint64 memory = 13;
+  uint64 memory = 12;
 
-  int64 online_timestamp = 14;
-  int64 offline_timestamp = 15;
-  int32 online = 16;
+  int64 online_timestamp = 13;
+  int64 offline_timestamp = 14;
+  int32 online = 15;
 }
 
 message RunnerStat {

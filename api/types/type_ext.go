@@ -23,14 +23,27 @@ import (
 )
 
 func (in *Endpoint) URL() string {
-	url := path.Join(in.Type.String())
+	var urlText string
 	if in.Kind != "" {
-		url = path.Join(url, in.Kind)
+		urlText = path.Join(urlText, in.Kind)
 	}
 	if in.Name != "" {
-		url = path.Join(url, in.Name)
+		urlText = path.Join(urlText, in.Name)
 	}
-	return url
+	return urlText
+}
+
+func (in *Endpoint) DeepCopyInto(out *Endpoint) {
+	*out = *in
+}
+
+func (in *Endpoint) DeepCopy() *Endpoint {
+	if in == nil {
+		return nil
+	}
+	out := new(Endpoint)
+	in.DeepCopyInto(out)
+	return out
 }
 
 func (in *Value) DeepCopyInto(out *Value) {

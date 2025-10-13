@@ -80,7 +80,7 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 func startServer(ctx context.Context, name string, cfg *config.Config) error {
 	app, err := server.NewServer(name, cfg)
 	if err != nil {
-		return fmt.Errorf("create %s server: %w", name, err)
+		return fmt.Errorf("create %s: %w", name, err)
 	}
 
 	ctx = signalutil.SetupSignalContext(ctx)

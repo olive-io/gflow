@@ -21,115 +21,72 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
+	"path/filepath"
 
-	"go.uber.org/zap"
+	"github.com/spf13/cobra"
 
-	"github.com/olive-io/gflow/api/types"
-	"github.com/olive-io/gflow/clientgo"
+	"github.com/olive-io/gflow/pkg/cliutil"
 	"github.com/olive-io/gflow/pkg/signalutil"
+	"github.com/olive-io/gflow/pkg/version"
+	"github.com/olive-io/gflow/runner"
 )
 
-func main() {
-	lg, _ := zap.NewDevelopment()
-	cfg := clientgo.NewConfig("localhost:6550")
-	gfc, err := clientgo.NewClient(cfg)
-	if err != nil {
-		lg.Fatal("create gflow client", zap.Error(err))
-	}
+func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
+	name := "gflow-runner"
+	cfg := runner.NewConfig()
+	app := &cobra.Command{
+		Use:     name,
+		Short:   "the runner component of gflow system",
+		Version: version.ReleaseVersion(),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 
-	ctx := signalutil.SetupSignalContext(context.Background())
-	hostname, _ := os.Hostname()
-	runner := &types.Runner{
-		Uid:         "node1",
-		Name:        "gflow-node1",
-		ListenUrl:   "",
-		Version:     "v0.0.1",
-		HeartbeatMs: 30000,
-		Hostname:    hostname,
-		Metadata:    map[string]string{},
-		Features:    map[string]string{},
-		Transport:   types.Runner_GRPCStream,
-		Cpu:         2,
-		Memory:      4096 * 1024 * 1024,
-	}
-	dispatcher, err := gfc.NewDispatcher(ctx, lg, runner)
-	if err != nil {
-		lg.Fatal("create dispatcher", zap.Error(err))
-	}
-	defer dispatcher.Close()
-
-	go func() {
-		for {
-			next, err := dispatcher.Next()
+			var err error
+			cfgPath, _ := cmd.Flags().GetString("config")
+			cfg, err = runner.FromConfigPath(cfgPath)
 			if err != nil {
-				if err == io.EOF {
-					continue
-				}
-				lg.Error("dispatch error", zap.Error(err))
-				return
+				return fmt.Errorf("load config: %w", err)
+			}
+			if err = cfg.Init(); err != nil {
+				return fmt.Errorf("init config: %w", err)
 			}
 
-			if next.Err != nil {
-				lg.Error("dispatch next error", zap.Error(next.Err))
-				continue
-			}
-
-			if callMsg := next.Call; callMsg != nil {
-				resp, err := call(ctx, lg, callMsg)
-				if err != nil {
-					resp = &types.CallTaskResponse{SeqId: callMsg.SeqId, Error: err.Error()}
-					lg.Error("dispatch call error", zap.Error(err))
-				}
-				_ = dispatcher.CallReply(resp)
-			}
-		}
-	}()
-
-	go func() {
-		timer := time.NewTimer(time.Second * 15)
-		defer timer.Stop()
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-timer.C:
-				stat := &types.RunnerStat{
-					Uid:           runner.Uid,
-					CpuUsed:       0,
-					MemoryUsed:    0,
-					State:         "",
-					Error:         "",
-					Timestamp:     0,
-					Steps:         0,
-					CommitCount:   0,
-					RollbackCount: 0,
-					DestroyCount:  0,
-				}
-				_ = dispatcher.Heartbeat(stat)
-			}
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+			return startRunner(ctx, name, cfg)
+		},
 	}
 
-	lg.Info("shutdown gracefully")
+	app.SetOut(stdout)
+	app.SetErr(stderr)
+	app.SetVersionTemplate(version.GetVersionTemplate())
+
+	app.ResetFlags()
+	flags := app.PersistentFlags()
+
+	var configPath string
+	homeDir, _ := os.UserHomeDir()
+	if homeDir != "" {
+		configPath = filepath.Join(homeDir, ".olive", name+".toml")
+	}
+
+	flags.StringP("config", "C", configPath, "path to the configuration file")
+
+	return app
 }
 
-func call(ctx context.Context, lg *zap.Logger, req *types.CallTaskRequest) (*types.CallTaskResponse, error) {
-	results := make(map[string]*types.Value)
-	results["a"] = types.NewValue("bb")
-
-	resp := &types.CallTaskResponse{
-		SeqId:   req.SeqId,
-		Results: results,
+func startRunner(ctx context.Context, name string, cfg *runner.Config) error {
+	app, err := runner.New(name, cfg)
+	if err != nil {
+		return fmt.Errorf("create %s: %w", name, err)
 	}
 
-	lg.Info("call response", zap.Any("request", req))
+	ctx = signalutil.SetupSignalContext(ctx)
+	return app.Start(ctx)
+}
 
-	return resp, fmt.Errorf("internal error")
+func main() {
+	cmd := newRootCommand(os.Stdout, os.Stderr)
+	os.Exit(cliutil.Run(cmd))
 }
