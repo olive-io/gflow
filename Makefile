@@ -2,12 +2,12 @@ NAME=gflow
 IMAGE_NAME=olive-io/$(NAME)
 GIT_COMMIT=$(shell git rev-parse --short HEAD)
 GIT_TAG=$(shell git describe --abbrev=0 --tags --always --match "v*")
-GIT_VERSION=github.com/olive-io/flow/pkg/version
+GIT_VERSION=github.com/olive-io/gflow/pkg/version
 CGO_ENABLED=0
 BUILD_DATE=$(shell date +%s)
 LDFLAGS=-X $(GIT_VERSION).GitCommit=$(GIT_COMMIT) -X $(GIT_VERSION).GitTag=$(GIT_TAG) -X $(GIT_VERSION).BuildDate=$(BUILD_DATE)
 IMAGE_TAG=$(GIT_TAG)-$(GIT_COMMIT)
-ROOT=github.com/olive-io/flow
+ROOT=github.com/olive-io/gflow
 
 ifeq ($(GOHOSTOS), windows)
         #the `find.exe` is different from `find` in bash/shell.
