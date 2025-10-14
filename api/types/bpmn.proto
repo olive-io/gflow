@@ -75,7 +75,7 @@ message Endpoint {
   string name = 2;
   string description = 3;
   string http_url = 4;
-
+  map<string, string> metadata = 5;
   // request data
   map<string, string> headers = 11;
   map<string, Value> properties = 12;
