@@ -1,0 +1,719 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+    title: GFlow
+    description: Gflow OpenAPI3.0 Document
+    version: b80625b849ebe1c5c72b23ed4cc00e3789f8d273
+paths:
+    /v1/definitions:
+        get:
+            tags:
+                - BpmnRPC
+            operationId: BpmnRPC_ListDefinitions
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: size
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.ListDefinitionsResponse'
+        post:
+            tags:
+                - BpmnRPC
+            operationId: BpmnRPC_DeployDefinition
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rpc.DeployDefinitionsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.DeployDefinitionsResponse'
+    /v1/definitions/{uid}:
+        get:
+            tags:
+                - BpmnRPC
+            operationId: BpmnRPC_GetDefinitions
+            parameters:
+                - name: uid
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: version
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.GetDefinitionsResponse'
+        delete:
+            tags:
+                - BpmnRPC
+            operationId: BpmnRPC_RemoveDefinitions
+            parameters:
+                - name: uid
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: version
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.RemoveDefinitionsResponse'
+    /v1/endpoints:
+        get:
+            tags:
+                - SystemRPC
+            operationId: SystemRPC_ListEndpoints
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: size
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.ListEndpointsResponse'
+        post:
+            tags:
+                - SystemRPC
+            operationId: SystemRPC_AddEndpoints
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rpc.AddEndpointsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.AddEndpointsResponse'
+    /v1/ping:
+        get:
+            tags:
+                - SystemRPC
+            operationId: SystemRPC_Ping
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.PingResponse'
+    /v1/processes:
+        get:
+            tags:
+                - BpmnRPC
+            operationId: BpmnRPC_ListProcess
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: size
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: definitionsUid
+                  in: query
+                  schema:
+                    type: string
+                - name: definitionsVersion
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.ListProcessResponse'
+    /v1/processes/execute:
+        post:
+            tags:
+                - BpmnRPC
+            operationId: BpmnRPC_ExecuteProcess
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rpc.ExecuteProcessRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.ExecuteProcessResponse'
+    /v1/processes/{id}:
+        get:
+            tags:
+                - BpmnRPC
+            operationId: BpmnRPC_GetProcess
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.GetProcessResponse'
+    /v1/runners:
+        get:
+            tags:
+                - SystemRPC
+            operationId: SystemRPC_ListRunners
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: size
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.ListRunnersResponse'
+    /v1/runners/disregister:
+        post:
+            tags:
+                - SystemRPC
+            description: Disregister disregisters runner
+            operationId: SystemRPC_Disregister
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rpc.DisregisterRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.DisregisterResponse'
+    /v1/runners/register:
+        post:
+            tags:
+                - SystemRPC
+            description: Register registers runner
+            operationId: SystemRPC_Register
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rpc.RegisterRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.RegisterResponse'
+    /v1/runners/{id}:
+        get:
+            tags:
+                - SystemRPC
+            operationId: SystemRPC_GetRunner
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: uid
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.GetRunnerResponse'
+components:
+    schemas:
+        rpc.AddEndpointsRequest:
+            type: object
+            properties:
+                endpoints:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/types.Endpoint'
+                target:
+                    type: string
+        rpc.AddEndpointsResponse:
+            type: object
+            properties: {}
+        rpc.DeployDefinitionsRequest:
+            type: object
+            properties:
+                metadata:
+                    type: object
+                    additionalProperties:
+                        type: string
+                content:
+                    type: string
+                    format: bytes
+                description:
+                    type: string
+        rpc.DeployDefinitionsResponse:
+            type: object
+            properties:
+                definitions:
+                    $ref: '#/components/schemas/types.Definitions'
+        rpc.DisregisterRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+        rpc.DisregisterResponse:
+            type: object
+            properties:
+                runner:
+                    $ref: '#/components/schemas/types.Runner'
+        rpc.ExecuteProcessRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                definitionsUid:
+                    type: string
+                definitionsVersion:
+                    type: string
+                priority:
+                    type: string
+                headers:
+                    type: object
+                    additionalProperties:
+                        type: string
+                properties:
+                    type: object
+                    additionalProperties:
+                        $ref: '#/components/schemas/types.Value'
+                dataObjects:
+                    type: object
+                    additionalProperties:
+                        $ref: '#/components/schemas/types.Value'
+        rpc.ExecuteProcessResponse:
+            type: object
+            properties:
+                process:
+                    $ref: '#/components/schemas/types.Process'
+        rpc.GetDefinitionsResponse:
+            type: object
+            properties:
+                definitions:
+                    $ref: '#/components/schemas/types.Definitions'
+        rpc.GetProcessResponse:
+            type: object
+            properties:
+                process:
+                    $ref: '#/components/schemas/types.Process'
+                activities:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/types.FlowNode'
+        rpc.GetRunnerResponse:
+            type: object
+            properties:
+                runner:
+                    $ref: '#/components/schemas/types.Runner'
+                stat:
+                    $ref: '#/components/schemas/types.RunnerStat'
+        rpc.ListDefinitionsResponse:
+            type: object
+            properties:
+                definitionsList:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/types.Definitions'
+                total:
+                    type: string
+        rpc.ListEndpointsResponse:
+            type: object
+            properties:
+                endpoints:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/types.Endpoint'
+                total:
+                    type: string
+        rpc.ListProcessResponse:
+            type: object
+            properties:
+                processes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/types.Process'
+                total:
+                    type: string
+        rpc.ListRunnersResponse:
+            type: object
+            properties:
+                runners:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/types.Runner'
+                total:
+                    type: string
+        rpc.PingResponse:
+            type: object
+            properties:
+                reply:
+                    type: string
+        rpc.RegisterRequest:
+            type: object
+            properties:
+                runner:
+                    $ref: '#/components/schemas/types.Runner'
+        rpc.RegisterResponse:
+            type: object
+            properties:
+                runner:
+                    $ref: '#/components/schemas/types.Runner'
+        rpc.RemoveDefinitionsResponse:
+            type: object
+            properties:
+                definitions:
+                    $ref: '#/components/schemas/types.Definitions'
+        types.BpmnArgs:
+            type: object
+            properties:
+                headers:
+                    type: object
+                    additionalProperties:
+                        type: string
+                properties:
+                    type: object
+                    additionalProperties:
+                        $ref: '#/components/schemas/types.Value'
+                dataObjects:
+                    type: object
+                    additionalProperties:
+                        $ref: '#/components/schemas/types.Value'
+        types.Definitions:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                createAt:
+                    type: string
+                updateAt:
+                    type: string
+                uid:
+                    type: string
+                description:
+                    type: string
+                metadata:
+                    type: object
+                    additionalProperties:
+                        type: string
+                content:
+                    type: string
+                version:
+                    type: string
+                isExecute:
+                    type: boolean
+            description: Definitions bpmn Definition
+        types.Endpoint:
+            type: object
+            properties:
+                id:
+                    type: string
+                createAt:
+                    type: string
+                updateAt:
+                    type: string
+                kind:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                httpUrl:
+                    type: string
+                metadata:
+                    type: object
+                    additionalProperties:
+                        type: string
+                targets:
+                    type: array
+                    items:
+                        type: string
+                headers:
+                    type: object
+                    additionalProperties:
+                        type: string
+                    description: request data
+                properties:
+                    type: object
+                    additionalProperties:
+                        $ref: '#/components/schemas/types.Value'
+                dataObjects:
+                    type: object
+                    additionalProperties:
+                        $ref: '#/components/schemas/types.Value'
+                results:
+                    type: object
+                    additionalProperties:
+                        $ref: '#/components/schemas/types.Value'
+                    description: response data
+        types.FlowNode:
+            type: object
+            properties:
+                id:
+                    type: string
+                createAt:
+                    type: string
+                name:
+                    type: string
+                flowId:
+                    type: string
+                flowType:
+                    type: integer
+                    format: enum
+                kind:
+                    type: string
+                target:
+                    type: string
+                headers:
+                    type: object
+                    additionalProperties:
+                        type: string
+                properties:
+                    type: object
+                    additionalProperties:
+                        $ref: '#/components/schemas/types.Value'
+                dataObjects:
+                    type: object
+                    additionalProperties:
+                        $ref: '#/components/schemas/types.Value'
+                results:
+                    type: object
+                    additionalProperties:
+                        $ref: '#/components/schemas/types.Value'
+                retries:
+                    type: integer
+                    format: int32
+                startTime:
+                    type: string
+                endTime:
+                    type: string
+                processId:
+                    type: string
+                processUid:
+                    type: string
+                stage:
+                    type: integer
+                    format: enum
+                status:
+                    type: integer
+                    format: enum
+                errMsg:
+                    type: string
+        types.Process:
+            type: object
+            properties:
+                id:
+                    type: string
+                createAt:
+                    type: string
+                updateAt:
+                    type: string
+                name:
+                    type: string
+                uid:
+                    type: string
+                metadata:
+                    type: object
+                    additionalProperties:
+                        type: string
+                priority:
+                    type: string
+                args:
+                    $ref: '#/components/schemas/types.BpmnArgs'
+                definitionsUid:
+                    type: string
+                definitionsVersion:
+                    type: string
+                definitionsProcess:
+                    type: string
+                context:
+                    $ref: '#/components/schemas/types.ProcessContext'
+                attempts:
+                    type: integer
+                    format: int32
+                startAt:
+                    type: string
+                endAt:
+                    type: string
+                stage:
+                    type: integer
+                    format: enum
+                status:
+                    type: integer
+                    format: enum
+                errMsg:
+                    type: string
+        types.ProcessContext:
+            type: object
+            properties:
+                variables:
+                    type: object
+                    additionalProperties:
+                        $ref: '#/components/schemas/types.Value'
+                dataObjects:
+                    type: object
+                    additionalProperties:
+                        $ref: '#/components/schemas/types.Value'
+        types.Runner:
+            type: object
+            properties:
+                id:
+                    type: string
+                createAt:
+                    type: string
+                uid:
+                    type: string
+                    description: Unique identified by runner
+                listenUrl:
+                    type: string
+                    description: listenURL is the URL the runner is listening on.
+                version:
+                    type: string
+                heartbeatMs:
+                    type: string
+                hostname:
+                    type: string
+                metadata:
+                    type: object
+                    additionalProperties:
+                        type: string
+                features:
+                    type: object
+                    additionalProperties:
+                        type: string
+                transport:
+                    type: integer
+                    format: enum
+                cpu:
+                    type: string
+                memory:
+                    type: string
+                onlineTimestamp:
+                    type: string
+                offlineTimestamp:
+                    type: string
+                online:
+                    type: integer
+                    format: int32
+                state:
+                    type: integer
+                    format: enum
+                message:
+                    type: string
+            description: Runner means olive-runner, the runner component of olive system
+        types.RunnerStat:
+            type: object
+            properties:
+                uid:
+                    type: string
+                cpuUsed:
+                    type: number
+                    format: double
+                memoryUsed:
+                    type: number
+                    format: double
+                state:
+                    type: string
+                error:
+                    type: string
+                timestamp:
+                    type: string
+                steps:
+                    type: string
+                commitCount:
+                    type: string
+                rollbackCount:
+                    type: string
+                destroyCount:
+                    type: string
+        types.Value:
+            type: object
+            properties:
+                type:
+                    type: integer
+                    format: enum
+                kind:
+                    type: string
+                value:
+                    type: string
+                default:
+                    type: string
+tags:
+    - name: BpmnRPC
+    - name: SystemRPC

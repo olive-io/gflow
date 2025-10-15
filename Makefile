@@ -17,11 +17,11 @@ ifeq ($(GOHOSTOS), windows)
         Git_Bash=$(subst \,/,$(subst cmd\,bin\bash.exe,$(dir $(shell where git))))
         TYPES_PROTO_FILES=$(shell $(Git_Bash) -c "find api/types -name *.proto")
         RPC_PROTO_FILES=$(shell $(Git_Bash) -c "find api/rpc -name *.proto")
-        #OPENAPI_PROTO_FILES=$(shell $(Git_Bash) -c "find api/rpc/consolepb -name *.proto")
+        OPENAPI_PROTO_FILES=$(shell $(Git_Bash) -c "find api/rpc -name *.proto")
 else
         TYPES_PROTO_FILES=$(shell find api/types -name *.proto)
         RPC_PROTO_FILES=$(shell find api/rpc -name *.proto)
-        #OPENAPI_PROTO_FILES=$(shell find api/rpc/consolepb -name *.proto)
+        OPENAPI_PROTO_FILES=$(shell find api/rpc -name *.proto)
 endif
 
 
@@ -64,10 +64,10 @@ apis:
     		--validate_out=paths=source_relative,lang=go:./api \
     		--grpc-gateway_out=paths=source_relative:./api \
     		$(RPC_PROTO_FILES)
-	#protoc --proto_path=./api \
-#			--proto_path=./third_party \
-#			--openapi_out=fq_schema_naming=true,title="olive",description="Gflow OpenAPI3.0 Document",version=$(GIT_TAG),default_response=false:./console/docs \
-#			$(OPENAPI_PROTO_FILES)
+	protoc --proto_path=./api \
+			--proto_path=./third-party \
+			--openapi_out=fq_schema_naming=true,title="GFlow",description="Gflow OpenAPI3.0 Document",version=$(GIT_TAG),default_response=false:./server/docs \
+			$(OPENAPI_PROTO_FILES)
 
 
 docker:
