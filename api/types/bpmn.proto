@@ -124,22 +124,24 @@ message BpmnArgs {
 
 message Process {
   enum ProcessStage {
+    UnknownStage = 0;
     // to be 'Prepare' where Process created
-    Prepare = 0;
-    // to be 'Ready' where olive-server scheduled
-    Ready = 1;
-    Commit = 2;
-    Rollback = 3;
-    Destroy = 4;
-    Finish = 5;
+    Prepare = 1;
+    // to be 'Ready' where gflow scheduled
+    Ready = 2;
+    Commit = 3;
+    Rollback = 4;
+    Destroy = 5;
+    Finish = 6;
   }
 
   enum ProcessStatus {
-    Waiting = 0;
-    Running = 1;
-    Success = 2;
-    Warn = 3;
-    Failed = 4;
+    UnknownStatus = 0;
+    Waiting = 1;
+    Running = 2;
+    Success = 3;
+    Warn = 4;
+    Failed = 5;
   }
 
   int64 id = 1 [(tagger.tags) = "gorm:\"primary\""];

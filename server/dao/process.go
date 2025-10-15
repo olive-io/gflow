@@ -38,8 +38,6 @@ func NewListProcessOptions(id string, version uint64) *ListProcessOptions {
 	return &ListProcessOptions{
 		DefinitionUID:      id,
 		definitionsVersion: version,
-		ProcessStage:       -1,
-		ProcessStatus:      -1,
 	}
 }
 
@@ -80,11 +78,11 @@ func (dao *ProcessDao) ListProcesses(ctx context.Context, page, size int32, opti
 			tx = tx.Where("definitions_version = ?", defVersion)
 			countTx = countTx.Where("definitions_version = ?", defVersion)
 		}
-		if status := options.ProcessStatus; status != -1 {
+		if status := options.ProcessStatus; status > 0 {
 			tx = tx.Where("status = ?", status)
 			countTx = countTx.Where("status = ?", status)
 		}
-		if stage := options.ProcessStage; stage != -1 {
+		if stage := options.ProcessStage; stage > 0 {
 			tx = tx.Where("process_stage = ?", stage)
 		}
 	}

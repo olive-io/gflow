@@ -219,6 +219,8 @@ func (bgs *bpmnGRPCServer) ExecuteProcess(ctx context.Context, req *pb.ExecutePr
 func (bgs *bpmnGRPCServer) ListProcess(ctx context.Context, req *pb.ListProcessRequest) (*pb.ListProcessResponse, error) {
 	page, size := req.Page, req.Size
 	options := dao.NewListProcessOptions(req.DefinitionsUid, req.DefinitionsVersion)
+	options.ProcessStatus = types.Process_ProcessStatus(req.ProcessStatus)
+	options.ProcessStage = types.Process_ProcessStage(req.ProcessStage)
 	processes, total, err := bgs.processDao.ListProcesses(ctx, page, size, options)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())

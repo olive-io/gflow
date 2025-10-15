@@ -41,6 +41,14 @@ type ListDefinitionsRequest struct {
 	Page, Size int32
 }
 
+type ListProcessesRequest struct {
+	Page, Size         int32
+	DefinitionUID      string
+	DefinitionsVersion uint64
+	ProcessStatus      types.Process_ProcessStatus
+	ProcessStage       types.Process_ProcessStage
+}
+
 type ExecuteProcessRequest struct {
 	Name               string
 	DefinitionsUid     string
@@ -161,11 +169,11 @@ func (c *Client) Register(ctx context.Context, runner *types.Runner) (*types.Run
 	in := &pb.RegisterRequest{
 		Runner: runner,
 	}
-	rsp, err := c.systemClient.Register(ctx, in, opts...)
+	resp, err := c.systemClient.Register(ctx, in, opts...)
 	if err != nil {
 		return nil, parseErr(err)
 	}
-	return rsp.Runner, nil
+	return resp.Runner, nil
 }
 
 func (c *Client) Disregister(ctx context.Context, uid string) (*types.Runner, error) {
@@ -174,11 +182,11 @@ func (c *Client) Disregister(ctx context.Context, uid string) (*types.Runner, er
 	in := &pb.DisregisterRequest{
 		Id: uid,
 	}
-	rsp, err := c.systemClient.Disregister(ctx, in, opts...)
+	resp, err := c.systemClient.Disregister(ctx, in, opts...)
 	if err != nil {
 		return nil, parseErr(err)
 	}
-	return rsp.Runner, nil
+	return resp.Runner, nil
 }
 
 func (c *Client) ListRunners(ctx context.Context, req *ListRunnersRequest) ([]*types.Runner, int64, error) {
@@ -189,11 +197,11 @@ func (c *Client) ListRunners(ctx context.Context, req *ListRunnersRequest) ([]*t
 		Size: req.Size,
 	}
 
-	rsp, err := c.systemClient.ListRunners(ctx, in, opts...)
+	resp, err := c.systemClient.ListRunners(ctx, in, opts...)
 	if err != nil {
 		return nil, 0, parseErr(err)
 	}
-	return rsp.Runners, rsp.Total, nil
+	return resp.Runners, resp.Total, nil
 }
 
 func (c *Client) GetRunner(ctx context.Context, id int64, uid string) (*types.Runner, error) {
@@ -204,11 +212,11 @@ func (c *Client) GetRunner(ctx context.Context, id int64, uid string) (*types.Ru
 		Uid: uid,
 	}
 
-	rsp, err := c.systemClient.GetRunner(ctx, in, opts...)
+	resp, err := c.systemClient.GetRunner(ctx, in, opts...)
 	if err != nil {
 		return nil, parseErr(err)
 	}
-	return rsp.Runner, nil
+	return resp.Runner, nil
 }
 
 func (c *Client) AddEndpoints(ctx context.Context, endpoints []*types.Endpoint, target string) error {
@@ -234,11 +242,11 @@ func (c *Client) DeployDefinitions(ctx context.Context, definitionsXML []byte, d
 
 	opts := c.buildCallOptions()
 
-	rsp, err := c.bpmnClient.DeployDefinition(ctx, req, opts...)
+	resp, err := c.bpmnClient.DeployDefinition(ctx, req, opts...)
 	if err != nil {
 		return nil, parseErr(err)
 	}
-	return rsp.Definitions, nil
+	return resp.Definitions, nil
 }
 
 func (c *Client) ListDefinitions(ctx context.Context, in *ListDefinitionsRequest) ([]*types.Definitions, int64, error) {
@@ -248,11 +256,30 @@ func (c *Client) ListDefinitions(ctx context.Context, in *ListDefinitionsRequest
 	}
 
 	opts := c.buildCallOptions()
-	rsp, err := c.bpmnClient.ListDefinitions(ctx, req, opts...)
+	resp, err := c.bpmnClient.ListDefinitions(ctx, req, opts...)
 	if err != nil {
 		return nil, 0, parseErr(err)
 	}
-	return rsp.DefinitionsList, rsp.Total, nil
+	return resp.DefinitionsList, resp.Total, nil
+}
+
+func (c *Client) ListProcesses(ctx context.Context, in *ListProcessesRequest) ([]*types.Process, int64, error) {
+	opts := c.buildCallOptions()
+
+	req := &pb.ListProcessRequest{
+		Page:               in.Page,
+		Size:               in.Size,
+		DefinitionsUid:     in.DefinitionUID,
+		DefinitionsVersion: in.DefinitionsVersion,
+		ProcessStatus:      int32(in.ProcessStatus),
+		ProcessStage:       int32(in.ProcessStage),
+	}
+
+	resp, err := c.bpmnClient.ListProcess(ctx, req, opts...)
+	if err != nil {
+		return nil, 0, parseErr(err)
+	}
+	return resp.Processes, resp.Total, nil
 }
 
 func (c *Client) GetDefinitions(ctx context.Context, uid string, version uint64) (*types.Definitions, error) {
@@ -262,11 +289,11 @@ func (c *Client) GetDefinitions(ctx context.Context, uid string, version uint64)
 	}
 
 	opts := c.buildCallOptions()
-	rsp, err := c.bpmnClient.GetDefinitions(ctx, req, opts...)
+	resp, err := c.bpmnClient.GetDefinitions(ctx, req, opts...)
 	if err != nil {
 		return nil, parseErr(err)
 	}
-	return rsp.Definitions, nil
+	return resp.Definitions, nil
 }
 
 func (c *Client) ExecuteProcess(ctx context.Context, options *ExecuteProcessRequest) (*types.Process, error) {
@@ -280,11 +307,11 @@ func (c *Client) ExecuteProcess(ctx context.Context, options *ExecuteProcessRequ
 		DataObjects:        options.DataObjects,
 	}
 	opts := c.buildCallOptions()
-	rsp, err := c.bpmnClient.ExecuteProcess(ctx, req, opts...)
+	resp, err := c.bpmnClient.ExecuteProcess(ctx, req, opts...)
 	if err != nil {
 		return nil, parseErr(err)
 	}
-	return rsp.Process, nil
+	return resp.Process, nil
 }
 
 func (c *Client) Close() error {

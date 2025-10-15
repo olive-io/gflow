@@ -5,7 +5,7 @@ openapi: 3.0.3
 info:
     title: GFlow
     description: Gflow OpenAPI3.0 Document
-    version: b80625b849ebe1c5c72b23ed4cc00e3789f8d273
+    version: eb518c860fe248a0e0f11439906f0b19be3da85b
 paths:
     /v1/definitions:
         get:
@@ -166,6 +166,16 @@ paths:
                   in: query
                   schema:
                     type: string
+                - name: processStatus
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: processStage
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
             responses:
                 "200":
                     description: OK

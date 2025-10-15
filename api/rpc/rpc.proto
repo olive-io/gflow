@@ -259,6 +259,8 @@ message ListProcessRequest {
   int32 size = 2 [(validate.rules).int32.gt = 0];
   string definitions_uid = 3;
   uint64 definitions_version = 4;
+  int32 process_status = 5;
+  int32 process_stage = 6;
 }
 
 message ListProcessResponse {
