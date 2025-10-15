@@ -38,7 +38,14 @@ message Runner {
     HTTP = 2;
   }
 
-  uint64 id = 1 [(tagger.tags) = "gorm:\"primary\""];
+  enum State {
+    Unknown = 0;
+    Ok = 1;
+    Warn = 2;
+    Error = 3;
+  }
+
+  int64 id = 1 [(tagger.tags) = "gorm:\"primary\""];
 
   int64 create_at = 2 [(tagger.tags) = "gorm:\"autoCreateTime\""];
 
@@ -67,6 +74,9 @@ message Runner {
   int64 online_timestamp = 13;
   int64 offline_timestamp = 14;
   int32 online = 15;
+
+  State state = 21;
+  string message = 22;
 }
 
 message RunnerStat {

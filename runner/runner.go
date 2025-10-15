@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -40,6 +41,13 @@ type Runner struct {
 	name string
 
 	tr *atomic.Pointer[types.Runner]
+
+	endpoints map[string]*types.Endpoint
+
+	taskDefines map[string]Task
+
+	pmu   sync.RWMutex
+	pools map[string]Task
 }
 
 func New(name string, cfg *Config) (*Runner, error) {
@@ -79,10 +87,13 @@ func New(name string, cfg *Config) (*Runner, error) {
 	trPtr.Store(tr)
 
 	runner := &Runner{
-		lg:   lg,
-		cfg:  cfg,
-		name: name,
-		tr:   &trPtr,
+		lg:          lg,
+		cfg:         cfg,
+		name:        name,
+		tr:          &trPtr,
+		endpoints:   make(map[string]*types.Endpoint),
+		taskDefines: make(map[string]Task),
+		pools:       make(map[string]Task),
 	}
 
 	return runner, nil
@@ -92,8 +103,8 @@ func (r *Runner) Start(ctx context.Context) error {
 	lg := r.lg
 
 	runner := r.tr.Load()
-	for _, target := range r.cfg.TargetURLs() {
-		ccfg := clientgo.NewConfig(target)
+	for _, targetURL := range r.cfg.TargetURLs() {
+		ccfg := clientgo.NewConfig(targetURL)
 		if r.cfg.CertFile != "" && r.cfg.KeyFile != "" {
 			ccfg.TLS = &clientgo.ConfigTLS{
 				CertFile: r.cfg.CertFile,
@@ -104,7 +115,14 @@ func (r *Runner) Start(ctx context.Context) error {
 
 		gfc, err := clientgo.NewClient(ccfg)
 		if err != nil {
-			return fmt.Errorf("connect to %s: %w", target, err)
+			return fmt.Errorf("connect to %s: %w", targetURL, err)
+		}
+
+		runnerUID := runner.Uid
+		endpoints := r.ListEndpoints()
+		err = gfc.AddEndpoints(ctx, endpoints, runnerUID)
+		if err != nil {
+			return fmt.Errorf("add endpoints: %w", err)
 		}
 
 		dispatcher, err := gfc.NewDispatcher(ctx, lg, runner)
@@ -115,7 +133,7 @@ func (r *Runner) Start(ctx context.Context) error {
 		id := dispatcher.ID()
 		lg.Info("start dispatcher",
 			zap.String("id", id),
-			zap.String("target", target))
+			zap.String("target", targetURL))
 
 		go func() {
 			for {
@@ -138,12 +156,11 @@ func (r *Runner) Start(ctx context.Context) error {
 				}
 
 				if callMsg := event.Call; callMsg != nil {
-					resp, cerr := r.handle(ctx, callMsg)
-					if cerr != nil {
-						resp = &types.CallTaskResponse{SeqId: callMsg.SeqId, Error: cerr.Error()}
+					resp := r.Handle(ctx, callMsg)
+					if len(resp.Error) != 0 {
 						lg.Error("dispatch call error",
 							zap.String("id", id),
-							zap.Error(cerr))
+							zap.String("error", resp.Error))
 					}
 					if err = dispatcher.CallReply(resp); err != nil {
 						lg.Error("dispatch reply",

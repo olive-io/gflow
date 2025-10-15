@@ -63,7 +63,7 @@ func (s SimpleTask) String() string {
 func TestExtractTask(t *testing.T) {
 	st := &SimpleTask{}
 
-	endpoint, found := extractTask(st, WithName("test"), WithRequest(new(TestRequest)), WithResponse(new(TestResponse)))
+	endpoint, _, found := extractTask(st, WithName("test"), WithRequest(new(TestRequest)), WithResponse(new(TestResponse)))
 	if !found {
 		t.Fatal("failed to extract task")
 	}

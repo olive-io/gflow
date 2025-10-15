@@ -44,21 +44,26 @@ func NewListProcessOptions(id string, version uint64) *ListProcessOptions {
 }
 
 type ProcessDao struct {
-	db *dbutil.DB
+	*InnerDao[types.Process]
+
+	nodeDao *InnerDao[types.FlowNode]
 }
 
 func NewProcessDao(db *dbutil.DB) (*ProcessDao, error) {
-	err := db.AutoMigrate(
-		&types.Process{},
-		&types.FlowNode{},
-	)
+	inner, err := newDao(db, types.Process{})
 	if err != nil {
 		return nil, fmt.Errorf("auto migrate process models: %w", err)
 	}
 
-	dao := &ProcessDao{
-		db: db,
+	nodeDao, err := newDao(db, types.FlowNode{})
+	if err != nil {
+		return nil, fmt.Errorf("auto migrate flowNode models: %w", err)
 	}
+	dao := &ProcessDao{
+		InnerDao: inner,
+		nodeDao:  nodeDao,
+	}
+
 	return dao, nil
 }
 
@@ -109,18 +114,6 @@ func (dao *ProcessDao) ListProcesses(ctx context.Context, page, size int32, opti
 	return processes, total, nil
 }
 
-func (dao *ProcessDao) GetProcess(ctx context.Context, id int64) (*types.Process, error) {
-	tx := dao.db.NewSession(ctx).Model(&types.Process{})
-
-	var process types.Process
-	err := tx.Where("id = ?", id).First(&process).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return &process, nil
-}
-
 func (dao *ProcessDao) ListFlowNodes(ctx context.Context, pid int64) ([]*types.FlowNode, error) {
 	tx := dao.db.NewSession(ctx).Model(&types.FlowNode{})
 
@@ -131,22 +124,6 @@ func (dao *ProcessDao) ListFlowNodes(ctx context.Context, pid int64) ([]*types.F
 	}
 
 	return nodes, nil
-}
-
-func (dao *ProcessDao) CreateProcess(ctx context.Context, process *types.Process) error {
-	tx := dao.db.NewSession(ctx).Model(&types.Process{})
-	if err := tx.Create(process).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (dao *ProcessDao) UpdateProcess(ctx context.Context, process *types.Process) error {
-	tx := dao.db.NewSession(ctx).Model(&types.Process{})
-	if err := tx.Where("id = ?", process.Id).Updates(process).Error; err != nil {
-		return err
-	}
-	return nil
 }
 
 func (dao *ProcessDao) SaveFlowNode(ctx context.Context, node *types.FlowNode) error {

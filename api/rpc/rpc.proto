@@ -60,6 +60,11 @@ service SystemRPC {
       get: "/v1/runners/{id}"
     };
   };
+  rpc ListEndpoints(ListEndpointsRequest) returns (ListEndpointsResponse) {
+    option (google.api.http) = {
+      get: "/v1/endpoints"
+    };
+  }
   rpc AddEndpoints(AddEndpointsRequest) returns (AddEndpointsResponse) {
     option (google.api.http) = {
       post: "/v1/endpoints"
@@ -102,7 +107,7 @@ message ListRunnersResponse {
 }
 
 message GetRunnerRequest {
-  uint64 id = 1;
+  int64 id = 1;
   string uid = 2;
 }
 
@@ -111,8 +116,19 @@ message GetRunnerResponse {
   types.RunnerStat stat = 2;
 }
 
+message ListEndpointsRequest {
+  int32 page = 1;
+  int32 size = 2;
+}
+
+message ListEndpointsResponse {
+  repeated types.Endpoint endpoints = 1;
+  int64 total = 2;
+}
+
 message AddEndpointsRequest {
   repeated types.Endpoint endpoints = 1;
+  string target = 2;
 }
 
 message AddEndpointsResponse {}

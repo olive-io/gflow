@@ -83,7 +83,7 @@ func (bgs *bpmnGRPCServer) DeployDefinition(ctx context.Context, req *pb.DeployD
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("no executable process found"))
 	}
 
-	definitions, err := bgs.definitionsDao.GetDefinitions(ctx, 0, uid)
+	definitions, err := bgs.definitionsDao.GetWithVersion(ctx, 0, uid, 0)
 	if err != nil {
 		if !dao.IsNotFound(err) {
 			return nil, status.Error(codes.Internal, err.Error())
@@ -96,7 +96,7 @@ func (bgs *bpmnGRPCServer) DeployDefinition(ctx context.Context, req *pb.DeployD
 			Version:     1,
 			IsExecute:   true,
 		}
-		id, err := bgs.definitionsDao.CreateDefinitions(ctx, definitions)
+		id, err := bgs.definitionsDao.Create(ctx, definitions)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -122,7 +122,7 @@ func (bgs *bpmnGRPCServer) DeployDefinition(ctx context.Context, req *pb.DeployD
 		definitions.Content = string(req.Content)
 		definitions.Version = definitions.Version + 1
 	}
-	if err = bgs.definitionsDao.UpdateDefinitions(ctx, definitions); err != nil {
+	if err = bgs.definitionsDao.Update(ctx, definitions.Id, definitions); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -136,8 +136,8 @@ func (bgs *bpmnGRPCServer) DeployDefinition(ctx context.Context, req *pb.DeployD
 }
 
 func (bgs *bpmnGRPCServer) ListDefinitions(ctx context.Context, req *pb.ListDefinitionsRequest) (*pb.ListDefinitionsResponse, error) {
-	page, size := req.Page, req.Size
-	list, total, err := bgs.definitionsDao.ListDefinitions(ctx, page, size)
+	page, size := int(req.Page), int(req.Size)
+	list, total, err := bgs.definitionsDao.PageList(ctx, page, size, nil)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -150,7 +150,7 @@ func (bgs *bpmnGRPCServer) ListDefinitions(ctx context.Context, req *pb.ListDefi
 }
 
 func (bgs *bpmnGRPCServer) GetDefinitions(ctx context.Context, req *pb.GetDefinitionsRequest) (*pb.GetDefinitionsResponse, error) {
-	definitions, err := bgs.definitionsDao.GetDefinitionsWithVersion(ctx, 0, req.Uid, req.Version)
+	definitions, err := bgs.definitionsDao.GetWithVersion(ctx, 0, req.Uid, req.Version)
 	if err != nil {
 		if dao.IsNotFound(err) {
 			return nil, status.Error(codes.NotFound, err.Error())
@@ -172,7 +172,7 @@ func (bgs *bpmnGRPCServer) ExecuteProcess(ctx context.Context, req *pb.ExecutePr
 	definitionUID := req.DefinitionsUid
 	version := req.DefinitionsVersion
 
-	definitions, err := bgs.definitionsDao.GetDefinitionsWithVersion(ctx, 0, definitionUID, version)
+	definitions, err := bgs.definitionsDao.GetWithVersion(ctx, 0, definitionUID, version)
 	if err != nil {
 		if dao.IsNotFound(err) {
 			return nil, status.Error(codes.NotFound, err.Error())
@@ -198,7 +198,7 @@ func (bgs *bpmnGRPCServer) ExecuteProcess(ctx context.Context, req *pb.ExecutePr
 		},
 	}
 
-	if err = bgs.processDao.CreateProcess(ctx, process); err != nil {
+	if _, err = bgs.processDao.Create(ctx, process); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -232,7 +232,7 @@ func (bgs *bpmnGRPCServer) ListProcess(ctx context.Context, req *pb.ListProcessR
 }
 
 func (bgs *bpmnGRPCServer) GetProcess(ctx context.Context, req *pb.GetProcessRequest) (*pb.GetProcessResponse, error) {
-	process, err := bgs.processDao.GetProcess(ctx, req.Id)
+	process, err := bgs.processDao.Get(ctx, req.Id)
 	if err != nil {
 		if dao.IsNotFound(err) {
 			return nil, status.Error(codes.NotFound, err.Error())
@@ -268,7 +268,7 @@ func (bgs *bpmnGRPCServer) process(wch *scheduler.WatchChan) {
 			continue
 		}
 		if p := rsp.Process; p != nil {
-			err := bgs.processDao.UpdateProcess(ctx, p)
+			err := bgs.processDao.Update(ctx, p.Id, p)
 			if err != nil {
 				lg.Error("update process",
 					zap.Int64("id", p.Id),

@@ -51,7 +51,8 @@ func WithTarget(target string) Option {
 // DoOptions contains runtime options for plugin execution.
 // It provides metadata storage for passing additional context during plugin execution.
 type DoOptions struct {
-	Stage    types.CallTaskRequest_Stage
+	Stage    types.CallTaskStage
+	Process  int64
 	FlowType types.FlowNodeType
 	Kind     string
 	Name     string
@@ -76,6 +77,12 @@ func (do *DoOptions) Get(key string) (any, bool) {
 // DoOption is a function type for configuring plugin execution options.
 type DoOption func(o *DoOptions)
 
+func DoWithProcess(process int64) DoOption {
+	return func(o *DoOptions) {
+		o.Process = process
+	}
+}
+
 func DoWithName(name string) DoOption {
 	return func(o *DoOptions) {
 		o.Name = name
@@ -94,7 +101,7 @@ func DoWithTaskType(flowType types.FlowNodeType) DoOption {
 	}
 }
 
-func DoWithTaskStage(stage types.CallTaskRequest_Stage) DoOption {
+func DoWithTaskStage(stage types.CallTaskStage) DoOption {
 	return func(o *DoOptions) {
 		o.Stage = stage
 	}

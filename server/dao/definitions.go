@@ -25,71 +25,22 @@ import (
 )
 
 type DefinitionsDao struct {
-	db *dbutil.DB
+	*InnerDao[types.Definitions]
 }
 
 func NewDefinitionsDao(db *dbutil.DB) (*DefinitionsDao, error) {
-	err := db.AutoMigrate(
-		&types.Definitions{},
-	)
+	inner, err := newDao(db, types.Definitions{})
 	if err != nil {
 		return nil, fmt.Errorf("auto migrate definitions models: %w", err)
 	}
-
 	dao := &DefinitionsDao{
-		db: db,
+		InnerDao: inner,
 	}
 
 	return dao, nil
 }
 
-func (dao *DefinitionsDao) ListDefinitions(ctx context.Context, page, size int32) ([]*types.Definitions, int64, error) {
-	tx := dao.db.NewSession(ctx).Model(&types.Definitions{})
-
-	total := int64(0)
-	err := tx.Count(&total).Error
-	if err != nil {
-		return nil, 0, err
-	}
-
-	offset := int((page - 1) * size)
-	limit := int(size)
-	definitionsList := make([]*types.Definitions, 0)
-	tx = dao.db.NewSession(ctx).Model(&types.Definitions{})
-	if offset > 0 {
-		tx = tx.Offset(offset)
-	}
-	if limit > 0 {
-		tx = tx.Limit(limit)
-	}
-	err = tx.Order("id desc").Find(&definitionsList).Error
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return definitionsList, total, nil
-}
-
-func (dao *DefinitionsDao) GetDefinitions(ctx context.Context, id int64, uid string) (*types.Definitions, error) {
-	tx := dao.db.NewSession(ctx).Model(&types.Definitions{})
-
-	var definitions types.Definitions
-
-	if id != 0 {
-		tx = tx.Where("id = ?", id)
-	}
-	if uid != "" {
-		tx = tx.Where("uid = ?", uid)
-	}
-
-	err := tx.First(&definitions).Error
-	if err != nil {
-		return nil, err
-	}
-	return &definitions, nil
-}
-
-func (dao *DefinitionsDao) GetDefinitionsWithVersion(ctx context.Context, id int64, uid string, version uint64) (*types.Definitions, error) {
+func (dao *DefinitionsDao) GetWithVersion(ctx context.Context, id int64, uid string, version uint64) (*types.Definitions, error) {
 	tx := dao.db.NewSession(ctx).Model(&types.Definitions{})
 
 	var definitions types.Definitions
@@ -111,26 +62,9 @@ func (dao *DefinitionsDao) GetDefinitionsWithVersion(ctx context.Context, id int
 	return &definitions, nil
 }
 
-func (dao *DefinitionsDao) CreateDefinitions(ctx context.Context, definitions *types.Definitions) (int64, error) {
-	tx := dao.db.NewSession(ctx).Model(&types.Definitions{})
-
+func (dao *DefinitionsDao) Create(ctx context.Context, definitions *types.Definitions) (int64, error) {
 	if definitions.Version == 0 {
 		definitions.Version = 1
 	}
-	err := tx.Create(&definitions).Error
-	if err != nil {
-		return 0, err
-	}
-
-	return tx.RowsAffected, nil
-}
-
-func (dao *DefinitionsDao) UpdateDefinitions(ctx context.Context, definitions *types.Definitions) error {
-	tx := dao.db.NewSession(ctx).Model(&types.Definitions{})
-	err := tx.Where("id = ?", definitions.Id).Updates(definitions).Error
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return dao.InnerDao.Create(ctx, definitions)
 }

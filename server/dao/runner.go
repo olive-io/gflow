@@ -25,25 +25,22 @@ import (
 )
 
 type RunnerDao struct {
-	db *dbutil.DB
+	*InnerDao[types.Runner]
 }
 
 func NewRunnerDao(db *dbutil.DB) (*RunnerDao, error) {
-	err := db.AutoMigrate(
-		&types.Runner{},
-	)
+	inner, err := newDao(db, types.Runner{})
 	if err != nil {
 		return nil, fmt.Errorf("auto migrate runner models: %w", err)
 	}
-
 	dao := &RunnerDao{
-		db: db,
+		InnerDao: inner,
 	}
 
 	return dao, nil
 }
 
-func (dao *RunnerDao) FindRunners(ctx context.Context) ([]*types.Runner, error) {
+func (dao *RunnerDao) Find(ctx context.Context) ([]*types.Runner, error) {
 	tx := dao.db.NewSession(ctx).Model(&types.Runner{})
 
 	runners := make([]*types.Runner, 0)
@@ -55,34 +52,7 @@ func (dao *RunnerDao) FindRunners(ctx context.Context) ([]*types.Runner, error) 
 	return runners, nil
 }
 
-func (dao *RunnerDao) ListRunners(ctx context.Context, page, size int32) ([]*types.Runner, int64, error) {
-	tx := dao.db.NewSession(ctx).Model(&types.Runner{})
-
-	total := int64(0)
-	err := tx.Count(&total).Error
-	if err != nil {
-		return nil, 0, err
-	}
-
-	offset := int((page - 1) * size)
-	limit := int(size)
-	runners := make([]*types.Runner, 0)
-	tx = dao.db.NewSession(ctx).Model(&types.Runner{})
-	if offset > 0 {
-		tx = tx.Offset(offset)
-	}
-	if limit > 0 {
-		tx = tx.Limit(limit)
-	}
-	err = tx.Order("id desc").Find(&runners).Error
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return runners, total, nil
-}
-
-func (dao *RunnerDao) GetRunner(ctx context.Context, id uint64, uid string) (*types.Runner, error) {
+func (dao *RunnerDao) Get(ctx context.Context, id int64, uid string) (*types.Runner, error) {
 	tx := dao.db.NewSession(ctx).Model(&types.Runner{})
 
 	if id != 0 {
@@ -100,29 +70,7 @@ func (dao *RunnerDao) GetRunner(ctx context.Context, id uint64, uid string) (*ty
 	return &runner, nil
 }
 
-func (dao *RunnerDao) CreateRunner(ctx context.Context, runner *types.Runner) error {
-	tx := dao.db.NewSession(ctx).Model(&types.Runner{})
-
-	err := tx.Create(runner).Error
-	if err != nil {
-		return err
-	}
-	runner.Id = uint64(tx.RowsAffected)
-
-	return nil
-}
-
-func (dao *RunnerDao) UpdateRunner(ctx context.Context, runner *types.Runner) error {
-	tx := dao.db.NewSession(ctx).Model(&types.Runner{})
-
-	err := tx.Where("uid = ?", runner.Uid).Updates(runner).Error
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (dao *RunnerDao) RemoveRunner(ctx context.Context, id uint64, uid string) error {
+func (dao *RunnerDao) Delete(ctx context.Context, id int64, uid string) error {
 	tx := dao.db.NewSession(ctx).Model(&types.Runner{})
 
 	if id != 0 {

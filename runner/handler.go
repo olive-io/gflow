@@ -20,14 +20,16 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strings"
-	"sync"
 	"time"
 
 	"go.uber.org/zap"
 
 	"github.com/olive-io/gflow/api/types"
 )
+
+type TaskClone interface {
+	Clone() TaskClone
+}
 
 type Task interface {
 	Commit(ctx context.Context, request any) (any, error)
@@ -44,28 +46,56 @@ type taskImpl struct {
 	opt *Options
 }
 
+func (impl *taskImpl) Clone() Task {
+	out := new(taskImpl)
+	out.Task = impl.Task
+	out.opt = &Options{
+		Name:     impl.opt.Name,
+		Request:  impl.opt.Request,
+		Response: impl.opt.Response,
+	}
+	return out
+}
+
 func (impl *taskImpl) Commit(ctx context.Context, in any) (any, error) {
 	request := in.(*TaskRequest)
 
-	argsType := reflect.TypeOf(reflect.TypeOf(impl.opt.Request).Elem())
+	argsType := reflect.TypeOf(impl.opt.Request)
+	if argsType.Kind() == reflect.Ptr {
+		argsType = argsType.Elem()
+	}
 	arg := reflect.New(argsType).Interface()
 	if err := request.InjectFor(arg); err != nil {
 		return nil, err
 	}
 
 	call := func(ctx context.Context, req any) (resp any, err error) {
-		defer func() { err = doRecover() }()
+		defer func() {
+			if e := recover(); e != nil {
+				err = fmt.Errorf("panic: %v", e)
+			}
+		}()
 
 		resp, err = impl.Task.Commit(ctx, arg)
 		return
 	}
 
-	return call(ctx, request)
+	out, err := call(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := applyToTaskResponse(reflect.ValueOf(out))
+	return resp, nil
 }
 
 func (impl *taskImpl) Rollback(ctx context.Context) error {
 	call := func(ctx context.Context) (err error) {
-		defer func() { err = doRecover() }()
+		defer func() {
+			if e := recover(); e != nil {
+				err = fmt.Errorf("panic: %v", e)
+			}
+		}()
 
 		err = impl.Task.Rollback(ctx)
 		return
@@ -76,7 +106,11 @@ func (impl *taskImpl) Rollback(ctx context.Context) error {
 
 func (impl *taskImpl) Destroy(ctx context.Context) error {
 	call := func(ctx context.Context) (err error) {
-		defer func() { err = doRecover() }()
+		defer func() {
+			if e := recover(); e != nil {
+				err = fmt.Errorf("panic: %v", e)
+			}
+		}()
 
 		err = impl.Task.Destroy(ctx)
 		return
@@ -94,6 +128,17 @@ type taskForFunc struct {
 
 	ctxIsFirst  bool
 	containsReq bool
+}
+
+func (fn *taskForFunc) Clone() Task {
+	out := new(taskForFunc)
+	out.name = fn.name
+	out.methodPtr = fn.methodPtr
+	out.args = fn.args
+
+	out.ctxIsFirst = fn.ctxIsFirst
+	out.containsReq = fn.containsReq
+	return out
 }
 
 func (fn *taskForFunc) Commit(ctx context.Context, arg any) (any, error) {
@@ -119,7 +164,12 @@ func (fn *taskForFunc) Commit(ctx context.Context, arg any) (any, error) {
 			if !ok {
 				return nil, fmt.Errorf("missing '%s' property", key)
 			}
-			rv := reflect.New(in.Elem())
+
+			inType := in
+			if in.Kind() == reflect.Ptr {
+				inType = in.Elem()
+			}
+			rv := reflect.New(inType).Elem()
 			if err := InjectFromTypesValue(rv, tv); err != nil {
 				return nil, err
 			}
@@ -128,7 +178,11 @@ func (fn *taskForFunc) Commit(ctx context.Context, arg any) (any, error) {
 	}
 
 	call := func(in []reflect.Value) (outs []reflect.Value, err error) {
-		defer func() { err = doRecover() }()
+		defer func() {
+			if e := recover(); e != nil {
+				err = fmt.Errorf("panic: %v", e)
+			}
+		}()
 		outs = method.Call(in)
 		if len(outs) > 0 {
 			lastIdx := len(outs) - 1
@@ -147,61 +201,25 @@ func (fn *taskForFunc) Commit(ctx context.Context, arg any) (any, error) {
 		return nil, cerr
 	}
 
-	resp := &TaskResponse{}
+	resp := &TaskResponse{
+		Results:     map[string]*types.Value{},
+		DataObjects: map[string]*types.Value{},
+	}
 	switch len(outputs) {
 	case 0:
 	case 1:
 		out := outputs[0]
-		var ok bool
-		resp, ok = out.Interface().(*TaskResponse)
+		taskResp, ok := out.Interface().(*TaskResponse)
 		if ok {
-			return resp, nil
+			return taskResp, nil
 		}
 
-		if out.Kind() == reflect.Pointer {
+		if out.Kind() == reflect.Ptr {
 			out = out.Elem()
 		}
 
 		if out.Kind() == reflect.Struct {
-			rv := out.Type()
-			for i := 0; i < rv.NumField(); i++ {
-				ft := rv.Field(i)
-				fv := out.Field(i)
-
-				tag, found := ft.Tag.Lookup("json")
-				if found {
-					name := strings.Split(tag, ",")[0]
-					vv := fv.Interface()
-					tv := types.NewValue(vv)
-
-					resp.Results[name] = tv
-
-					continue
-				}
-
-				tag, found = ft.Tag.Lookup(DefaultTag)
-				if !found {
-					continue
-				}
-
-				parts := strings.Split(tag, ";")
-				pairs := map[string]string{}
-				for _, part := range parts {
-					kv := strings.Split(part, ":")
-					if len(kv) != 2 {
-						continue
-					}
-					pairs[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
-
-					key, ok := pairs[DataObjectTag]
-					if ok {
-						vv := fv.Interface()
-						tv := types.NewValue(vv)
-						resp.Results[key] = tv
-					}
-				}
-			}
-
+			resp = applyToTaskResponse(out)
 		} else {
 			tv := fromReflectValue(out)
 			resp.Results["r0"] = tv
@@ -251,73 +269,139 @@ func WithResponse(response any) Option {
 	}
 }
 
-type Controller struct {
-	taskDefines map[string]Task
-
-	endpoints map[string]*types.Endpoint
-
-	mu    sync.RWMutex
-	pools map[string]Task
-}
-
-func NewController() *Controller {
-	controller := &Controller{
-		taskDefines: make(map[string]Task),
-		pools:       make(map[string]Task),
-	}
-	return controller
-}
-
-func (c *Controller) ListEndpoints() []*types.Endpoint {
+func (r *Runner) ListEndpoints() []*types.Endpoint {
 	endpoints := make([]*types.Endpoint, 0)
-	for _, item := range c.endpoints {
+	for _, item := range r.endpoints {
 		endpoints = append(endpoints, item.DeepCopy())
 	}
 	return endpoints
 }
 
-func (c *Controller) Register(task Task, opts ...Option) error { return nil }
+func (r *Runner) Register(task Task, opts ...Option) error {
+	endpoint, impl, ok := extractTask(task, opts...)
+	if !ok {
+		return fmt.Errorf("invalid task")
+	}
 
-func (c *Controller) RegisterFn(fn any, opts ...Option) error {
+	name := endpoint.Name
+	_, exists := r.endpoints[name]
+	if exists {
+		return fmt.Errorf("endpoint '%s' already exists", name)
+	}
+	r.endpoints[name] = endpoint
+
+	r.taskDefines[name] = impl
+	return nil
+}
+
+func (r *Runner) RegisterFn(fn any, opts ...Option) error {
 	endpoint, taskForFn, ok := extractFunc(fn, opts...)
 	if !ok {
 		return fmt.Errorf("invalid function")
 	}
 
 	name := endpoint.Name
-	_, exists := c.endpoints[name]
+	_, exists := r.endpoints[name]
 	if exists {
 		return fmt.Errorf("endpoint '%s' already exists", name)
 	}
-	c.endpoints[name] = endpoint
+	r.endpoints[name] = endpoint
 
-	c.taskDefines[name] = taskForFn
+	r.taskDefines[name] = taskForFn
 	return nil
 }
 
-func (r *Runner) handle(ctx context.Context, req *types.CallTaskRequest) (*types.CallTaskResponse, error) {
+func (r *Runner) Handle(ctx context.Context, req *types.CallTaskRequest) *types.CallTaskResponse {
 	lg := r.lg
 	timeout := time.Duration(req.Timeout) * time.Millisecond
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	results := make(map[string]*types.Value)
-	results["a"] = types.NewValue("bb")
-
 	resp := &types.CallTaskResponse{
-		SeqId:   req.SeqId,
-		Results: results,
+		Stage:       req.Stage,
+		SeqId:       req.SeqId,
+		Results:     map[string]*types.Value{},
+		DataObjects: map[string]*types.Value{},
 	}
 
-	lg.Info("call response", zap.Any("request", req))
+	ident := fmt.Sprintf("%d.%s", req.Process, req.Name)
+	switch req.Stage {
+	case types.CallTaskStage_Commit:
+		stepCommitCounter.Add(1)
+		defer stepCommitCounter.Sub(1)
 
-	return resp, fmt.Errorf("internal error")
-}
+		name := req.Name
+		taskDef, found := r.taskDefines[name]
+		if !found {
+			resp.Error = fmt.Errorf("invalid kind '%s'", name).Error()
+			return resp
+		}
 
-func doRecover() error {
-	var err error
-	if e := recover(); e != nil {
-		err = fmt.Errorf("panic: %v", e)
+		task := taskDef
+		if impl, ok := task.(TaskClone); ok {
+			task = impl.Clone().(Task)
+		}
+
+		r.pmu.Lock()
+		r.pools[ident] = task
+		r.pmu.Unlock()
+
+		lg.Info("commit task",
+			zap.String("task", req.Name))
+
+		in := &TaskRequest{
+			Headers:     req.Headers,
+			Properties:  req.Properties,
+			DataObjects: req.DataObjects,
+		}
+
+		out, err := task.Commit(ctx, in)
+		if err != nil {
+			resp.Error = err.Error()
+			return resp
+		}
+
+		taskResp := out.(*TaskResponse)
+		resp.Results = taskResp.Results
+		resp.DataObjects = taskResp.DataObjects
+
+	case types.CallTaskStage_Rollback:
+		stepRollbackCounter.Add(1)
+		defer stepRollbackCounter.Sub(1)
+
+		r.pmu.RLock()
+		task, ok := r.pools[ident]
+		r.pmu.RUnlock()
+
+		if ok {
+			lg.Info("rollback task",
+				zap.String("task", req.Name))
+
+			if err := task.Rollback(ctx); err != nil {
+				resp.Error = err.Error()
+			}
+		}
+
+	case types.CallTaskStage_Destroy:
+		stepDestroyCounter.Add(1)
+		defer stepDestroyCounter.Sub(1)
+
+		r.pmu.RLock()
+		task, ok := r.pools[ident]
+		r.pmu.RUnlock()
+
+		if ok {
+			lg.Info("destroy task",
+				zap.String("task", req.Name))
+
+			if err := task.Destroy(ctx); err != nil {
+				resp.Error = err.Error()
+			}
+			r.pmu.Lock()
+			delete(r.pools, ident)
+			r.pmu.Unlock()
+		}
 	}
-	return err
+
+	return resp
 }

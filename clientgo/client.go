@@ -196,7 +196,7 @@ func (c *Client) ListRunners(ctx context.Context, req *ListRunnersRequest) ([]*t
 	return rsp.Runners, rsp.Total, nil
 }
 
-func (c *Client) GetRunner(ctx context.Context, id uint64, uid string) (*types.Runner, error) {
+func (c *Client) GetRunner(ctx context.Context, id int64, uid string) (*types.Runner, error) {
 	opts := c.buildCallOptions()
 
 	in := &pb.GetRunnerRequest{
@@ -211,11 +211,12 @@ func (c *Client) GetRunner(ctx context.Context, id uint64, uid string) (*types.R
 	return rsp.Runner, nil
 }
 
-func (c *Client) AddEndpoints(ctx context.Context, endpoints []*types.Endpoint) error {
+func (c *Client) AddEndpoints(ctx context.Context, endpoints []*types.Endpoint, target string) error {
 	opts := c.buildCallOptions()
 
 	in := &pb.AddEndpointsRequest{
 		Endpoints: endpoints,
+		Target:    target,
 	}
 	_, err := c.systemClient.AddEndpoints(ctx, in, opts...)
 	if err != nil {

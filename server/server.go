@@ -119,15 +119,19 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 
 	definitionsDao, err := dao.NewDefinitionsDao(db)
 	if err != nil {
-		return nil, fmt.Errorf("creates definitions model: %w", err)
+		return nil, fmt.Errorf("creates definitions dao: %w", err)
 	}
 	processDao, err := dao.NewProcessDao(db)
 	if err != nil {
-		return nil, fmt.Errorf("creates process model: %w", err)
+		return nil, fmt.Errorf("creates process dao: %w", err)
 	}
 	runnerDao, err := dao.NewRunnerDao(db)
 	if err != nil {
-		return nil, fmt.Errorf("creates runner model: %w", err)
+		return nil, fmt.Errorf("creates runner dao: %w", err)
+	}
+	endpointDao, err := dao.NewEndpointDao(db)
+	if err != nil {
+		return nil, fmt.Errorf("creates endpoint dao: %w", err)
 	}
 
 	dispatcher := dispatch.NewDispatcher()
@@ -149,7 +153,7 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	}
 
 	bpmnRPC := newBpmnServer(ctx, lg, sch, definitionsDao, processDao)
-	systemRPC := newSystemGRPCServer(ctx, lg, s.cfg, runnerDao, dispatcher)
+	systemRPC := newSystemGRPCServer(ctx, lg, s.cfg, runnerDao, endpointDao, dispatcher)
 
 	var kaep = keepalive.EnforcementPolicy{
 		MinTime:             30 * time.Second, // If a client pings more than once every 1 minute, terminate the connection

@@ -218,15 +218,15 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 	}
 
 	options := make([]bpmn.Option, 0)
-	if pctx := stat.Context; pctx != nil {
+	if args := stat.Args; args != nil {
 		dataObjects := map[string]any{}
-		for name, dataObject := range pctx.DataObjects {
-			dataObjects[name] = dataObject
+		for name, dataObject := range args.DataObjects {
+			dataObjects[name] = dataObject.ToSchemaValue()
 		}
 		options = append(options, bpmn.WithDataObjects(dataObjects))
 		variables := map[string]any{}
-		for name, variable := range pctx.Variables {
-			variables[name] = variable
+		for name, variable := range args.Properties {
+			variables[name] = variable.ToSchemaValue()
 		}
 		options = append(options, bpmn.WithVariables(variables))
 	}
@@ -522,6 +522,7 @@ func (sch *Scheduler) doTask(ctx context.Context, node *types.FlowNode, extensio
 
 	stage := types.ConvertStage(node.Stage)
 	doOptions := []plugin.DoOption{
+		plugin.DoWithProcess(node.ProcessId),
 		plugin.DoWithTaskStage(stage),
 		plugin.DoWithKind(kind),
 		plugin.DoWithName(node.Name),

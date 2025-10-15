@@ -71,7 +71,7 @@ func (gp *gflowPlugin) Do(ctx context.Context, req *plugin.Request, opts ...plug
 
 	callRequest := &types.CallTaskRequest{
 		Stage:       doOptions.Stage,
-		FlowType:    doOptions.FlowType,
+		Process:     doOptions.Process,
 		Kind:        doOptions.Kind,
 		Name:        doOptions.Name,
 		Headers:     req.Headers,

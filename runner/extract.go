@@ -42,18 +42,24 @@ type TaskRequest struct {
 }
 
 func (req *TaskRequest) InjectFor(target any) error {
+	if target == nil {
+		return fmt.Errorf("target cannot be nil")
+	}
+	if rv, ok := target.(reflect.Value); ok {
+		return req.InjectForReflectValue(rv)
+	}
 	return req.InjectForReflectValue(reflect.ValueOf(target))
 }
 
 func (req *TaskRequest) InjectForReflectValue(rv reflect.Value) error {
 	switch rv.Kind() {
-	case reflect.Pointer:
-		return req.InjectFor(rv.Elem())
+	case reflect.Ptr:
+		return req.InjectForReflectValue(rv.Elem())
 	case reflect.Struct:
-		rt := rv.Type().Elem()
+		rt := rv.Type()
 		for i := 0; i < rt.NumField(); i++ {
 			ft := rt.Field(i)
-			fv := rv.Elem().Field(i)
+			fv := rv.Field(i)
 			if !ft.IsExported() {
 				continue
 			}
@@ -117,17 +123,71 @@ type TaskResponse struct {
 	DataObjects map[string]*types.Value
 }
 
-func extractTask(task Task, opts ...Option) (*types.Endpoint, bool) {
+func applyToTaskResponse(rv reflect.Value) *TaskResponse {
+	resp := &TaskResponse{
+		Results:     make(map[string]*types.Value),
+		DataObjects: make(map[string]*types.Value),
+	}
+	rt := rv.Type()
+	if rt.Kind() == reflect.Ptr {
+		rt = rt.Elem()
+	}
+
+	if rt.Kind() != reflect.Struct {
+		return resp
+	}
+	for i := 0; i < rt.NumField(); i++ {
+		ft := rt.Field(i)
+		fv := rv.Field(i)
+
+		tag, found := ft.Tag.Lookup("json")
+		if found {
+			name := strings.Split(tag, ",")[0]
+			vv := fv.Interface()
+			tv := types.NewValue(vv)
+
+			resp.Results[name] = tv
+
+			continue
+		}
+
+		tag, found = ft.Tag.Lookup(DefaultTag)
+		if !found {
+			continue
+		}
+
+		parts := strings.Split(tag, ";")
+		pairs := map[string]string{}
+		for _, part := range parts {
+			kv := strings.Split(part, ":")
+			if len(kv) != 2 {
+				continue
+			}
+			pairs[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
+
+			key, ok := pairs[DataObjectTag]
+			if ok {
+				vv := fv.Interface()
+				tv := types.NewValue(vv)
+				resp.DataObjects[key] = tv
+			}
+		}
+	}
+
+	return resp
+}
+
+func extractTask(task Task, opts ...Option) (*types.Endpoint, *taskImpl, bool) {
 	var options Options
 	for _, opt := range opts {
 		opt(&options)
 	}
 
 	if options.Request == nil {
-		return nil, false
+		return nil, nil, false
 	}
 	if options.Response == nil {
-		return nil, false
+		return nil, nil, false
 	}
 
 	endpoint := &types.Endpoint{
@@ -138,8 +198,13 @@ func extractTask(task Task, opts ...Option) (*types.Endpoint, bool) {
 		Results:     map[string]*types.Value{},
 	}
 
+	impl := &taskImpl{
+		Task: task,
+		opt:  &options,
+	}
+
 	rt := reflect.TypeOf(task)
-	if rt.Kind() == reflect.Pointer {
+	if rt.Kind() == reflect.Ptr {
 		rt = rt.Elem()
 	}
 
@@ -152,7 +217,7 @@ func extractTask(task Task, opts ...Option) (*types.Endpoint, bool) {
 
 	headers, properties, dataObjects, matched := ExtractInOrOut(options.Request)
 	if !matched {
-		return nil, false
+		return nil, nil, false
 	}
 	endpoint.Headers = headers
 	endpoint.Properties = properties
@@ -160,11 +225,11 @@ func extractTask(task Task, opts ...Option) (*types.Endpoint, bool) {
 
 	_, results, _, matched := ExtractInOrOut(options.Response)
 	if !matched {
-		return nil, false
+		return nil, nil, false
 	}
 	endpoint.Results = results
 
-	return endpoint, true
+	return endpoint, impl, true
 }
 
 func extractFunc(fn any, opts ...Option) (*types.Endpoint, *taskForFunc, bool) {
@@ -211,6 +276,8 @@ func extractFunc(fn any, opts ...Option) (*types.Endpoint, *taskForFunc, bool) {
 		endpoint.Headers = headers
 		endpoint.Properties = properties
 		endpoint.DataObjects = dataObjects
+
+		taskFn.args = append(taskFn.args, reflect.TypeOf(options.Request))
 	} else {
 		switch rt.NumIn() {
 		case 0:
@@ -232,6 +299,7 @@ func extractFunc(fn any, opts ...Option) (*types.Endpoint, *taskForFunc, bool) {
 						endpoint.Properties["p0"] = tv
 					}
 				}
+				taskFn.args = append(taskFn.args, in)
 			} else {
 				taskFn.ctxIsFirst = true
 			}
@@ -239,6 +307,7 @@ func extractFunc(fn any, opts ...Option) (*types.Endpoint, *taskForFunc, bool) {
 			if isContext(rt.In(0)) {
 				taskFn.ctxIsFirst = true
 				in := rt.In(1)
+				taskFn.args = append(taskFn.args, in)
 				if isStruct(in) {
 					inImpl := reflect.New(in.Elem()).Interface()
 					headers, properties, dataObjects, matched := ExtractInOrOut(inImpl)
@@ -258,6 +327,7 @@ func extractFunc(fn any, opts ...Option) (*types.Endpoint, *taskForFunc, bool) {
 				p := 0
 				for i := 0; i < rt.NumIn(); i++ {
 					in := rt.In(i)
+					taskFn.args = append(taskFn.args, in)
 
 					tv, ok := ExtractReflectType(in)
 					if ok {
@@ -274,6 +344,7 @@ func extractFunc(fn any, opts ...Option) (*types.Endpoint, *taskForFunc, bool) {
 					continue
 				}
 
+				taskFn.args = append(taskFn.args, in)
 				tv, ok := ExtractReflectType(in)
 				if ok {
 					endpoint.Properties[fmt.Sprintf("p%d", p)] = tv
@@ -367,7 +438,7 @@ func ExtractInOrOut(in any) (map[string]string, map[string]*types.Value, map[str
 
 	rv := reflect.ValueOf(in)
 	rt := rv.Type()
-	if rt.Kind() == reflect.Pointer {
+	if rt.Kind() == reflect.Ptr {
 		rv = rv.Elem()
 		rt = rt.Elem()
 	}
@@ -419,7 +490,7 @@ func ExtractInOrOut(in any) (map[string]string, map[string]*types.Value, map[str
 }
 
 func ExtractReflectType(rt reflect.Type) (*types.Value, bool) {
-	if rt.Kind() == reflect.Pointer {
+	if rt.Kind() == reflect.Ptr {
 		return ExtractReflectType(rt.Elem())
 	}
 
@@ -518,8 +589,8 @@ func InjectFromTypesValue(rv reflect.Value, value *types.Value) error {
 		if err != nil {
 			return err
 		}
-		rv.Set(reflect.ValueOf(&vv))
-	case reflect.Pointer:
+		rv.Set(reflect.Indirect(v))
+	case reflect.Ptr:
 		v := reflect.New(rv.Type().Elem())
 		vv := v.Interface()
 
@@ -572,7 +643,7 @@ func isErr(rt reflect.Type) bool {
 }
 
 func isStruct(rt reflect.Type) bool {
-	if rt.Kind() == reflect.Pointer {
+	if rt.Kind() == reflect.Ptr {
 		return isStruct(rt.Elem())
 	}
 	return rt.Kind() == reflect.Struct

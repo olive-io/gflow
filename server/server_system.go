@@ -43,19 +43,25 @@ type systemGRPCServer struct {
 	lg  *zap.Logger
 	cfg *config.Config
 
-	runnerDao *dao.RunnerDao
+	runnerDao   *dao.RunnerDao
+	endpointDao *dao.EndpointDao
 
 	dispatcher *dispatch.Dispatcher
 }
 
-func newSystemGRPCServer(ctx context.Context, lg *zap.Logger, cfg *config.Config, runnerDao *dao.RunnerDao, dispatcher *dispatch.Dispatcher) *systemGRPCServer {
+func newSystemGRPCServer(
+	ctx context.Context, lg *zap.Logger, cfg *config.Config,
+	runnerDao *dao.RunnerDao, endpointDao *dao.EndpointDao,
+	dispatcher *dispatch.Dispatcher) *systemGRPCServer {
+
 	server := &systemGRPCServer{
 		ctx: ctx,
 		lg:  lg,
 		cfg: cfg,
-		
-		runnerDao:  runnerDao,
-		dispatcher: dispatcher,
+
+		runnerDao:   runnerDao,
+		endpointDao: endpointDao,
+		dispatcher:  dispatcher,
 	}
 
 	return server
@@ -69,7 +75,7 @@ func (sgs *systemGRPCServer) Register(ctx context.Context, req *pb.RegisterReque
 	runner := req.GetRunner()
 	runner.Online = 1
 
-	value, _ := sgs.runnerDao.GetRunner(ctx, runner.Id, runner.Uid)
+	value, _ := sgs.runnerDao.Get(ctx, runner.Id, runner.Uid)
 	if value != nil {
 		runner.Id = value.Id
 		runner.OnlineTimestamp = time.Now().UnixMilli()
@@ -79,12 +85,12 @@ func (sgs *systemGRPCServer) Register(ctx context.Context, req *pb.RegisterReque
 			zap.String("transport", runner.Transport.String()),
 			zap.String("listen", runner.ListenUrl))
 
-		err := sgs.runnerDao.UpdateRunner(ctx, runner)
+		err := sgs.runnerDao.Update(ctx, runner.Id, runner)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 	} else {
-		err := sgs.runnerDao.CreateRunner(ctx, runner)
+		_, err := sgs.runnerDao.Create(ctx, runner)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -102,7 +108,7 @@ func (sgs *systemGRPCServer) Register(ctx context.Context, req *pb.RegisterReque
 }
 
 func (sgs *systemGRPCServer) Disregister(ctx context.Context, req *pb.DisregisterRequest) (*pb.DisregisterResponse, error) {
-	runner, err := sgs.runnerDao.GetRunner(ctx, 0, req.Id)
+	runner, err := sgs.runnerDao.Get(ctx, 0, req.Id)
 	if err != nil {
 		if dao.IsNotFound(err) {
 			return nil, status.Error(codes.NotFound, err.Error())
@@ -113,7 +119,7 @@ func (sgs *systemGRPCServer) Disregister(ctx context.Context, req *pb.Disregiste
 	runner.OfflineTimestamp = time.Now().UnixMilli()
 	runner.Online = 0
 
-	err = sgs.runnerDao.UpdateRunner(ctx, runner)
+	err = sgs.runnerDao.Update(ctx, runner.Id, runner)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -124,8 +130,8 @@ func (sgs *systemGRPCServer) Disregister(ctx context.Context, req *pb.Disregiste
 }
 
 func (sgs *systemGRPCServer) ListRunners(ctx context.Context, req *pb.ListRunnersRequest) (*pb.ListRunnersResponse, error) {
-	page, size := req.Page, req.Size
-	list, total, err := sgs.runnerDao.ListRunners(ctx, page, size)
+	page, size := int(req.Page), int(req.Size)
+	list, total, err := sgs.runnerDao.PageList(ctx, page, size, nil)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -137,7 +143,7 @@ func (sgs *systemGRPCServer) ListRunners(ctx context.Context, req *pb.ListRunner
 }
 
 func (sgs *systemGRPCServer) GetRunner(ctx context.Context, req *pb.GetRunnerRequest) (*pb.GetRunnerResponse, error) {
-	runner, err := sgs.runnerDao.GetRunner(ctx, req.Id, req.Uid)
+	runner, err := sgs.runnerDao.Get(ctx, req.Id, req.Uid)
 	if err != nil {
 		if dao.IsNotFound(err) {
 			return nil, status.Error(codes.NotFound, err.Error())
@@ -148,9 +154,61 @@ func (sgs *systemGRPCServer) GetRunner(ctx context.Context, req *pb.GetRunnerReq
 	return rsp, nil
 }
 
+func (sgs *systemGRPCServer) ListEndpoints(ctx context.Context, req *pb.ListEndpointsRequest) (*pb.ListEndpointsResponse, error) {
+	page, size := int(req.Page), int(req.Size)
+	list, total, err := sgs.endpointDao.PageList(ctx, page, size, nil)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	rsp := &pb.ListEndpointsResponse{
+		Endpoints: list,
+		Total:     total,
+	}
+	return rsp, nil
+}
+
 func (sgs *systemGRPCServer) AddEndpoints(ctx context.Context, req *pb.AddEndpointsRequest) (*pb.AddEndpointsResponse, error) {
+	for _, endpoint := range req.Endpoints {
+		if err := sgs.addEndpoint(ctx, endpoint, req.Target); err != nil {
+			return nil, err
+		}
+	}
+
 	resp := &pb.AddEndpointsResponse{}
 	return resp, nil
+}
+
+func (sgs *systemGRPCServer) addEndpoint(ctx context.Context, endpoint *types.Endpoint, target string) error {
+	cond := map[string]string{"name": endpoint.Name}
+	value, err := sgs.endpointDao.First(ctx, cond)
+	if err != nil {
+		if !dao.IsNotFound(err) {
+			return status.Error(codes.Internal, err.Error())
+		}
+
+		endpoint.Targets = []string{target}
+		_, err = sgs.endpointDao.Create(ctx, endpoint)
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+	} else {
+		found := false
+		for _, item := range value.Targets {
+			if item == target {
+				found = true
+				break
+			}
+		}
+		if !found {
+			value.Targets = append(value.Targets, target)
+			err = sgs.endpointDao.Update(ctx, value.Id, value)
+			if err != nil {
+				return status.Error(codes.Internal, err.Error())
+			}
+		}
+	}
+
+	return nil
 }
 
 func (sgs *systemGRPCServer) RunnerDispatch(stream pb.SystemRPC_RunnerDispatchServer) error {
@@ -177,17 +235,17 @@ func (sgs *systemGRPCServer) RunnerDispatch(stream pb.SystemRPC_RunnerDispatchSe
 	}
 
 	runnerMsg := handshake.Runner
-	runner, err := sgs.runnerDao.GetRunner(ctx, 0, runnerMsg.Uid)
+	runner, err := sgs.runnerDao.Get(ctx, 0, runnerMsg.Uid)
 	if err != nil {
 		if !dao.IsNotFound(err) {
 			return status.Error(codes.Internal, err.Error())
 		}
 		runner = runnerMsg
 		runner.ListenUrl = listenURL
-		_ = sgs.runnerDao.CreateRunner(ctx, runner)
+		_, _ = sgs.runnerDao.Create(ctx, runner)
 	} else {
 		runner.ListenUrl = listenURL
-		_ = sgs.runnerDao.UpdateRunner(ctx, runner)
+		_ = sgs.runnerDao.Update(ctx, runner.Id, runner)
 	}
 
 	serverID := sgs.cfg.Server.ID
