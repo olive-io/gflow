@@ -41,9 +41,11 @@ import (
 	"github.com/olive-io/gflow/server/config"
 	"github.com/olive-io/gflow/server/dao"
 	"github.com/olive-io/gflow/server/dispatch"
+	"github.com/olive-io/gflow/server/docs"
 	"github.com/olive-io/gflow/server/plugin"
 	"github.com/olive-io/gflow/server/plugin/gflow"
 	"github.com/olive-io/gflow/server/scheduler"
+	"github.com/olive-io/gflow/third-party/swagger"
 )
 
 var (
@@ -212,6 +214,20 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 			wsproxy.WithMaxRespBodyBufferSize(0x7fffffff),
 		),
 	)
+
+	serveMux.HandleFunc("/openapi.yaml", func(w http.ResponseWriter, r *http.Request) {
+		openapiYAML, _ := docs.GetOpenYAML()
+		w.WriteHeader(http.StatusOK)
+		w.Write(openapiYAML)
+	})
+
+	pattern := "/swagger-ui/"
+	swaggerFs, err := swagger.GetFS()
+	if err != nil {
+		return nil, fmt.Errorf("load swagger embed filesystem: %w", err)
+	}
+	serveMux.PathPrefix(pattern).Handler(http.StripPrefix(pattern, http.FileServer(http.FS(swaggerFs))))
+	serveMux.PathPrefix("/").Handler(gwmux)
 
 	return grpcWithHttp(gs, serveMux), nil
 }
