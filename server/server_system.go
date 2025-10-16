@@ -169,8 +169,8 @@ func (sgs *systemGRPCServer) ListEndpoints(ctx context.Context, req *pb.ListEndp
 
 func (sgs *systemGRPCServer) AddEndpoints(ctx context.Context, req *pb.AddEndpointsRequest) (*pb.AddEndpointsResponse, error) {
 	for _, endpoint := range req.Endpoints {
-		if err := sgs.addEndpoint(ctx, endpoint, req.Target); err != nil {
-			return nil, err
+		if err := sgs.RegisterEndpoint(ctx, endpoint, req.Target); err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}
 
@@ -178,18 +178,18 @@ func (sgs *systemGRPCServer) AddEndpoints(ctx context.Context, req *pb.AddEndpoi
 	return resp, nil
 }
 
-func (sgs *systemGRPCServer) addEndpoint(ctx context.Context, endpoint *types.Endpoint, target string) error {
+func (sgs *systemGRPCServer) RegisterEndpoint(ctx context.Context, endpoint *types.Endpoint, target string) error {
 	cond := map[string]string{"name": endpoint.Name}
 	value, err := sgs.endpointDao.First(ctx, cond)
 	if err != nil {
 		if !dao.IsNotFound(err) {
-			return status.Error(codes.Internal, err.Error())
+			return err
 		}
 
 		endpoint.Targets = []string{target}
 		_, err = sgs.endpointDao.Create(ctx, endpoint)
 		if err != nil {
-			return status.Error(codes.Internal, err.Error())
+			return err
 		}
 	} else {
 		found := false
@@ -203,7 +203,7 @@ func (sgs *systemGRPCServer) addEndpoint(ctx context.Context, endpoint *types.En
 			value.Targets = append(value.Targets, target)
 			err = sgs.endpointDao.Update(ctx, value.Id, value)
 			if err != nil {
-				return status.Error(codes.Internal, err.Error())
+				return err
 			}
 		}
 	}

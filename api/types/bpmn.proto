@@ -76,19 +76,21 @@ message Endpoint {
   int64 update_at = 3 [(tagger.tags) = "gorm:\"autoUpdateTime\""];
 
   string kind = 4;
-  string name = 5;
-  string description = 6;
-  string http_url = 7;
-  map<string, string> metadata = 8 [(tagger.tags) = "gorm:\"serializer:json\""];
+  FlowNodeType type = 5;
+  string name = 6;
+  string description = 7;
+  bool OnTransaction = 8;
+  string http_url = 9;
+  map<string, string> metadata = 10 [(tagger.tags) = "gorm:\"serializer:json\""];
 
-  repeated string targets = 9 [(tagger.tags) = "gorm:\"serializer:json\""];
+  repeated string targets = 11 [(tagger.tags) = "gorm:\"serializer:json\""];
 
   // request data
-  map<string, string> headers = 11 [(tagger.tags) = "gorm:\"serializer:json\""];
-  map<string, Value> properties = 12 [(tagger.tags) = "gorm:\"serializer:json\""];
-  map<string, Value> dataObjects = 13 [(tagger.tags) = "gorm:\"serializer:json\""];
+  map<string, string> headers = 21 [(tagger.tags) = "gorm:\"serializer:json\""];
+  map<string, Value> properties = 22 [(tagger.tags) = "gorm:\"serializer:json\""];
+  map<string, Value> dataObjects = 23 [(tagger.tags) = "gorm:\"serializer:json\""];
   // response data
-  map<string, Value> results = 14 [(tagger.tags) = "gorm:\"serializer:json\""];
+  map<string, Value> results = 24 [(tagger.tags) = "gorm:\"serializer:json\""];
 }
 
 // Definitions bpmn Definition
@@ -158,26 +160,28 @@ message Process {
 
   int64 priority = 7;
 
-  BpmnArgs args = 8 [(tagger.tags) = "gorm:\"serializer:json\""];
+  bool OnTransaction = 8;
 
-  string definitions_uid = 9 [(tagger.tags) = "gorm:\"index\""];
+  BpmnArgs args = 9 [(tagger.tags) = "gorm:\"serializer:json\""];
 
-  uint64 definitions_version = 10;
+  string definitions_uid = 10 [(tagger.tags) = "gorm:\"index\""];
 
-  string definitions_process = 11;
+  uint64 definitions_version = 11;
 
-  ProcessContext context = 12 [(tagger.tags) = "gorm:\"serializer:json\""];
+  string definitions_process = 12;
 
-  int32 attempts = 13;
+  ProcessContext context = 13 [(tagger.tags) = "gorm:\"serializer:json\""];
 
-  int64 start_at = 14;
+  int32 attempts = 14;
 
-  int64 end_at = 15;
+  int64 start_at = 15;
 
-  ProcessStage stage = 16;
-  ProcessStatus status = 17;
+  int64 end_at = 16;
 
-  string err_msg = 18;
+  ProcessStage stage = 17;
+  ProcessStatus status = 18;
+
+  string err_msg = 19;
 }
 
 message ProcessContext {
@@ -244,13 +248,13 @@ message FlowNode {
 }
 
 enum CallTaskStage {
-  Commit = 0;
-  Rollback = 1;
-  Destroy = 2;
+  Echo = 0;
+  Commit = 1;
+  Rollback = 2;
+  Destroy = 3;
 }
 
 message CallTaskRequest {
-
   int64 process = 1;
   uint64 seq_id = 2;
   CallTaskStage stage = 3;

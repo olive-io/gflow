@@ -16,7 +16,7 @@ limitations under the License.
 
 // Package plugin provides a plugin management system for gflow.
 // It allows dynamic registration and retrieval of plugins at runtime.
-package plugin
+package plugins
 
 import (
 	"context"
@@ -61,6 +61,11 @@ func Get(name string) (Factory, error) {
 	return defaultManager.Get(name)
 }
 
+// ListEndpoints retrieves all *types.Endpoint from the default manager.
+func ListEndpoints() []*types.Endpoint {
+	return defaultManager.ListEndpoints()
+}
+
 // Request represents a plugin execution request containing headers, properties,
 // data objects, and timeout configuration.
 type Request struct {
@@ -99,10 +104,19 @@ type Factory interface {
 	Create(opts ...Option) (Plugin, error)
 }
 
+// ProxyFactory defines the interface for creating plugin instances and returns types.Endpoint
+type ProxyFactory interface {
+	Factory
+	// GetEndpoint returns relational Task or function
+	GetEndpoint() types.Endpoint
+}
+
 // Manager manages plugin factories and provides registration and retrieval functionality.
 type Manager struct {
 	// factories stores registered plugin factories indexed by name
 	factories map[string]Factory
+	// endpoints stores registered plugin Endpoint indexed by name
+	endpoints map[string]types.Endpoint
 }
 
 // NewManager creates a new plugin manager with an empty factory registry.
@@ -122,6 +136,17 @@ func (m *Manager) Register(factory Factory) error {
 	if ok {
 		return fmt.Errorf("%w: %s", ErrFactoryAlreadyExists, name)
 	}
+
+	if v, match := factory.(ProxyFactory); match {
+		endpoint := v.GetEndpoint()
+		endpointName := endpoint.Name
+		_, exists := m.endpoints[endpointName]
+		if exists {
+			return fmt.Errorf("%w: endpoint '%s' be registered", ErrFactoryAlreadyExists, endpointName)
+		}
+		m.endpoints[endpointName] = endpoint
+	}
+
 	m.factories[name] = factory
 	return nil
 }
@@ -134,4 +159,13 @@ func (m *Manager) Get(name string) (Factory, error) {
 		return nil, fmt.Errorf("%w: %s", ErrFactoryNotFound, name)
 	}
 	return factory, nil
+}
+
+// ListEndpoints retrieves all *types.Endpoint from the manager.
+func (m *Manager) ListEndpoints() []*types.Endpoint {
+	endpoints := make([]*types.Endpoint, 0, len(m.endpoints))
+	for _, endpoint := range m.endpoints {
+		endpoints = append(endpoints, endpoint.DeepCopy())
+	}
+	return endpoints
 }

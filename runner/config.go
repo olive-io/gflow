@@ -34,6 +34,7 @@ import (
 )
 
 var (
+	DefaultID                = "runner"
 	DefaultTargets           = "localhost:6550"
 	DefaultHeartBeatInterval = time.Second * 30
 )
@@ -58,7 +59,7 @@ type Config struct {
 func NewConfig() *Config {
 	logCfg := logutil.NewLogConfig()
 	cfg := &Config{
-		ID:                "runner",
+		ID:                DefaultID,
 		Targets:           DefaultTargets,
 		HeartBeatInterval: DefaultHeartBeatInterval,
 		Metadata:          map[string]string{},
@@ -84,10 +85,10 @@ func (cfg *Config) init() error {
 	}
 
 	err := cfg.Log.SetupLogging()
-	cfg.Log.SetupGlobalLoggers()
 	if err != nil {
 		return fmt.Errorf("init logger: %w", err)
 	}
+	cfg.Log.SetupGlobalLoggers()
 
 	if cfg.ID == "" {
 		return fmt.Errorf("id is required")

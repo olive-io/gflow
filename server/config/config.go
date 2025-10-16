@@ -50,6 +50,47 @@ type ServerConfig struct {
 	TLS    *TLS   `json:"tls" toml:"tls"`
 }
 
+type MessageQueueConfig struct {
+	RabbitMQ *RabbitMQConfig `json:"rabbitmq" toml:"rabbitmq"`
+}
+
+type RabbitMQConfig struct {
+	Username string `json:"username" toml:"username"`
+	Password string `json:"password" toml:"password"`
+	// rabbit host and port (localhost:5672)
+	Host string `json:"host" toml:"host"`
+}
+
+type EmailConfig struct {
+	// email server and port
+	Host     string `json:"host" toml:"host"`
+	Username string `json:"username" toml:"username"`
+	Secret   string `json:"secret" toml:"secret"`
+}
+
+type PluginConfig struct {
+	SendTask               *SendTaskPluginConfig    `json:"sendTask" toml:"sendTask"`
+	ReceiveTask            *ReceiveTaskPluginConfig `json:"receiveTask" toml:"receiveTask"`
+	ScriptTaskPluginConfig *ScriptTaskPluginConfig  `json:"scriptTask" toml:"scriptTask"`
+}
+
+type RabbitMQConfigWithRef struct {
+	RabbitMQConfig `json:",inline" toml:",inline"`
+
+	Ref string `json:"ref" toml:"ref"`
+}
+
+type SendTaskPluginConfig struct {
+	RabbitMQ *RabbitMQConfigWithRef `json:"rabbitmq" toml:"rabbitmq"`
+}
+
+type ReceiveTaskPluginConfig struct {
+	RabbitMQ *RabbitMQConfigWithRef `json:"rabbitmq" toml:"rabbitmq"`
+}
+
+type ScriptTaskPluginConfig struct {
+}
+
 type Config struct {
 	once sync.Once
 
@@ -57,6 +98,12 @@ type Config struct {
 	Database *dbutil.Config `json:"database" toml:"database"`
 
 	Log *logutil.LogConfig `json:"log" toml:"log"`
+
+	Plugin *PluginConfig `json:"plugin" toml:"plugin"`
+
+	MQ map[string]MessageQueueConfig `json:"mq" toml:"mq"`
+
+	Email map[string]EmailConfig `json:"email" toml:"email"`
 }
 
 func NewConfig() *Config {
@@ -91,10 +138,10 @@ func (cfg *Config) init() error {
 	}
 
 	err := cfg.Log.SetupLogging()
-	cfg.Log.SetupGlobalLoggers()
 	if err != nil {
 		return fmt.Errorf("init logger: %w", err)
 	}
+	cfg.Log.SetupGlobalLoggers()
 
 	if cfg.Server.ID == "" {
 		return errors.New("server id is required")

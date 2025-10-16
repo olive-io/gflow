@@ -181,10 +181,11 @@ func (bgs *bpmnGRPCServer) ExecuteProcess(ctx context.Context, req *pb.ExecutePr
 	}
 
 	process := &types.Process{
-		Name:     req.Name,
-		Uid:      uuid.New().String(),
-		Metadata: map[string]string{},
-		Priority: req.Priority,
+		Name:          req.Name,
+		Uid:           uuid.New().String(),
+		Metadata:      map[string]string{},
+		Priority:      req.Priority,
+		OnTransaction: req.OnTransaction,
 		Args: &types.BpmnArgs{
 			Headers:     req.Headers,
 			Properties:  req.Properties,
@@ -196,6 +197,8 @@ func (bgs *bpmnGRPCServer) ExecuteProcess(ctx context.Context, req *pb.ExecutePr
 			Variables:   map[string]*types.Value{},
 			DataObjects: map[string]*types.Value{},
 		},
+		Stage:  types.Process_Prepare,
+		Status: types.Process_Waiting,
 	}
 
 	if _, err = bgs.processDao.Create(ctx, process); err != nil {

@@ -19,8 +19,6 @@ package runner
 import (
 	"context"
 	"testing"
-
-	"github.com/olive-io/gflow/api/types"
 )
 
 type Data1 struct {
@@ -63,7 +61,8 @@ func (s SimpleTask) String() string {
 func TestExtractTask(t *testing.T) {
 	st := &SimpleTask{}
 
-	endpoint, _, found := extractTask(st, WithName("test"), WithRequest(new(TestRequest)), WithResponse(new(TestResponse)))
+	options := NewOptions(WithName("test"), WithRequest(new(TestRequest)), WithResponse(new(TestResponse)))
+	endpoint, _, found := extractTask(st, options)
 	if !found {
 		t.Fatal("failed to extract task")
 	}
@@ -80,66 +79,31 @@ func Fn3() error { return nil }
 func Fn4(request *TestRequest) (*TestRequest, error) { return nil, nil }
 
 func TestExtractFunc(t *testing.T) {
-	endpoint, _, found := extractFunc(Fn1)
+	endpoint, _, found := extractFunc(Fn1, NewOptions())
 	if !found {
 		t.Fatal("failed to extract function")
 	}
 
 	t.Logf("%+v", endpoint)
 
-	endpoint, _, found = extractFunc(Fn2)
+	endpoint, _, found = extractFunc(Fn2, NewOptions())
 	if !found {
 		t.Fatal("failed to extract function")
 	}
 
 	t.Logf("%+v", endpoint)
 
-	endpoint, _, found = extractFunc(Fn3)
+	endpoint, _, found = extractFunc(Fn3, NewOptions())
 	if !found {
 		t.Fatal("failed to extract function")
 	}
 
 	t.Logf("%+v", endpoint)
 
-	endpoint, _, found = extractFunc(Fn4)
+	endpoint, _, found = extractFunc(Fn4, NewOptions())
 	if !found {
 		t.Fatal("failed to extract function")
 	}
 
 	t.Logf("%+v", endpoint)
-}
-
-type TestData1 struct {
-	Name string
-}
-
-type TestData struct {
-	ContentType string     `gflow:"hr:content_type"`
-	D1          *TestData1 `gflow:"dt:d1"`
-	P1          int32      `json:"p1"`
-	P2          string     `json:"p2"`
-	S1          []string   `json:"s1"`
-}
-
-func TestInjectValue(t *testing.T) {
-	target := &TestData{}
-	req := &TaskRequest{
-		Headers: map[string]string{
-			"Content_type": "application/json",
-		},
-		Properties: map[string]*types.Value{
-			"p1": types.NewValue(1),
-			"p2": types.NewValue("a"),
-			"s1": types.NewValue([]string{"a"}),
-		},
-		DataObjects: map[string]*types.Value{
-			"d1": types.NewValue(&Data1{Name: "test1"}),
-		},
-	}
-
-	if err := req.InjectFor(target); err != nil {
-		t.Fatal(err)
-	}
-
-	t.Logf("%+v", target)
 }

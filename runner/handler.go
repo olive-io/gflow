@@ -25,7 +25,22 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/olive-io/gflow/api/types"
+	"github.com/olive-io/gflow/plugins"
 )
+
+var (
+	originKey = struct{}{}
+)
+
+// GetOriginData returns Origin Parameter from gflow server
+func GetOriginData(ctx context.Context) (*plugins.Request, bool) {
+	value := ctx.Value(originKey)
+	if value == nil {
+		return nil, false
+	}
+	req, ok := value.(*plugins.Request)
+	return req, ok
+}
 
 type TaskClone interface {
 	Clone() TaskClone
@@ -38,34 +53,33 @@ type Task interface {
 	String() string
 }
 
-var _ Task = (*taskImpl)(nil)
+var _ Task = (*taskProxy)(nil)
 
-type taskImpl struct {
-	Task
-
-	opt *Options
+type taskProxy struct {
+	opt   *Options
+	proxy Task
 }
 
-func (impl *taskImpl) Clone() Task {
-	out := new(taskImpl)
-	out.Task = impl.Task
+func (tp *taskProxy) Clone() *taskProxy {
+	out := new(taskProxy)
+	out.proxy = tp.proxy
 	out.opt = &Options{
-		Name:     impl.opt.Name,
-		Request:  impl.opt.Request,
-		Response: impl.opt.Response,
+		Name:     tp.opt.Name,
+		Request:  tp.opt.Request,
+		Response: tp.opt.Response,
 	}
 	return out
 }
 
-func (impl *taskImpl) Commit(ctx context.Context, in any) (any, error) {
-	request := in.(*TaskRequest)
+func (tp *taskProxy) Commit(ctx context.Context, in any) (any, error) {
+	request := in.(*plugins.Request)
 
-	argsType := reflect.TypeOf(impl.opt.Request)
+	argsType := reflect.TypeOf(tp.opt.Request)
 	if argsType.Kind() == reflect.Ptr {
 		argsType = argsType.Elem()
 	}
 	arg := reflect.New(argsType).Interface()
-	if err := request.InjectFor(arg); err != nil {
+	if err := request.ApplyTo(arg); err != nil {
 		return nil, err
 	}
 
@@ -76,7 +90,7 @@ func (impl *taskImpl) Commit(ctx context.Context, in any) (any, error) {
 			}
 		}()
 
-		resp, err = impl.Task.Commit(ctx, arg)
+		resp, err = tp.proxy.Commit(ctx, arg)
 		return
 	}
 
@@ -85,11 +99,11 @@ func (impl *taskImpl) Commit(ctx context.Context, in any) (any, error) {
 		return nil, err
 	}
 
-	resp := applyToTaskResponse(reflect.ValueOf(out))
+	resp := plugins.ExtractResponse(reflect.ValueOf(out))
 	return resp, nil
 }
 
-func (impl *taskImpl) Rollback(ctx context.Context) error {
+func (tp *taskProxy) Rollback(ctx context.Context) error {
 	call := func(ctx context.Context) (err error) {
 		defer func() {
 			if e := recover(); e != nil {
@@ -97,14 +111,14 @@ func (impl *taskImpl) Rollback(ctx context.Context) error {
 			}
 		}()
 
-		err = impl.Task.Rollback(ctx)
+		err = tp.proxy.Rollback(ctx)
 		return
 	}
 
 	return call(ctx)
 }
 
-func (impl *taskImpl) Destroy(ctx context.Context) error {
+func (tp *taskProxy) Destroy(ctx context.Context) error {
 	call := func(ctx context.Context) (err error) {
 		defer func() {
 			if e := recover(); e != nil {
@@ -112,16 +126,18 @@ func (impl *taskImpl) Destroy(ctx context.Context) error {
 			}
 		}()
 
-		err = impl.Task.Destroy(ctx)
+		err = tp.proxy.Destroy(ctx)
 		return
 	}
 
 	return call(ctx)
 }
 
-var _ Task = (*taskForFunc)(nil)
+func (tp *taskProxy) String() string { return tp.opt.Name }
 
-type taskForFunc struct {
+var _ Task = (*fnProxy)(nil)
+
+type fnProxy struct {
 	name      string
 	methodPtr reflect.Value
 	args      []reflect.Type
@@ -130,8 +146,8 @@ type taskForFunc struct {
 	containsReq bool
 }
 
-func (fn *taskForFunc) Clone() Task {
-	out := new(taskForFunc)
+func (fn *fnProxy) Clone() Task {
+	out := new(fnProxy)
 	out.name = fn.name
 	out.methodPtr = fn.methodPtr
 	out.args = fn.args
@@ -141,8 +157,8 @@ func (fn *taskForFunc) Clone() Task {
 	return out
 }
 
-func (fn *taskForFunc) Commit(ctx context.Context, arg any) (any, error) {
-	request := arg.(*TaskRequest)
+func (fn *fnProxy) Commit(ctx context.Context, arg any) (any, error) {
+	request := arg.(*plugins.Request)
 
 	method := fn.methodPtr
 
@@ -153,7 +169,7 @@ func (fn *taskForFunc) Commit(ctx context.Context, arg any) (any, error) {
 	if fn.containsReq {
 		in := fn.args[0]
 		target := reflect.New(in.Elem()).Interface()
-		if err := request.InjectFor(target); err != nil {
+		if err := request.ApplyTo(target); err != nil {
 			return nil, err
 		}
 		inputs = append(inputs, reflect.ValueOf(target))
@@ -170,7 +186,7 @@ func (fn *taskForFunc) Commit(ctx context.Context, arg any) (any, error) {
 				inType = in.Elem()
 			}
 			rv := reflect.New(inType).Elem()
-			if err := InjectFromTypesValue(rv, tv); err != nil {
+			if err := tv.ApplyTo(rv); err != nil {
 				return nil, err
 			}
 			inputs = append(inputs, rv)
@@ -201,7 +217,7 @@ func (fn *taskForFunc) Commit(ctx context.Context, arg any) (any, error) {
 		return nil, cerr
 	}
 
-	resp := &TaskResponse{
+	resp := &plugins.Response{
 		Results:     map[string]*types.Value{},
 		DataObjects: map[string]*types.Value{},
 	}
@@ -209,7 +225,7 @@ func (fn *taskForFunc) Commit(ctx context.Context, arg any) (any, error) {
 	case 0:
 	case 1:
 		out := outputs[0]
-		taskResp, ok := out.Interface().(*TaskResponse)
+		taskResp, ok := out.Interface().(*plugins.Response)
 		if ok {
 			return taskResp, nil
 		}
@@ -219,9 +235,9 @@ func (fn *taskForFunc) Commit(ctx context.Context, arg any) (any, error) {
 		}
 
 		if out.Kind() == reflect.Struct {
-			resp = applyToTaskResponse(out)
+			resp = plugins.ExtractResponse(out)
 		} else {
-			tv := fromReflectValue(out)
+			tv := types.FromReflectValue(out)
 			resp.Results["r0"] = tv
 		}
 	default:
@@ -237,23 +253,60 @@ func (fn *taskForFunc) Commit(ctx context.Context, arg any) (any, error) {
 	return resp, nil
 }
 
-func (fn *taskForFunc) Rollback(ctx context.Context) error { return nil }
+func (fn *fnProxy) Rollback(ctx context.Context) error { return nil }
 
-func (fn *taskForFunc) Destroy(ctx context.Context) error { return nil }
+func (fn *fnProxy) Destroy(ctx context.Context) error { return nil }
 
-func (fn *taskForFunc) String() string { return fn.name }
+func (fn *fnProxy) String() string { return fn.name }
 
 type Options struct {
-	Name     string
-	Request  any
-	Response any
+	Name        string
+	Type        types.FlowNodeType
+	Kind        string
+	Description string
+	Request     any
+	Response    any
 }
 
 type Option func(*Options)
 
+func NewOptions(opts ...Option) *Options {
+	var options Options
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	if options.Type == 0 {
+		options.Type = types.FlowNodeType_ServiceTask
+	}
+	if options.Kind == "" {
+		options.Kind = "gflow"
+	}
+
+	return &options
+}
+
 func WithName(name string) Option {
 	return func(o *Options) {
 		o.Name = name
+	}
+}
+
+func WithType(t types.FlowNodeType) Option {
+	return func(o *Options) {
+		o.Type = t
+	}
+}
+
+func WithKind(kind string) Option {
+	return func(o *Options) {
+		o.Kind = kind
+	}
+}
+
+func WithDesc(desc string) Option {
+	return func(o *Options) {
+		o.Description = desc
 	}
 }
 
@@ -278,7 +331,8 @@ func (r *Runner) ListEndpoints() []*types.Endpoint {
 }
 
 func (r *Runner) Register(task Task, opts ...Option) error {
-	endpoint, impl, ok := extractTask(task, opts...)
+	options := NewOptions(opts...)
+	endpoint, proxy, ok := extractTask(task, options)
 	if !ok {
 		return fmt.Errorf("invalid task")
 	}
@@ -290,12 +344,13 @@ func (r *Runner) Register(task Task, opts ...Option) error {
 	}
 	r.endpoints[name] = endpoint
 
-	r.taskDefines[name] = impl
+	r.taskDefines[name] = proxy
 	return nil
 }
 
 func (r *Runner) RegisterFn(fn any, opts ...Option) error {
-	endpoint, taskForFn, ok := extractFunc(fn, opts...)
+	options := NewOptions(opts...)
+	endpoint, proxy, ok := extractFunc(fn, options)
 	if !ok {
 		return fmt.Errorf("invalid function")
 	}
@@ -307,7 +362,7 @@ func (r *Runner) RegisterFn(fn any, opts ...Option) error {
 	}
 	r.endpoints[name] = endpoint
 
-	r.taskDefines[name] = taskForFn
+	r.taskDefines[name] = proxy
 	return nil
 }
 
@@ -325,8 +380,12 @@ func (r *Runner) Handle(ctx context.Context, req *types.CallTaskRequest) *types.
 	}
 
 	ident := fmt.Sprintf("%d.%s", req.Process, req.Name)
+
+	lg.Info("call task",
+		zap.String("stage", req.Stage.String()),
+		zap.String("task", req.Name))
 	switch req.Stage {
-	case types.CallTaskStage_Commit:
+	case types.CallTaskStage_Echo, types.CallTaskStage_Commit:
 		stepCommitCounter.Add(1)
 		defer stepCommitCounter.Sub(1)
 
@@ -342,26 +401,26 @@ func (r *Runner) Handle(ctx context.Context, req *types.CallTaskRequest) *types.
 			task = impl.Clone().(Task)
 		}
 
-		r.pmu.Lock()
-		r.pools[ident] = task
-		r.pmu.Unlock()
+		if req.Stage == types.CallTaskStage_Commit {
+			r.pmu.Lock()
+			r.pools[ident] = task
+			r.pmu.Unlock()
+		}
 
-		lg.Info("commit task",
-			zap.String("task", req.Name))
-
-		in := &TaskRequest{
+		in := &plugins.Request{
 			Headers:     req.Headers,
 			Properties:  req.Properties,
 			DataObjects: req.DataObjects,
 		}
 
+		ctx = context.WithValue(ctx, originKey, in)
 		out, err := task.Commit(ctx, in)
 		if err != nil {
 			resp.Error = err.Error()
 			return resp
 		}
 
-		taskResp := out.(*TaskResponse)
+		taskResp := out.(*plugins.Response)
 		resp.Results = taskResp.Results
 		resp.DataObjects = taskResp.DataObjects
 
@@ -374,9 +433,7 @@ func (r *Runner) Handle(ctx context.Context, req *types.CallTaskRequest) *types.
 		r.pmu.RUnlock()
 
 		if ok {
-			lg.Info("rollback task",
-				zap.String("task", req.Name))
-
+			ctx = context.WithValue(ctx, originKey, req)
 			if err := task.Rollback(ctx); err != nil {
 				resp.Error = err.Error()
 			}
@@ -391,12 +448,11 @@ func (r *Runner) Handle(ctx context.Context, req *types.CallTaskRequest) *types.
 		r.pmu.RUnlock()
 
 		if ok {
-			lg.Info("destroy task",
-				zap.String("task", req.Name))
-
+			ctx = context.WithValue(ctx, originKey, req)
 			if err := task.Destroy(ctx); err != nil {
 				resp.Error = err.Error()
 			}
+
 			r.pmu.Lock()
 			delete(r.pools, ident)
 			r.pmu.Unlock()

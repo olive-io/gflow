@@ -38,11 +38,11 @@ import (
 
 	pb "github.com/olive-io/gflow/api/rpc"
 	"github.com/olive-io/gflow/pkg/dbutil"
+	"github.com/olive-io/gflow/plugins"
 	"github.com/olive-io/gflow/server/config"
 	"github.com/olive-io/gflow/server/dao"
 	"github.com/olive-io/gflow/server/dispatch"
 	"github.com/olive-io/gflow/server/docs"
-	"github.com/olive-io/gflow/server/plugin"
 	"github.com/olive-io/gflow/server/plugin/gflow"
 	"github.com/olive-io/gflow/server/scheduler"
 	"github.com/olive-io/gflow/third-party/swagger"
@@ -144,7 +144,7 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	if err != nil {
 		return nil, fmt.Errorf("creates gflow factory: %w", err)
 	}
-	if err = plugin.Register(gflowFactory); err != nil {
+	if err = plugins.Register(gflowFactory); err != nil {
 		return nil, fmt.Errorf("registry plugin factory %s: %w", gflowFactory.Name(), err)
 	}
 
@@ -156,6 +156,14 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 
 	bpmnRPC := newBpmnServer(ctx, lg, sch, definitionsDao, processDao)
 	systemRPC := newSystemGRPCServer(ctx, lg, s.cfg, runnerDao, endpointDao, dispatcher)
+
+	endpoints := plugins.ListEndpoints()
+	targetID := s.cfg.Server.ID
+	for _, endpoint := range endpoints {
+		if err = systemRPC.RegisterEndpoint(ctx, endpoint, targetID); err != nil {
+			return nil, fmt.Errorf("register endpoint %s: %w", endpoint.Name, err)
+		}
+	}
 
 	var kaep = keepalive.EnforcementPolicy{
 		MinTime:             30 * time.Second, // If a client pings more than once every 1 minute, terminate the connection

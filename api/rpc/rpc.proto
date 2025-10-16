@@ -245,9 +245,10 @@ message ExecuteProcessRequest {
   string definitions_uid = 2;
   uint64 definitions_version = 3;
   int64 priority = 4;
-  map<string, string> headers = 5;
-  map<string, types.Value> properties = 6;
-  map<string, types.Value> dataObjects = 7;
+  bool OnTransaction = 5;
+  map<string, string> headers = 6;
+  map<string, types.Value> properties = 7;
+  map<string, types.Value> dataObjects = 8;
 }
 
 message ExecuteProcessResponse {

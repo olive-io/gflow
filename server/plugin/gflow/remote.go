@@ -21,34 +21,34 @@ import (
 	"fmt"
 
 	"github.com/olive-io/gflow/api/types"
+	"github.com/olive-io/gflow/plugins"
 	"github.com/olive-io/gflow/server/dispatch"
-	"github.com/olive-io/gflow/server/plugin"
 )
 
-var _ plugin.Factory = (*gflowFactory)(nil)
+var _ plugins.Factory = (*remoteFactory)(nil)
 
-type gflowFactory struct {
+type remoteFactory struct {
 	dispatcher *dispatch.Dispatcher
 }
 
-func NewFactory(dispatcher *dispatch.Dispatcher) (plugin.Factory, error) {
-	factory := &gflowFactory{
+func NewFactory(dispatcher *dispatch.Dispatcher) (plugins.Factory, error) {
+	factory := &remoteFactory{
 		dispatcher: dispatcher,
 	}
 	return factory, nil
 }
 
-func (f *gflowFactory) Name() string { return "gflow" }
+func (f *remoteFactory) Name() string { return "gflow" }
 
-func (f *gflowFactory) Create(opts ...plugin.Option) (plugin.Plugin, error) {
-	options := plugin.NewOptions(opts...)
+func (f *remoteFactory) Create(opts ...plugins.Option) (plugins.Plugin, error) {
+	options := plugins.NewOptions(opts...)
 
 	target := options.Target
 	if target == "" {
-		return nil, fmt.Errorf("%w: target is required", plugin.ErrInvalidCreationOptions)
+		return nil, fmt.Errorf("%w: target is required", plugins.ErrInvalidCreationOptions)
 	}
 
-	gp := &gflowPlugin{
+	gp := &remotePlugin{
 		dispatcher: f.dispatcher,
 		target:     target,
 	}
@@ -56,17 +56,24 @@ func (f *gflowFactory) Create(opts ...plugin.Option) (plugin.Plugin, error) {
 	return gp, nil
 }
 
-var _ plugin.Plugin = (*gflowPlugin)(nil)
+var _ plugins.Plugin = (*remotePlugin)(nil)
 
-type gflowPlugin struct {
+type remotePlugin struct {
 	dispatcher *dispatch.Dispatcher
 	target     string
 }
 
-func (gp *gflowPlugin) Do(ctx context.Context, req *plugin.Request, opts ...plugin.DoOption) (*plugin.Response, error) {
-	var doOptions plugin.DoOptions
+func (gp *remotePlugin) Do(ctx context.Context, req *plugins.Request, opts ...plugins.DoOption) (*plugins.Response, error) {
+	var doOptions plugins.DoOptions
 	for _, opt := range opts {
 		opt(&doOptions)
+	}
+
+	if doOptions.Name == "" {
+		return nil, fmt.Errorf("%w: name is required", plugins.ErrInvalidDoOptions)
+	}
+	if doOptions.Stage > types.CallTaskStage_Destroy {
+		return nil, fmt.Errorf("%w: bad stage '%s'", plugins.ErrInvalidDoOptions, doOptions.Stage.String())
 	}
 
 	callRequest := &types.CallTaskRequest{
@@ -85,10 +92,10 @@ func (gp *gflowPlugin) Do(ctx context.Context, req *plugin.Request, opts ...plug
 
 	resp, err := gp.dispatcher.CallTask(ctx, callRequest, callOptions...)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", plugin.ErrDoExecution, err)
+		return nil, fmt.Errorf("%w: %v", plugins.ErrDoExecution, err)
 	}
 
-	callResp := &plugin.Response{
+	callResp := &plugins.Response{
 		Results:     resp.Results,
 		DataObjects: resp.DataObjects,
 		Error:       resp.Error,
@@ -96,4 +103,4 @@ func (gp *gflowPlugin) Do(ctx context.Context, req *plugin.Request, opts ...plug
 	return callResp, nil
 }
 
-func (gp *gflowPlugin) String() string { return "gflow" }
+func (gp *remotePlugin) String() string { return "gflow" }

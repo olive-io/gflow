@@ -30,7 +30,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/olive-io/gflow/api/types"
-	"github.com/olive-io/gflow/server/plugin"
+	"github.com/olive-io/gflow/plugins"
 )
 
 type antLogger struct {
@@ -250,37 +250,44 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 			rctx = sch.ctx
 		}
 
-		if err != nil {
-			lg.Errorf("execute process [%s] failed: %v", pid, err)
+		if stat.OnTransaction {
+			if err != nil {
+				lg.Infof("rollback process [%s]", pid)
+				stat.Stage = types.Process_Rollback
+				sch.setProcess(stat.Process)
 
-			lg.Infof("rollback process [%s]", pid)
-			stat.Stage = types.Process_Rollback
+				for i := len(activeStack) - 1; i >= 0; i-- {
+					node := activeStack[i]
+					node.Stage = types.FlowNode_Rollback
+					sch.setFlowNode(node)
+
+					lg.Infof("rollback task [%s][%s]", pid, node.FlowId)
+
+					_ = sch.doTask(rctx, stat, node, nil)
+				}
+			}
+
+			stat.Stage = types.Process_Destroy
 			sch.setProcess(stat.Process)
 
+			lg.Infof("destroy process [%s]", pid)
 			for i := len(activeStack) - 1; i >= 0; i-- {
 				node := activeStack[i]
-				node.Stage = types.FlowNode_Rollback
+				node.Stage = types.FlowNode_Destroy
 				sch.setFlowNode(node)
 
-				lg.Infof("rollback task [%s][%s]", pid, node.FlowId)
+				lg.Infof("destroy task [%s][%s]", pid, node.FlowId)
 
-				_ = sch.doTask(rctx, node, nil)
+				_ = sch.doTask(rctx, stat, node, nil)
 			}
 		}
 
-		stat.Stage = types.Process_Destroy
+		lg.Infof("finish process [%s]", pid)
+		stat.Stage = types.Process_Finish
 		sch.setProcess(stat.Process)
 
-		lg.Infof("destroy process [%s]", pid)
-		for i := len(activeStack) - 1; i >= 0; i-- {
+		for i := 0; i < len(activeStack); i++ {
 			node := activeStack[i]
-			node.Stage = types.FlowNode_Destroy
-			sch.setFlowNode(node)
-
-			lg.Infof("destroy task [%s][%s]", pid, node.FlowId)
-
-			_ = sch.doTask(rctx, node, nil)
-
 			node.Stage = types.FlowNode_Finish
 			sch.setFlowNode(node)
 		}
@@ -438,7 +445,7 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 
 					doOptions := make([]bpmn.DoOption, 0)
 					flowNode.Status = types.FlowNode_Success
-					doErr := sch.doTask(ctx, flowNode, extension)
+					doErr := sch.doTask(ctx, stat, flowNode, extension)
 					if doErr != nil {
 						flowNode.Status = types.FlowNode_Failed
 						flowNode.ErrMsg = doErr.Error()
@@ -476,7 +483,14 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 	case <-done:
 	}
 
-	return err
+	if err != nil {
+		lg.Errorf("execute process [%s] failed: %v", pid, err)
+		return err
+	}
+
+	lg.Infof("execute process [%s] success", pid)
+
+	return nil
 }
 
 func (sch *Scheduler) destroy() {
@@ -490,20 +504,20 @@ func (sch *Scheduler) destroy() {
 	sch.lg.Debug("released scheduler execute pool")
 }
 
-func (sch *Scheduler) doTask(ctx context.Context, node *types.FlowNode, extension *schema.ExtensionElements) error {
+func (sch *Scheduler) doTask(ctx context.Context, stat *ProcessStat, node *types.FlowNode, extension *schema.ExtensionElements) error {
 	kind := node.Kind
 	if kind == "" {
 		return fmt.Errorf("missing task kind")
 	}
 
-	factory, err := plugin.Get(kind)
+	factory, err := plugins.Get(kind)
 	if err != nil {
 		return fmt.Errorf("find '%s' factory: %w", kind, err)
 	}
 
-	options := make([]plugin.Option, 0)
+	options := make([]plugins.Option, 0)
 	if len(node.Target) != 0 {
-		options = append(options, plugin.WithTarget(node.Target))
+		options = append(options, plugins.WithTarget(node.Target))
 	}
 
 	pluginImpl, err := factory.Create(options...)
@@ -514,26 +528,29 @@ func (sch *Scheduler) doTask(ctx context.Context, node *types.FlowNode, extensio
 	headers := node.Headers
 	properties := node.Properties
 	dataObjects := node.DataObjects
-	req := &plugin.Request{
+	req := &plugins.Request{
 		Headers:     headers,
 		Properties:  properties,
 		DataObjects: dataObjects,
 	}
 
 	stage := types.ConvertStage(node.Stage)
-	doOptions := []plugin.DoOption{
-		plugin.DoWithProcess(node.ProcessId),
-		plugin.DoWithTaskStage(stage),
-		plugin.DoWithKind(kind),
-		plugin.DoWithName(node.Name),
-		plugin.DoWithTaskType(node.FlowType),
+	if !stat.OnTransaction {
+		stage = types.CallTaskStage_Echo
+	}
+	doOptions := []plugins.DoOption{
+		plugins.DoWithProcess(node.ProcessId),
+		plugins.DoWithTaskStage(stage),
+		plugins.DoWithKind(kind),
+		plugins.DoWithName(node.Name),
+		plugins.DoWithTaskType(node.FlowType),
 	}
 	if extension != nil {
 		taskDefinition := extension.TaskDefinitionField
 		if taskDefinition != nil {
 			durations, _ := time.ParseDuration(taskDefinition.Timeout)
 			if durations > 0 {
-				doOptions = append(doOptions, plugin.DoWithTimeout(durations.Milliseconds()))
+				doOptions = append(doOptions, plugins.DoWithTimeout(durations.Milliseconds()))
 			}
 		}
 	}
