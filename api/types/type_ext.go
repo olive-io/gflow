@@ -22,8 +22,9 @@ import (
 
 func (in *Endpoint) URL() string {
 	var urlText string
-	if in.Kind != "" {
-		urlText = path.Join(urlText, in.Kind)
+	urlText = path.Join(urlText, in.TaskType.String())
+	if in.Type != "" {
+		urlText = path.Join(urlText, in.Type)
 	}
 	if in.Name != "" {
 		urlText = path.Join(urlText, in.Name)

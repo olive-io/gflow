@@ -161,10 +161,10 @@ func ExtractResponse(rv reflect.Value) *Response {
 	return resp
 }
 
-func ExtractInOrOut(in any) (map[string]string, map[string]*types.Value, map[string]*types.Value, bool) {
-	headers := make(map[string]string)
-	properties := make(map[string]*types.Value)
-	dataObjects := make(map[string]*types.Value)
+func ExtractInOrOut(in any) (headers map[string]string, properties map[string]*types.Value, dataObjects map[string]*types.Value, ok bool) {
+	headers = make(map[string]string)
+	properties = make(map[string]*types.Value)
+	dataObjects = make(map[string]*types.Value)
 
 	rv := reflect.ValueOf(in)
 	rt := rv.Type()

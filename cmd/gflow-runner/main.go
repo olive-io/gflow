@@ -25,6 +25,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/olive-io/gflow/api/types"
 	"github.com/olive-io/gflow/pkg/cliutil"
 	"github.com/olive-io/gflow/pkg/signalutil"
 	"github.com/olive-io/gflow/pkg/version"
@@ -83,6 +84,14 @@ func startRunner(ctx context.Context, name string, cfg *runner.Config) error {
 	}
 
 	ctx = signalutil.SetupSignalContext(ctx)
+
+	// creates plugin factories
+	factory := runner.NewTaskFactory(types.FlowNodeType_ServiceTask)
+	//TODO: register plugins
+	if err = app.SetupFactory(factory); err != nil {
+		return fmt.Errorf("register %s: %w", name, err)
+	}
+
 	return app.Start(ctx)
 }
 

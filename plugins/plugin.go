@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package plugin provides a plugin management system for gflow.
+// Package plugins provides a plugin management system for gflow.
 // It allows dynamic registration and retrieval of plugins at runtime.
 package plugins
 
@@ -49,10 +49,10 @@ func init() {
 	})
 }
 
-// Register registers a plugin factory with the default manager.
+// Setup adds a plugin factory with the default manager.
 // It returns an error if a plugin with the same name is already registered.
-func Register(factory Factory) error {
-	return defaultManager.Register(factory)
+func Setup(factory Factory) error {
+	return defaultManager.Setup(factory)
 }
 
 // Get retrieves a plugin factory by name from the default manager.
@@ -87,12 +87,25 @@ type Response struct {
 	Error string
 }
 
+const (
+	GflowPlugin string = "gflow"
+	GRPCPlugin         = "grpc"
+	HTTPPlugin         = "http"
+)
+
 // Plugin defines the interface that all plugins must implement.
 type Plugin interface {
+	// Name returns the unique name of the plugin type
+	Name() string
 	// Do executes the plugin with the given request and returns a response
 	Do(ctx context.Context, req *Request, opts ...DoOption) (*Response, error)
-	// String returns a string representation of the plugin
-	String() string
+}
+
+// ProxyPlugin defines the interface that all plugins must implement and returns types.Endpoint
+type ProxyPlugin interface {
+	Plugin
+	// GetEndpoint returns relational Task or function
+	GetEndpoint() types.Endpoint
 }
 
 // Factory defines the interface for creating plugin instances.
@@ -107,8 +120,8 @@ type Factory interface {
 // ProxyFactory defines the interface for creating plugin instances and returns types.Endpoint
 type ProxyFactory interface {
 	Factory
-	// GetEndpoint returns relational Task or function
-	GetEndpoint() types.Endpoint
+	// ListEndpoint returns relational Tasks or functions
+	ListEndpoint() []types.Endpoint
 }
 
 // Manager manages plugin factories and provides registration and retrieval functionality.
@@ -123,14 +136,15 @@ type Manager struct {
 func NewManager() *Manager {
 	manager := &Manager{
 		factories: make(map[string]Factory),
+		endpoints: make(map[string]types.Endpoint),
 	}
 
 	return manager
 }
 
-// Register registers a plugin factory with the manager.
+// Setup adds a plugin factory with the manager.
 // It returns an error if a factory with the same name is already registered.
-func (m *Manager) Register(factory Factory) error {
+func (m *Manager) Setup(factory Factory) error {
 	name := factory.Name()
 	_, ok := m.factories[name]
 	if ok {
@@ -138,13 +152,14 @@ func (m *Manager) Register(factory Factory) error {
 	}
 
 	if v, match := factory.(ProxyFactory); match {
-		endpoint := v.GetEndpoint()
-		endpointName := endpoint.Name
-		_, exists := m.endpoints[endpointName]
-		if exists {
-			return fmt.Errorf("%w: endpoint '%s' be registered", ErrFactoryAlreadyExists, endpointName)
+		for _, endpoint := range v.ListEndpoint() {
+			endpointName := endpoint.Name
+			_, exists := m.endpoints[endpointName]
+			if exists {
+				return fmt.Errorf("%w: endpoint '%s' be registered", ErrFactoryAlreadyExists, endpointName)
+			}
+			m.endpoints[endpointName] = endpoint
 		}
-		m.endpoints[endpointName] = endpoint
 	}
 
 	m.factories[name] = factory

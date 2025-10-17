@@ -75,8 +75,8 @@ message Endpoint {
   int64 create_at = 2 [(tagger.tags) = "gorm:\"autoCreateTime\""];
   int64 update_at = 3 [(tagger.tags) = "gorm:\"autoUpdateTime\""];
 
-  string kind = 4;
-  FlowNodeType type = 5;
+  FlowNodeType taskType = 4;
+  string type = 5;
   string name = 6;
   string description = 7;
   bool OnTransaction = 8;
@@ -218,7 +218,7 @@ message FlowNode {
 
   FlowNodeType flow_type = 5;
 
-  string kind = 6;
+  string type = 6;
 
   string target = 7;
 
@@ -258,12 +258,13 @@ message CallTaskRequest {
   int64 process = 1;
   uint64 seq_id = 2;
   CallTaskStage stage = 3;
-  string kind = 4;
-  string name = 5;
-  map<string, string> headers = 6;
-  map<string, Value> properties = 7;
-  map<string, Value> dataObjects = 8;
-  int64 timeout = 9;
+  FlowNodeType taskType = 4;
+  string type = 5;
+  string name = 6;
+  map<string, string> headers = 7;
+  map<string, Value> properties = 8;
+  map<string, Value> dataObjects = 9;
+  int64 timeout = 10;
 }
 
 message CallTaskResponse {

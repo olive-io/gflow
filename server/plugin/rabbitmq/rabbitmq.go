@@ -36,9 +36,9 @@ func (rf *rabbitmqFactory) Create(opts ...plugins.Option) (plugins.Plugin, error
 
 type rabbitmqPlugin struct{}
 
+func (rp *rabbitmqPlugin) Name() string { return "rabbitmq" }
+
 func (rp *rabbitmqPlugin) Do(ctx context.Context, req *plugins.Request, opts ...plugins.DoOption) (*plugins.Response, error) {
 	//TODO implement me
 	panic("implement me")
 }
-
-func (rp *rabbitmqPlugin) String() string { return "rabbitmq" }

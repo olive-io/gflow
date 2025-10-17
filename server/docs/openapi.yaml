@@ -5,7 +5,7 @@ openapi: 3.0.3
 info:
     title: GFlow
     description: Gflow OpenAPI3.0 Document
-    version: f1a9182bd01f239c74d42e0c2202bcfa8c557715
+    version: 41b184f3e60cda9e6648cd24f9bc363f23b44f19
 paths:
     /v1/definitions:
         get:
@@ -500,11 +500,11 @@ components:
                     type: string
                 updateAt:
                     type: string
-                kind:
-                    type: string
-                type:
+                taskType:
                     type: integer
                     format: enum
+                type:
+                    type: string
                 name:
                     type: string
                 description:
@@ -553,7 +553,7 @@ components:
                 flowType:
                     type: integer
                     format: enum
-                kind:
+                type:
                     type: string
                 target:
                     type: string

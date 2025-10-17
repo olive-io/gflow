@@ -43,7 +43,7 @@ import (
 	"github.com/olive-io/gflow/server/dao"
 	"github.com/olive-io/gflow/server/dispatch"
 	"github.com/olive-io/gflow/server/docs"
-	"github.com/olive-io/gflow/server/plugin/gflow"
+	"github.com/olive-io/gflow/server/plugin/service"
 	"github.com/olive-io/gflow/server/scheduler"
 	"github.com/olive-io/gflow/third-party/swagger"
 )
@@ -140,11 +140,11 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	dispatcher.Start(ctx)
 
 	// registers plugin factories
-	gflowFactory, err := gflow.NewFactory(dispatcher)
+	gflowFactory, err := service.NewFactory(lg, dispatcher)
 	if err != nil {
 		return nil, fmt.Errorf("creates gflow factory: %w", err)
 	}
-	if err = plugins.Register(gflowFactory); err != nil {
+	if err = plugins.Setup(gflowFactory); err != nil {
 		return nil, fmt.Errorf("registry plugin factory %s: %w", gflowFactory.Name(), err)
 	}
 

@@ -14,56 +14,43 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package gflow
+package sdk
 
 import (
 	"context"
 	"fmt"
+
+	"go.uber.org/zap"
 
 	"github.com/olive-io/gflow/api/types"
 	"github.com/olive-io/gflow/plugins"
 	"github.com/olive-io/gflow/server/dispatch"
 )
 
-var _ plugins.Factory = (*remoteFactory)(nil)
+var _ plugins.Plugin = (*RemoteGflowPlugin)(nil)
 
-type remoteFactory struct {
+type RemoteGflowPlugin struct {
+	lg         *zap.Logger
 	dispatcher *dispatch.Dispatcher
-}
-
-func NewFactory(dispatcher *dispatch.Dispatcher) (plugins.Factory, error) {
-	factory := &remoteFactory{
-		dispatcher: dispatcher,
-	}
-	return factory, nil
-}
-
-func (f *remoteFactory) Name() string { return "gflow" }
-
-func (f *remoteFactory) Create(opts ...plugins.Option) (plugins.Plugin, error) {
-	options := plugins.NewOptions(opts...)
-
-	target := options.Target
-	if target == "" {
-		return nil, fmt.Errorf("%w: target is required", plugins.ErrInvalidCreationOptions)
-	}
-
-	gp := &remotePlugin{
-		dispatcher: f.dispatcher,
-		target:     target,
-	}
-
-	return gp, nil
-}
-
-var _ plugins.Plugin = (*remotePlugin)(nil)
-
-type remotePlugin struct {
-	dispatcher *dispatch.Dispatcher
+	taskType   types.FlowNodeType
+	typ        string
 	target     string
 }
 
-func (gp *remotePlugin) Do(ctx context.Context, req *plugins.Request, opts ...plugins.DoOption) (*plugins.Response, error) {
+func NewRemoteGflowPlugin(lg *zap.Logger, dispatcher *dispatch.Dispatcher, taskType types.FlowNodeType, target string) *RemoteGflowPlugin {
+	rgp := &RemoteGflowPlugin{
+		lg:         lg,
+		dispatcher: dispatcher,
+		taskType:   taskType,
+		typ:        plugins.GflowPlugin,
+		target:     target,
+	}
+	return rgp
+}
+
+func (gp *RemoteGflowPlugin) Name() string { return gp.typ }
+
+func (gp *RemoteGflowPlugin) Do(ctx context.Context, req *plugins.Request, opts ...plugins.DoOption) (*plugins.Response, error) {
 	var doOptions plugins.DoOptions
 	for _, opt := range opts {
 		opt(&doOptions)
@@ -79,7 +66,8 @@ func (gp *remotePlugin) Do(ctx context.Context, req *plugins.Request, opts ...pl
 	callRequest := &types.CallTaskRequest{
 		Stage:       doOptions.Stage,
 		Process:     doOptions.Process,
-		Kind:        doOptions.Kind,
+		TaskType:    gp.taskType,
+		Type:        gp.typ,
 		Name:        doOptions.Name,
 		Headers:     req.Headers,
 		Properties:  req.Properties,
@@ -102,5 +90,3 @@ func (gp *remotePlugin) Do(ctx context.Context, req *plugins.Request, opts ...pl
 	}
 	return callResp, nil
 }
-
-func (gp *remotePlugin) String() string { return "gflow" }

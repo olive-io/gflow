@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -32,6 +31,7 @@ import (
 	"github.com/olive-io/gflow/api/types"
 	"github.com/olive-io/gflow/clientgo"
 	"github.com/olive-io/gflow/pkg/version"
+	"github.com/olive-io/gflow/plugins"
 )
 
 type Runner struct {
@@ -42,12 +42,7 @@ type Runner struct {
 
 	tr *atomic.Pointer[types.Runner]
 
-	endpoints map[string]*types.Endpoint
-
-	taskDefines map[string]Task
-
-	pmu   sync.RWMutex
-	pools map[string]Task
+	pluginManager *plugins.Manager
 }
 
 func New(name string, cfg *Config) (*Runner, error) {
@@ -86,14 +81,13 @@ func New(name string, cfg *Config) (*Runner, error) {
 	trPtr := atomic.Pointer[types.Runner]{}
 	trPtr.Store(tr)
 
+	pm := plugins.NewManager()
 	runner := &Runner{
-		lg:          lg,
-		cfg:         cfg,
-		name:        name,
-		tr:          &trPtr,
-		endpoints:   make(map[string]*types.Endpoint),
-		taskDefines: make(map[string]Task),
-		pools:       make(map[string]Task),
+		lg:            lg,
+		cfg:           cfg,
+		name:          name,
+		tr:            &trPtr,
+		pluginManager: pm,
 	}
 
 	return runner, nil

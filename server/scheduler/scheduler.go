@@ -160,6 +160,7 @@ LOOP:
 }
 
 func (sch *Scheduler) tick(ctx context.Context) {
+	lg := sch.lg
 	free := sch.executePool.Free()
 	if free == 0 {
 		return
@@ -181,15 +182,18 @@ func (sch *Scheduler) tick(ctx context.Context) {
 	}()
 
 	err = sch.executePool.Submit(func() {
+		process := stat.Process
 		execErr := sch.execute(ctx, stat)
 		if execErr != nil {
-			//TODO: handle error
+			lg.Error("process executes failed", zap.String("pid", process.Uid), zap.Error(execErr))
+		} else {
+			lg.Info("process executes success", zap.String("pid", process.Uid))
 		}
 	})
 }
 
 func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
-	lg := sch.lg.Sugar()
+	lg := sch.lg
 
 	var err error
 	defer func() {
@@ -252,7 +256,7 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 
 		if stat.OnTransaction {
 			if err != nil {
-				lg.Infof("rollback process [%s]", pid)
+				lg.Info("process rollback", zap.String("pid", pid))
 				stat.Stage = types.Process_Rollback
 				sch.setProcess(stat.Process)
 
@@ -261,28 +265,42 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 					node.Stage = types.FlowNode_Rollback
 					sch.setFlowNode(node)
 
-					lg.Infof("rollback task [%s][%s]", pid, node.FlowId)
-
-					_ = sch.doTask(rctx, stat, node, nil)
+					lg.Info("rollback task",
+						zap.String("pid", pid),
+						zap.String("task", node.Name))
+					_, _, doErr := sch.doTask(rctx, stat, node, nil)
+					if doErr != nil {
+						lg.Error("rollback task",
+							zap.String("pid", pid),
+							zap.String("task", node.Name),
+							zap.Error(doErr))
+					}
 				}
 			}
 
 			stat.Stage = types.Process_Destroy
 			sch.setProcess(stat.Process)
 
-			lg.Infof("destroy process [%s]", pid)
+			lg.Info("process destroy", zap.String("pid", pid))
 			for i := len(activeStack) - 1; i >= 0; i-- {
 				node := activeStack[i]
 				node.Stage = types.FlowNode_Destroy
 				sch.setFlowNode(node)
 
-				lg.Infof("destroy task [%s][%s]", pid, node.FlowId)
-
-				_ = sch.doTask(rctx, stat, node, nil)
+				lg.Info("destroy task",
+					zap.String("pid", pid),
+					zap.String("task", node.Name))
+				_, _, doErr := sch.doTask(rctx, stat, node, nil)
+				if doErr != nil {
+					lg.Error("destroy task",
+						zap.String("pid", pid),
+						zap.String("task", node.Name),
+						zap.Error(doErr))
+				}
 			}
 		}
 
-		lg.Infof("finish process [%s]", pid)
+		lg.Info("process finish", zap.String("pid", pid))
 		stat.Stage = types.Process_Finish
 		sch.setProcess(stat.Process)
 
@@ -309,8 +327,7 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 	stat.Stage = types.Process_Commit
 	sch.setProcess(stat.Process)
 
-	lg.Infof("commit process [%s]", pid)
-
+	lg.Info("process commit", zap.String("pid", pid))
 	ech := make(chan error, 1)
 	done := make(chan struct{}, 1)
 	go func(ech chan<- error) {
@@ -394,8 +411,8 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 				if ok {
 					tname = *name
 				}
-				lg.Infof("commit task [%s][%s]", pid, fid)
 
+				lg.Info("commit task", zap.String("pid", pid), zap.String("task", tname))
 				flowNode, exists := nodeMapping[fid]
 				if !exists {
 					flowNode = &types.FlowNode{
@@ -416,7 +433,7 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 				extension, found := act.Element().ExtensionElements()
 				if found {
 					if taskDefinition := extension.TaskDefinitionField; taskDefinition != nil {
-						flowNode.Kind = taskDefinition.Type
+						flowNode.Type = taskDefinition.Type
 						flowNode.Target = taskDefinition.Target
 					}
 				}
@@ -445,11 +462,24 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 
 					doOptions := make([]bpmn.DoOption, 0)
 					flowNode.Status = types.FlowNode_Success
-					doErr := sch.doTask(ctx, stat, flowNode, extension)
+					results, outDataObjects, doErr := sch.doTask(ctx, stat, flowNode, extension)
 					if doErr != nil {
 						flowNode.Status = types.FlowNode_Failed
 						flowNode.ErrMsg = doErr.Error()
 						doOptions = append(doOptions, bpmn.DoWithErr(doErr))
+					} else {
+						flowNode.Results = results
+						flowNode.DataObjects = outDataObjects
+						values := make(map[string]any)
+						for key, value := range results {
+							values[key] = value
+						}
+						doOptions = append(doOptions, bpmn.DoWithResults(values))
+						values = make(map[string]any)
+						for key, value := range outDataObjects {
+							values[key] = value
+						}
+						doOptions = append(doOptions, bpmn.DoWithObjects(values))
 					}
 
 					tt.Do(doOptions...)
@@ -484,11 +514,8 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 	}
 
 	if err != nil {
-		lg.Errorf("execute process [%s] failed: %v", pid, err)
 		return err
 	}
-
-	lg.Infof("execute process [%s] success", pid)
 
 	return nil
 }
@@ -504,25 +531,30 @@ func (sch *Scheduler) destroy() {
 	sch.lg.Debug("released scheduler execute pool")
 }
 
-func (sch *Scheduler) doTask(ctx context.Context, stat *ProcessStat, node *types.FlowNode, extension *schema.ExtensionElements) error {
-	kind := node.Kind
-	if kind == "" {
-		return fmt.Errorf("missing task kind")
-	}
+func (sch *Scheduler) doTask(
+	ctx context.Context, stat *ProcessStat,
+	node *types.FlowNode, extension *schema.ExtensionElements,
+) (map[string]*types.Value, map[string]*types.Value, error) {
 
-	factory, err := plugins.Get(kind)
+	lg := sch.lg
+	taskType := node.FlowType.String()
+	typ := node.Type
+	lg.Debug("select plugin", zap.String("taskType", taskType), zap.String("type", typ))
+
+	factory, err := plugins.Get(taskType)
 	if err != nil {
-		return fmt.Errorf("find '%s' factory: %w", kind, err)
+		return nil, nil, fmt.Errorf("find '%s' factory: %w", taskType, err)
 	}
 
 	options := make([]plugins.Option, 0)
+	options = append(options, plugins.WithType(typ))
 	if len(node.Target) != 0 {
 		options = append(options, plugins.WithTarget(node.Target))
 	}
 
 	pluginImpl, err := factory.Create(options...)
 	if err != nil {
-		return fmt.Errorf("create plugin: %w", err)
+		return nil, nil, fmt.Errorf("create plugin: %w", err)
 	}
 
 	headers := node.Headers
@@ -541,9 +573,7 @@ func (sch *Scheduler) doTask(ctx context.Context, stat *ProcessStat, node *types
 	doOptions := []plugins.DoOption{
 		plugins.DoWithProcess(node.ProcessId),
 		plugins.DoWithTaskStage(stage),
-		plugins.DoWithKind(kind),
 		plugins.DoWithName(node.Name),
-		plugins.DoWithTaskType(node.FlowType),
 	}
 	if extension != nil {
 		taskDefinition := extension.TaskDefinitionField
@@ -557,16 +587,13 @@ func (sch *Scheduler) doTask(ctx context.Context, stat *ProcessStat, node *types
 
 	resp, err := pluginImpl.Do(ctx, req, doOptions...)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	if len(resp.Error) != 0 {
-		return errors.New(resp.Error)
+		return nil, nil, errors.New(resp.Error)
 	}
 
-	node.Results = resp.Results
-	node.DataObjects = resp.DataObjects
-
-	return nil
+	return resp.Results, resp.DataObjects, nil
 }
 
 func (sch *Scheduler) setProcess(process *types.Process) {

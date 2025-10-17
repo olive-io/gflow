@@ -21,9 +21,10 @@ import (
 )
 
 // Options contains configuration options for plugin creation.
-// It includes target configuration and can be extended with additional plugin-specific options.
 type Options struct {
-	// Target specifies the target destination or endpoint for the plugin
+	// Type specifies the type for the plugin
+	Type string
+	// Target specifies the target destination for the plugin
 	Target string
 }
 
@@ -40,8 +41,15 @@ func NewOptions(opts ...Option) *Options {
 // Option is a function type for configuring plugin creation options.
 type Option func(o *Options)
 
+// WithType returns an Option function that sets the type for plugin configuration.
+func WithType(typ string) Option {
+	return func(o *Options) {
+		o.Type = typ
+	}
+}
+
 // WithTarget returns an Option function that sets the target for plugin configuration.
-// The target parameter specifies the destination or endpoint the plugin should use.
+// The target parameter specifies the destination the plugin should use.
 func WithTarget(target string) Option {
 	return func(o *Options) {
 		o.Target = target
@@ -51,14 +59,25 @@ func WithTarget(target string) Option {
 // DoOptions contains runtime options for plugin execution.
 // It provides metadata storage for passing additional context during plugin execution.
 type DoOptions struct {
-	Stage    types.CallTaskStage
-	Process  int64
-	FlowType types.FlowNodeType
-	Kind     string
-	Name     string
-	Timeout  int64
+	Stage   types.CallTaskStage
+	Process int64
+	Name    string
+	Timeout int64
 	// metadata stores key-value pairs of execution context
 	metadata map[string]any
+}
+
+func NewDoOptions(opts ...DoOption) *DoOptions {
+	var options DoOptions
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	if options.metadata == nil {
+		options.metadata = make(map[string]any)
+	}
+
+	return &options
 }
 
 // Metadata returns the complete metadata map containing all key-value pairs.
@@ -86,18 +105,6 @@ func DoWithProcess(process int64) DoOption {
 func DoWithName(name string) DoOption {
 	return func(o *DoOptions) {
 		o.Name = name
-	}
-}
-
-func DoWithKind(kind string) DoOption {
-	return func(o *DoOptions) {
-		o.Kind = kind
-	}
-}
-
-func DoWithTaskType(flowType types.FlowNodeType) DoOption {
-	return func(o *DoOptions) {
-		o.FlowType = flowType
 	}
 }
 
