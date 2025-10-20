@@ -23,29 +23,29 @@ func TestNewRabbitmq(t *testing.T) {
 
 	ctx := context.TODO()
 	topic := "hello"
-	contentType := "text/plain"
-	ch, cancel, err := rabbitmq.Receive(ctx, topic, contentType)
-	if err != nil {
-		t.Fatalf("receive failed: %v", err)
-	}
-	defer cancel()
-
-	//msg := []byte("rabbitmq")
-	msg1 := []byte("")
-	done := make(chan struct{}, 1)
-	go func() {
-		defer close(done)
-		select {
-		case d := <-ch:
-			msg1 = d.Body
-		}
-	}()
-
-	//if err = rabbitmq.Send(ctx, topic, contentType, msg); err != nil {
-	//	t.Fatalf("send failed: %v", err)
+	contentType := "application/json"
+	//ch, cancel, err := rabbitmq.Receive(ctx, topic, contentType)
+	//if err != nil {
+	//	t.Fatalf("receive failed: %v", err)
 	//}
+	//defer cancel()
 
-	<-done
+	msg := []byte(fmt.Sprint(`{"hello":"world"}`))
+	//msg1 := []byte("")
+	//done := make(chan struct{}, 1)
+	//go func() {
+	//	defer close(done)
+	//	select {
+	//	case d := <-ch:
+	//		msg1 = d.Body
+	//	}
+	//}()
 
-	fmt.Println(string(msg1))
+	if err = rabbitmq.Send(ctx, topic, contentType, msg); err != nil {
+		t.Fatalf("send failed: %v", err)
+	}
+
+	//<-done
+	//
+	//fmt.Println(string(msg1))
 }

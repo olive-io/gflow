@@ -43,6 +43,7 @@ import (
 	"github.com/olive-io/gflow/server/dao"
 	"github.com/olive-io/gflow/server/dispatch"
 	"github.com/olive-io/gflow/server/docs"
+	"github.com/olive-io/gflow/server/plugin/receive"
 	"github.com/olive-io/gflow/server/plugin/send"
 	"github.com/olive-io/gflow/server/plugin/service"
 	"github.com/olive-io/gflow/server/scheduler"
@@ -159,6 +160,15 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 		}
 		if err = plugins.Setup(sendFactory); err != nil {
 			return nil, fmt.Errorf("registry plugin factory %s: %w", sendFactory.Name(), err)
+		}
+	}
+	if rc := pluginConfig.ReceiveTask; rc != nil {
+		receiveFactory, err := receive.NewFactory(lg, rc)
+		if err != nil {
+			return nil, fmt.Errorf("creates rabbitmq factory %s: %w", s.name, err)
+		}
+		if err = plugins.Setup(receiveFactory); err != nil {
+			return nil, fmt.Errorf("registry plugin factory %s: %w", receiveFactory.Name(), err)
 		}
 	}
 

@@ -219,9 +219,25 @@ func (cfg *Config) FormatPluginConfig() (*PluginConfig, error) {
 		return nil, fmt.Errorf("send task plugin config is required")
 	}
 
-	sc := cfg.Plugin.SendTask
-	if sc != nil {
+	if sc := cfg.Plugin.SendTask; sc != nil {
 		if mq := sc.RabbitMQ; mq != nil {
+			if mq.Ref != "" && mq.RabbitMQConfig == nil {
+				ref := mq.Ref
+				exists := false
+				for _, item := range cfg.MQ {
+					if item.Name == ref {
+						exists = true
+						mq.RabbitMQConfig = item.RabbitMQ
+					}
+				}
+				if !exists {
+					return nil, fmt.Errorf("rabbitmq reference not found: %s", ref)
+				}
+			}
+		}
+	}
+	if rc := cfg.Plugin.ReceiveTask; rc != nil {
+		if mq := rc.RabbitMQ; mq != nil {
 			if mq.Ref != "" && mq.RabbitMQConfig == nil {
 				ref := mq.Ref
 				exists := false
