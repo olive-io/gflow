@@ -24,7 +24,6 @@ import (
 	"github.com/olive-io/gflow/api/types"
 	"github.com/olive-io/gflow/plugins"
 	"github.com/olive-io/gflow/server/dispatch"
-	"github.com/olive-io/gflow/server/plugin/sdk"
 )
 
 var _ plugins.Factory = (*remoteFactory)(nil)
@@ -58,7 +57,7 @@ func (f *remoteFactory) Create(opts ...plugins.Option) (plugins.Plugin, error) {
 	var gp plugins.Plugin
 	switch options.Type {
 	case plugins.GflowPlugin:
-		gp = sdk.NewRemoteGflowPlugin(lg, f.dispatcher, f.taskType, target)
+		gp = NewRemoteGflow(lg, f.dispatcher, f.taskType, target)
 	case plugins.GRPCPlugin:
 		return nil, fmt.Errorf("not implemented yet")
 	case plugins.HTTPPlugin:

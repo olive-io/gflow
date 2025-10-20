@@ -62,9 +62,9 @@ func TestExtractTask(t *testing.T) {
 	st := &SimpleTask{}
 
 	options := NewOptions(WithName("test"), WithRequest(new(TestRequest)), WithResponse(new(TestResponse)))
-	endpoint, _, found := extractTask(st, options)
-	if !found {
-		t.Fatal("failed to extract task")
+	endpoint, _, err := extractTask(st, options)
+	if err != nil {
+		t.Fatalf("failed to extract task: %v", err)
 	}
 
 	t.Logf("%+v", endpoint)
@@ -79,30 +79,30 @@ func Fn3() error { return nil }
 func Fn4(request *TestRequest) (*TestRequest, error) { return nil, nil }
 
 func TestExtractFunc(t *testing.T) {
-	endpoint, _, found := extractFunc(Fn1, NewOptions())
-	if !found {
-		t.Fatal("failed to extract function")
+	endpoint, _, err := extractFunc(Fn1, NewOptions())
+	if err != nil {
+		t.Fatalf("failed to extract function: %v", err)
 	}
 
 	t.Logf("%+v", endpoint)
 
-	endpoint, _, found = extractFunc(Fn2, NewOptions())
-	if !found {
-		t.Fatal("failed to extract function")
+	endpoint, _, err = extractFunc(Fn2, NewOptions())
+	if err != nil {
+		t.Fatalf("failed to extract function: %v", err)
 	}
 
 	t.Logf("%+v", endpoint)
 
-	endpoint, _, found = extractFunc(Fn3, NewOptions())
-	if !found {
-		t.Fatal("failed to extract function")
+	endpoint, _, err = extractFunc(Fn3, NewOptions())
+	if err != nil {
+		t.Fatalf("failed to extract function: %v", err)
 	}
 
 	t.Logf("%+v", endpoint)
 
-	endpoint, _, found = extractFunc(Fn4, NewOptions())
-	if !found {
-		t.Fatal("failed to extract function")
+	endpoint, _, err = extractFunc(Fn4, NewOptions())
+	if err != nil {
+		t.Fatalf("failed to extract function: %v", err)
 	}
 
 	t.Logf("%+v", endpoint)

@@ -55,14 +55,14 @@ type Task interface {
 var _ Task = (*taskProxy)(nil)
 
 type taskProxy struct {
-	opt   *Options
+	opt   *plugins.RegisterOptions
 	proxy Task
 }
 
 func (tp *taskProxy) Clone() *taskProxy {
 	out := new(taskProxy)
 	out.proxy = tp.proxy
-	out.opt = &Options{
+	out.opt = &plugins.RegisterOptions{
 		Name:     tp.opt.Name,
 		Request:  tp.opt.Request,
 		Response: tp.opt.Response,
@@ -258,70 +258,7 @@ func (fn *fnProxy) Destroy(ctx context.Context) error { return nil }
 
 func (fn *fnProxy) String() string { return fn.name }
 
-type Options struct {
-	Name        string
-	TaskType    types.FlowNodeType
-	Type        string
-	Description string
-	Request     any
-	Response    any
-}
-
-type Option func(*Options)
-
-func NewOptions(opts ...Option) *Options {
-	var options Options
-	for _, opt := range opts {
-		opt(&options)
-	}
-
-	if options.TaskType == 0 {
-		options.TaskType = types.FlowNodeType_ServiceTask
-	}
-	if options.Type == "" {
-		options.Type = "gflow"
-	}
-
-	return &options
-}
-
-func WithName(name string) Option {
-	return func(o *Options) {
-		o.Name = name
-	}
-}
-
-func WithTaskType(t types.FlowNodeType) Option {
-	return func(o *Options) {
-		o.TaskType = t
-	}
-}
-
-func WithType(typ string) Option {
-	return func(o *Options) {
-		o.Type = typ
-	}
-}
-
-func WithDesc(desc string) Option {
-	return func(o *Options) {
-		o.Description = desc
-	}
-}
-
-func WithRequest(request any) Option {
-	return func(o *Options) {
-		o.Request = request
-	}
-}
-
-func WithResponse(response any) Option {
-	return func(o *Options) {
-		o.Response = response
-	}
-}
-
-func extractTask(task Task, options *Options) (*types.Endpoint, *taskProxy, error) {
+func extractTask(task Task, options *plugins.RegisterOptions) (*types.Endpoint, *taskProxy, error) {
 	if options.Request == nil {
 		return nil, nil, fmt.Errorf("no request provided")
 	}
@@ -330,15 +267,15 @@ func extractTask(task Task, options *Options) (*types.Endpoint, *taskProxy, erro
 	}
 
 	endpoint := &types.Endpoint{
-		TaskType:      options.TaskType,
-		Type:          options.Type,
-		Description:   options.Description,
-		OnTransaction: true,
-		Metadata:      map[string]string{},
-		Headers:       map[string]string{},
-		Properties:    map[string]*types.Value{},
-		DataObjects:   map[string]*types.Value{},
-		Results:       map[string]*types.Value{},
+		TaskType:    options.FlowType,
+		Type:        options.Type,
+		Description: options.Description,
+		Mode:        types.TransitionMode_Transition,
+		Metadata:    map[string]string{},
+		Headers:     map[string]string{},
+		Properties:  map[string]*types.Value{},
+		DataObjects: map[string]*types.Value{},
+		Results:     map[string]*types.Value{},
 	}
 
 	impl := &taskProxy{
@@ -375,7 +312,7 @@ func extractTask(task Task, options *Options) (*types.Endpoint, *taskProxy, erro
 	return endpoint, impl, nil
 }
 
-func extractFunc(fn any, options *Options) (*types.Endpoint, *fnProxy, error) {
+func extractFunc(fn any, options *plugins.RegisterOptions) (*types.Endpoint, *fnProxy, error) {
 	rv := reflect.ValueOf(fn)
 	rt := rv.Type()
 	if rt.Kind() != reflect.Func {
@@ -383,7 +320,7 @@ func extractFunc(fn any, options *Options) (*types.Endpoint, *fnProxy, error) {
 	}
 
 	endpoint := &types.Endpoint{
-		TaskType:    options.TaskType,
+		TaskType:    options.FlowType,
 		Type:        options.Type,
 		Description: options.Description,
 		Metadata:    map[string]string{},

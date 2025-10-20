@@ -20,6 +20,14 @@ import (
 	"github.com/olive-io/gflow/api/types"
 )
 
+const (
+	GflowPlugin string = "gflow"
+	GRPCPlugin         = "grpc"
+	HTTPPlugin         = "http"
+
+	RabbitMQPlugin = "rabbitmq"
+)
+
 // Options contains configuration options for plugin creation.
 type Options struct {
 	// Type specifies the type for the plugin
@@ -33,6 +41,10 @@ func NewOptions(opts ...Option) *Options {
 	var options Options
 	for _, o := range opts {
 		o(&options)
+	}
+
+	if options.Type == "" {
+		options.Type = GflowPlugin
 	}
 
 	return &options
@@ -53,6 +65,76 @@ func WithType(typ string) Option {
 func WithTarget(target string) Option {
 	return func(o *Options) {
 		o.Target = target
+	}
+}
+
+type RegisterOptions struct {
+	Name        string
+	FlowType    types.FlowNodeType
+	Type        string
+	Description string
+	Task        any
+	Request     any
+	Response    any
+}
+
+type RegisterOption func(*RegisterOptions)
+
+func NewRegisterOptions(opts ...RegisterOption) *RegisterOptions {
+	var options RegisterOptions
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	if options.FlowType == 0 {
+		options.FlowType = types.FlowNodeType_ServiceTask
+	}
+	if options.Type == "" {
+		options.Type = GflowPlugin
+	}
+
+	return &options
+}
+
+func WithTaskName(name string) RegisterOption {
+	return func(o *RegisterOptions) {
+		o.Name = name
+	}
+}
+
+func WithFlowType(t types.FlowNodeType) RegisterOption {
+	return func(o *RegisterOptions) {
+		o.FlowType = t
+	}
+}
+
+func WithTaskType(typ string) RegisterOption {
+	return func(o *RegisterOptions) {
+		o.Type = typ
+	}
+}
+
+func WithDesc(desc string) RegisterOption {
+	return func(o *RegisterOptions) {
+		o.Description = desc
+	}
+}
+
+func WithTask(task any) RegisterOption {
+	return func(o *RegisterOptions) {
+		o.Task = task
+	}
+}
+
+func WithRequest(request any) RegisterOption {
+	return func(o *RegisterOptions) {
+		o.Request = request
+	}
+}
+
+func WithResponse(response any) RegisterOption {
+	return func(o *RegisterOptions) {
+		o.Response = response
 	}
 }
 

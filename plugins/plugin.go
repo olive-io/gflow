@@ -87,12 +87,6 @@ type Response struct {
 	Error string
 }
 
-const (
-	GflowPlugin string = "gflow"
-	GRPCPlugin         = "grpc"
-	HTTPPlugin         = "http"
-)
-
 // Plugin defines the interface that all plugins must implement.
 type Plugin interface {
 	// Name returns the unique name of the plugin type
@@ -101,8 +95,8 @@ type Plugin interface {
 	Do(ctx context.Context, req *Request, opts ...DoOption) (*Response, error)
 }
 
-// ProxyPlugin defines the interface that all plugins must implement and returns types.Endpoint
-type ProxyPlugin interface {
+// TaskPlugin defines the interface that all plugins must implement and returns types.Endpoint
+type TaskPlugin interface {
 	Plugin
 	// GetEndpoint returns relational Task or function
 	GetEndpoint() types.Endpoint
@@ -117,9 +111,10 @@ type Factory interface {
 	Create(opts ...Option) (Plugin, error)
 }
 
-// ProxyFactory defines the interface for creating plugin instances and returns types.Endpoint
-type ProxyFactory interface {
+// TaskFactory defines the interface that all factories must implement and returns types.Endpoint
+type TaskFactory interface {
 	Factory
+	Register(opts ...RegisterOption) error
 	// ListEndpoint returns relational Tasks or functions
 	ListEndpoint() []types.Endpoint
 }
@@ -151,7 +146,7 @@ func (m *Manager) Setup(factory Factory) error {
 		return fmt.Errorf("%w: %s", ErrFactoryAlreadyExists, name)
 	}
 
-	if v, match := factory.(ProxyFactory); match {
+	if v, match := factory.(TaskFactory); match {
 		for _, endpoint := range v.ListEndpoint() {
 			endpointName := endpoint.Name
 			_, exists := m.endpoints[endpointName]
@@ -183,4 +178,82 @@ func (m *Manager) ListEndpoints() []*types.Endpoint {
 		endpoints = append(endpoints, endpoint.DeepCopy())
 	}
 	return endpoints
+}
+
+var _ TaskFactory = (*TaskFactoryImpl)(nil)
+
+type TaskFactoryImpl struct {
+	name      string
+	endpoints map[string]*types.Endpoint
+}
+
+func NewTaskFactory(name string) *TaskFactoryImpl {
+	f := &TaskFactoryImpl{
+		endpoints: make(map[string]*types.Endpoint),
+	}
+	return f
+}
+
+func (f *TaskFactoryImpl) Name() string { return f.name }
+
+func (f *TaskFactoryImpl) Create(opts ...Option) (Plugin, error) {
+	return nil, fmt.Errorf("implement me")
+}
+
+func (f *TaskFactoryImpl) Register(opts ...RegisterOption) error {
+	options := NewRegisterOptions(opts...)
+
+	if options.Request == nil {
+		return fmt.Errorf("no request provided")
+	}
+	if options.Response == nil {
+		return fmt.Errorf("no response provided")
+	}
+	if options.Name == "" {
+		return fmt.Errorf("missing plugin name")
+	}
+
+	endpoint := &types.Endpoint{
+		TaskType:    options.FlowType,
+		Type:        options.Type,
+		Description: options.Description,
+		Mode:        types.TransitionMode_Simple,
+		Metadata:    map[string]string{},
+		Headers:     map[string]string{},
+		Properties:  map[string]*types.Value{},
+		DataObjects: map[string]*types.Value{},
+		Results:     map[string]*types.Value{},
+	}
+
+	endpoint.Name = options.Name
+
+	headers, properties, dataObjects, matched := ExtractInOrOut(options.Request)
+	if !matched {
+		return fmt.Errorf("bad request")
+	}
+	endpoint.Headers = headers
+	endpoint.Properties = properties
+	endpoint.DataObjects = dataObjects
+
+	_, properties, _, matched = ExtractInOrOut(options.Response)
+	if !matched {
+		return fmt.Errorf("bad response")
+	}
+	endpoint.Results = properties
+
+	name := endpoint.Name
+	_, exists := f.endpoints[name]
+	if exists {
+		return fmt.Errorf("endpoint '%s' already exists", name)
+	}
+	f.endpoints[name] = endpoint
+	return nil
+}
+
+func (f *TaskFactoryImpl) ListEndpoint() []types.Endpoint {
+	endpoint := make([]types.Endpoint, 0, len(f.endpoints))
+	for _, ep := range f.endpoints {
+		endpoint = append(endpoint, *ep.DeepCopy())
+	}
+	return endpoint
 }

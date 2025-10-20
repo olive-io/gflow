@@ -5,7 +5,7 @@ openapi: 3.0.3
 info:
     title: GFlow
     description: Gflow OpenAPI3.0 Document
-    version: 41b184f3e60cda9e6648cd24f9bc363f23b44f19
+    version: bfa989c2f5c27e80678c9b8d64cd1be43c3c2337
 paths:
     /v1/definitions:
         get:
@@ -354,8 +354,9 @@ components:
                     type: string
                 priority:
                     type: string
-                OnTransaction:
-                    type: boolean
+                mode:
+                    type: integer
+                    format: enum
                 headers:
                     type: object
                     additionalProperties:
@@ -509,8 +510,9 @@ components:
                     type: string
                 description:
                     type: string
-                OnTransaction:
-                    type: boolean
+                mode:
+                    type: integer
+                    format: enum
                 httpUrl:
                     type: string
                 metadata:
@@ -557,6 +559,9 @@ components:
                     type: string
                 target:
                     type: string
+                mode:
+                    type: integer
+                    format: enum
                 headers:
                     type: object
                     additionalProperties:
@@ -611,8 +616,9 @@ components:
                         type: string
                 priority:
                     type: string
-                OnTransaction:
-                    type: boolean
+                mode:
+                    type: integer
+                    format: enum
                 args:
                     $ref: '#/components/schemas/types.BpmnArgs'
                 definitionsUid:

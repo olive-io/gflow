@@ -254,7 +254,7 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 			rctx = sch.ctx
 		}
 
-		if stat.OnTransaction {
+		if stat.Mode == types.TransitionMode_Transition {
 			if err != nil {
 				lg.Info("process rollback", zap.String("pid", pid))
 				stat.Stage = types.Process_Rollback
@@ -567,7 +567,7 @@ func (sch *Scheduler) doTask(
 	}
 
 	stage := types.ConvertStage(node.Stage)
-	if !stat.OnTransaction {
+	if stat.Mode == types.TransitionMode_Simple {
 		stage = types.CallTaskStage_Echo
 	}
 	doOptions := []plugins.DoOption{

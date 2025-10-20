@@ -86,7 +86,7 @@ func startRunner(ctx context.Context, name string, cfg *runner.Config) error {
 	ctx = signalutil.SetupSignalContext(ctx)
 
 	// creates plugin factories
-	factory := runner.NewTaskFactory(types.FlowNodeType_ServiceTask)
+	factory := runner.NewFactory(types.FlowNodeType_ServiceTask)
 	//TODO: register plugins
 	if err = app.SetupFactory(factory); err != nil {
 		return fmt.Errorf("register %s: %w", name, err)

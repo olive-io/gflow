@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package sdk
+package service
 
 import (
 	"context"
@@ -27,9 +27,9 @@ import (
 	"github.com/olive-io/gflow/server/dispatch"
 )
 
-var _ plugins.Plugin = (*RemoteGflowPlugin)(nil)
+var _ plugins.Plugin = (*RemoteGflow)(nil)
 
-type RemoteGflowPlugin struct {
+type RemoteGflow struct {
 	lg         *zap.Logger
 	dispatcher *dispatch.Dispatcher
 	taskType   types.FlowNodeType
@@ -37,8 +37,8 @@ type RemoteGflowPlugin struct {
 	target     string
 }
 
-func NewRemoteGflowPlugin(lg *zap.Logger, dispatcher *dispatch.Dispatcher, taskType types.FlowNodeType, target string) *RemoteGflowPlugin {
-	rgp := &RemoteGflowPlugin{
+func NewRemoteGflow(lg *zap.Logger, dispatcher *dispatch.Dispatcher, taskType types.FlowNodeType, target string) *RemoteGflow {
+	rgp := &RemoteGflow{
 		lg:         lg,
 		dispatcher: dispatcher,
 		taskType:   taskType,
@@ -48,9 +48,9 @@ func NewRemoteGflowPlugin(lg *zap.Logger, dispatcher *dispatch.Dispatcher, taskT
 	return rgp
 }
 
-func (gp *RemoteGflowPlugin) Name() string { return gp.typ }
+func (gp *RemoteGflow) Name() string { return gp.typ }
 
-func (gp *RemoteGflowPlugin) Do(ctx context.Context, req *plugins.Request, opts ...plugins.DoOption) (*plugins.Response, error) {
+func (gp *RemoteGflow) Do(ctx context.Context, req *plugins.Request, opts ...plugins.DoOption) (*plugins.Response, error) {
 	var doOptions plugins.DoOptions
 	for _, opt := range opts {
 		opt(&doOptions)

@@ -54,6 +54,12 @@ enum FlowNodeType {
   ParallelGateway = 34;
 }
 
+enum TransitionMode {
+  UnknownMode = 0;
+  Simple = 1;
+  Transition = 2;
+}
+
 message Value {
   enum Type {
     String = 0;
@@ -79,7 +85,7 @@ message Endpoint {
   string type = 5;
   string name = 6;
   string description = 7;
-  bool OnTransaction = 8;
+  TransitionMode mode = 8;
   string http_url = 9;
   map<string, string> metadata = 10 [(tagger.tags) = "gorm:\"serializer:json\""];
 
@@ -160,7 +166,7 @@ message Process {
 
   int64 priority = 7;
 
-  bool OnTransaction = 8;
+  TransitionMode mode = 8;
 
   BpmnArgs args = 9 [(tagger.tags) = "gorm:\"serializer:json\""];
 
@@ -222,29 +228,31 @@ message FlowNode {
 
   string target = 7;
 
-  map<string, string> headers = 8 [(tagger.tags) = "gorm:\"serializer:json\""];
+  TransitionMode mode = 8;
 
-  map<string, Value> properties = 9 [(tagger.tags) = "gorm:\"serializer:json\""];
+  map<string, string> headers = 9 [(tagger.tags) = "gorm:\"serializer:json\""];
 
-  map<string, Value> data_objects = 10 [(tagger.tags) = "gorm:\"serializer:json\""];
+  map<string, Value> properties = 10 [(tagger.tags) = "gorm:\"serializer:json\""];
 
-  map<string, Value> results = 11 [(tagger.tags) = "gorm:\"serializer:json\""];
+  map<string, Value> data_objects = 11 [(tagger.tags) = "gorm:\"serializer:json\""];
 
-  int32 retries = 12;
+  map<string, Value> results = 12 [(tagger.tags) = "gorm:\"serializer:json\""];
 
-  int64 startTime = 13;
+  int32 retries = 13;
 
-  int64 endTime = 14;
+  int64 startTime = 14;
 
-  int64 process_id = 15 [(tagger.tags) = "gorm:\"index\""];
+  int64 endTime = 15;
 
-  string process_uid = 16;
+  int64 process_id = 16 [(tagger.tags) = "gorm:\"index\""];
 
-  FlowNodeStage stage = 17;
+  string process_uid = 17;
 
-  FlowNodeStatus status = 18;
+  FlowNodeStage stage = 18;
 
-  string err_msg = 19;
+  FlowNodeStatus status = 19;
+
+  string err_msg = 20;
 }
 
 enum CallTaskStage {

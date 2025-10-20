@@ -19,6 +19,7 @@ package runner
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sync"
 	"time"
 
@@ -35,18 +36,16 @@ type TaskFactory struct {
 
 	endpoints  map[string]*types.Endpoint
 	prototypes map[string]Task
-	plugins    map[string]plugins.Plugin
 
 	cmu       sync.RWMutex
 	cachePool map[string]Task
 }
 
-func NewTaskFactory(taskType types.FlowNodeType) *TaskFactory {
+func NewFactory(taskType types.FlowNodeType) *TaskFactory {
 	tf := &TaskFactory{
 		taskType:   taskType,
 		endpoints:  make(map[string]*types.Endpoint),
 		prototypes: make(map[string]Task),
-		plugins:    make(map[string]plugins.Plugin),
 		cachePool:  make(map[string]Task),
 	}
 
@@ -61,29 +60,36 @@ func (tf *TaskFactory) ListEndpoint() []types.Endpoint {
 	return endpoints
 }
 
-func (tf *TaskFactory) Register(task Task, opts ...Option) error {
-	options := NewOptions(opts...)
-	endpoint, proxy, err := extractTask(task, options)
-	if err != nil {
-		return fmt.Errorf("register task: %w", err)
+func (tf *TaskFactory) Register(opts ...plugins.RegisterOption) error {
+	options := plugins.NewRegisterOptions(opts...)
+
+	target := options.Task
+	if target == nil {
+		return fmt.Errorf("missing task")
 	}
-
-	name := endpoint.Name
-	_, exists := tf.endpoints[name]
-	if exists {
-		return fmt.Errorf("endpoint '%s' already exists", name)
-	}
-	tf.endpoints[name] = endpoint
-
-	tf.prototypes[name] = proxy
-	return nil
-}
-
-func (tf *TaskFactory) RegisterFn(fn any, opts ...Option) error {
-	options := NewOptions(opts...)
-	endpoint, proxy, err := extractFunc(fn, options)
-	if err != nil {
-		return fmt.Errorf("register function: %w", err)
+	
+	var endpoint *types.Endpoint
+	var proxy Task
+	var err error
+	if task, ok := target.(Task); ok {
+		endpoint, proxy, err = extractTask(task, options)
+		if err != nil {
+			return fmt.Errorf("register task: %w", err)
+		}
+	} else {
+		rt := reflect.TypeOf(target)
+		if rt.Kind() != reflect.Ptr {
+			rt = rt.Elem()
+		}
+		switch rt.Kind() {
+		case reflect.Func:
+			endpoint, proxy, err = extractFunc(target, options)
+			if err != nil {
+				return fmt.Errorf("register function: %w", err)
+			}
+		default:
+			return fmt.Errorf("register target '%s' is not a function", rt.String())
+		}
 	}
 
 	name := endpoint.Name

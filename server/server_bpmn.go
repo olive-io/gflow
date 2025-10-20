@@ -181,11 +181,11 @@ func (bgs *bpmnGRPCServer) ExecuteProcess(ctx context.Context, req *pb.ExecutePr
 	}
 
 	process := &types.Process{
-		Name:          req.Name,
-		Uid:           uuid.New().String(),
-		Metadata:      map[string]string{},
-		Priority:      req.Priority,
-		OnTransaction: req.OnTransaction,
+		Name:     req.Name,
+		Uid:      uuid.New().String(),
+		Metadata: map[string]string{},
+		Priority: req.Priority,
+		Mode:     req.Mode,
 		Args: &types.BpmnArgs{
 			Headers:     req.Headers,
 			Properties:  req.Properties,

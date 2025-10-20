@@ -54,7 +54,7 @@ type ExecuteProcessRequest struct {
 	DefinitionsUid     string
 	DefinitionsVersion uint64
 	Priority           int64
-	OnTransaction      bool
+	Mode               types.TransitionMode
 	Headers            map[string]string
 	Properties         map[string]*types.Value
 	DataObjects        map[string]*types.Value
@@ -302,7 +302,7 @@ func (c *Client) ExecuteProcess(ctx context.Context, options *ExecuteProcessRequ
 		Name:               options.Name,
 		DefinitionsUid:     options.DefinitionsUid,
 		DefinitionsVersion: options.DefinitionsVersion,
-		OnTransaction:      options.OnTransaction,
+		Mode:               options.Mode,
 		Priority:           options.Priority,
 		Headers:            options.Headers,
 		Properties:         options.Properties,

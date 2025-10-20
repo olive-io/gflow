@@ -65,7 +65,7 @@ func (req *Request) ApplyToReflectValue(rv reflect.Value) error {
 				continue
 			}
 
-			tag, found = ft.Tag.Lookup("gflow")
+			tag, found = ft.Tag.Lookup(DefaultTag)
 			if found {
 				parts := strings.Split(tag, ";")
 				pairs := map[string]string{}
@@ -115,6 +115,7 @@ func ExtractResponse(rv reflect.Value) *Response {
 	rt := rv.Type()
 	if rt.Kind() == reflect.Ptr {
 		rt = rt.Elem()
+		rv = rv.Elem()
 	}
 
 	if rt.Kind() != reflect.Struct {

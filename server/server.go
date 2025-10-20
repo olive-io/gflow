@@ -43,6 +43,7 @@ import (
 	"github.com/olive-io/gflow/server/dao"
 	"github.com/olive-io/gflow/server/dispatch"
 	"github.com/olive-io/gflow/server/docs"
+	"github.com/olive-io/gflow/server/plugin/send"
 	"github.com/olive-io/gflow/server/plugin/service"
 	"github.com/olive-io/gflow/server/scheduler"
 	"github.com/olive-io/gflow/third-party/swagger"
@@ -140,12 +141,25 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	dispatcher.Start(ctx)
 
 	// registers plugin factories
-	gflowFactory, err := service.NewFactory(lg, dispatcher)
+	serviceFactory, err := service.NewFactory(lg, dispatcher)
 	if err != nil {
 		return nil, fmt.Errorf("creates gflow factory: %w", err)
 	}
-	if err = plugins.Setup(gflowFactory); err != nil {
-		return nil, fmt.Errorf("registry plugin factory %s: %w", gflowFactory.Name(), err)
+	if err = plugins.Setup(serviceFactory); err != nil {
+		return nil, fmt.Errorf("registry plugin factory %s: %w", serviceFactory.Name(), err)
+	}
+	pluginConfig, err := s.cfg.FormatPluginConfig()
+	if err != nil {
+		return nil, fmt.Errorf("get plugin config %s: %w", s.name, err)
+	}
+	if sc := pluginConfig.SendTask; sc != nil {
+		sendFactory, err := send.NewFactory(lg, sc)
+		if err != nil {
+			return nil, fmt.Errorf("creates rabbitmq factory %s: %w", s.name, err)
+		}
+		if err = plugins.Setup(sendFactory); err != nil {
+			return nil, fmt.Errorf("registry plugin factory %s: %w", sendFactory.Name(), err)
+		}
 	}
 
 	schedulerOptions := scheduler.NewOptions(lg)

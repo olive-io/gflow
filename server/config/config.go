@@ -51,6 +51,7 @@ type ServerConfig struct {
 }
 
 type MessageQueueConfig struct {
+	Name     string          `json:"name" toml:"name"`
 	RabbitMQ *RabbitMQConfig `json:"rabbitmq" toml:"rabbitmq"`
 }
 
@@ -62,6 +63,7 @@ type RabbitMQConfig struct {
 }
 
 type EmailConfig struct {
+	Name string `json:"name" toml:"name"`
 	// email server and port
 	Host     string `json:"host" toml:"host"`
 	Username string `json:"username" toml:"username"`
@@ -69,13 +71,13 @@ type EmailConfig struct {
 }
 
 type PluginConfig struct {
-	SendTask               *SendTaskPluginConfig    `json:"sendTask" toml:"sendTask"`
-	ReceiveTask            *ReceiveTaskPluginConfig `json:"receiveTask" toml:"receiveTask"`
-	ScriptTaskPluginConfig *ScriptTaskPluginConfig  `json:"scriptTask" toml:"scriptTask"`
+	SendTask    *SendTaskPluginConfig    `json:"sendTask" toml:"sendTask"`
+	ReceiveTask *ReceiveTaskPluginConfig `json:"receiveTask" toml:"receiveTask"`
+	ScriptTask  *ScriptTaskPluginConfig  `json:"scriptTask" toml:"scriptTask"`
 }
 
 type RabbitMQConfigWithRef struct {
-	RabbitMQConfig `json:",inline" toml:",inline"`
+	*RabbitMQConfig `json:",inline" toml:",inline"`
 
 	Ref string `json:"ref" toml:"ref"`
 }
@@ -101,9 +103,9 @@ type Config struct {
 
 	Plugin *PluginConfig `json:"plugin" toml:"plugin"`
 
-	MQ map[string]MessageQueueConfig `json:"mq" toml:"mq"`
+	MQ []MessageQueueConfig `json:"mq" toml:"mq"`
 
-	Email map[string]EmailConfig `json:"email" toml:"email"`
+	Email []EmailConfig `json:"email" toml:"email"`
 }
 
 func NewConfig() *Config {
@@ -210,6 +212,33 @@ func (cfg *Config) Save(filename string) error {
 		return err
 	}
 	return os.WriteFile(filename, data, 0755)
+}
+
+func (cfg *Config) FormatPluginConfig() (*PluginConfig, error) {
+	if cfg.Plugin == nil || cfg.Plugin.SendTask == nil {
+		return nil, fmt.Errorf("send task plugin config is required")
+	}
+
+	sc := cfg.Plugin.SendTask
+	if sc != nil {
+		if mq := sc.RabbitMQ; mq != nil {
+			if mq.Ref != "" && mq.RabbitMQConfig == nil {
+				ref := mq.Ref
+				exists := false
+				for _, item := range cfg.MQ {
+					if item.Name == ref {
+						exists = true
+						mq.RabbitMQConfig = item.RabbitMQ
+					}
+				}
+				if !exists {
+					return nil, fmt.Errorf("rabbitmq reference not found: %s", ref)
+				}
+			}
+		}
+	}
+
+	return cfg.Plugin, nil
 }
 
 func (cfg *Config) Logger() *zap.Logger {
