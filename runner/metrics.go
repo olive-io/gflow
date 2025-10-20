@@ -1,22 +1,17 @@
 /*
-Copyright 2025 The olive Authors
+Copyright 2025 The gflow Authors
 
-This program is offered under a commercial and under the AGPL license.
-For AGPL licensing, see below.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-AGPL licensing:
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 
 package runner
@@ -31,62 +26,57 @@ import (
 )
 
 var (
-	DefaultNamespace = "olive"
-	DefaultSubsystem = "runner"
-)
-
-var (
 	currentVersion = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: DefaultNamespace,
-		Subsystem: DefaultSubsystem,
+		Namespace: metrics.DefaultNamespace,
+		Subsystem: metrics.DefaultSubsystem,
 		Name:      "version",
 		Help:      "Which version is running. 1 for 'runner_version' label with current version.",
 	},
 		[]string{"runner_version"})
 	currentGoVersion = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: DefaultNamespace,
-		Subsystem: DefaultSubsystem,
+		Namespace: metrics.DefaultNamespace,
+		Subsystem: metrics.DefaultSubsystem,
 		Name:      "go_version",
 		Help:      "Which Go version runner is running with. 1 for 'runner_go_version' label with current version.",
 	},
 		[]string{"runner_go_version"})
 
-	stepCounter = metrics.NewGauge(prometheus.GaugeOpts{
-		Namespace: DefaultNamespace,
-		Subsystem: DefaultSubsystem,
-		Name:      "step_count",
-		Help:      "the number of Step",
+	taskCounter = metrics.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.DefaultNamespace,
+		Subsystem: metrics.DefaultSubsystem,
+		Name:      "task_count",
+		Help:      "the number of Task",
 	})
 
-	stepCommitCounter = metrics.NewGauge(prometheus.GaugeOpts{
-		Namespace: DefaultNamespace,
-		Subsystem: DefaultSubsystem,
-		Name:      "step_commit_count",
-		Help:      "the number of Step on commit",
+	taskCommitCounter = metrics.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.DefaultNamespace,
+		Subsystem: metrics.DefaultSubsystem,
+		Name:      "task_commit_count",
+		Help:      "the number of Task on commit",
 	})
 
-	stepRollbackCounter = metrics.NewGauge(prometheus.GaugeOpts{
-		Namespace: DefaultNamespace,
-		Subsystem: DefaultSubsystem,
-		Name:      "step_rollback_count",
-		Help:      "the number of Step on rollback",
+	taskRollbackCounter = metrics.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.DefaultNamespace,
+		Subsystem: metrics.DefaultSubsystem,
+		Name:      "task_rollback_count",
+		Help:      "the number of Task on rollback",
 	})
 
-	stepDestroyCounter = metrics.NewGauge(prometheus.GaugeOpts{
-		Namespace: DefaultNamespace,
-		Subsystem: DefaultSubsystem,
-		Name:      "step_destroy_count",
-		Help:      "the number of Step on destroy",
+	taskDestroyCounter = metrics.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.DefaultNamespace,
+		Subsystem: metrics.DefaultSubsystem,
+		Name:      "task_destroy_count",
+		Help:      "the number of Task on destroy",
 	})
 )
 
 func init() {
 	prometheus.MustRegister(currentVersion)
 	prometheus.MustRegister(currentGoVersion)
-	prometheus.MustRegister(stepCounter)
-	prometheus.MustRegister(stepCommitCounter)
-	prometheus.MustRegister(stepRollbackCounter)
-	prometheus.MustRegister(stepDestroyCounter)
+	prometheus.MustRegister(taskCounter)
+	prometheus.MustRegister(taskCommitCounter)
+	prometheus.MustRegister(taskRollbackCounter)
+	prometheus.MustRegister(taskDestroyCounter)
 
 	currentVersion.With(prometheus.Labels{
 		"runner_version": version.Version,

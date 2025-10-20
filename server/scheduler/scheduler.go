@@ -195,6 +195,8 @@ func (sch *Scheduler) tick(ctx context.Context) {
 func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 	lg := sch.lg
 
+	processCounter.Add(1)
+
 	var err error
 	defer func() {
 		stat.EndAt = time.Now().UnixMilli()
@@ -207,6 +209,7 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 		}
 
 		sch.setProcess(stat.Process)
+		processCounter.Add(-1)
 	}()
 
 	activeStack := make([]*types.FlowNode, 0)
@@ -535,6 +538,20 @@ func (sch *Scheduler) doTask(
 	ctx context.Context, stat *ProcessStat,
 	node *types.FlowNode, extension *schema.ExtensionElements,
 ) (map[string]*types.Value, map[string]*types.Value, error) {
+	taskCounter.Add(1)
+	defer taskCounter.Add(-1)
+
+	switch node.Stage {
+	case types.FlowNode_Commit:
+		taskCommitCounter.Add(1)
+		defer taskCommitCounter.Add(-1)
+	case types.FlowNode_Rollback:
+		taskRollbackCounter.Add(1)
+		defer taskRollbackCounter.Add(-1)
+	case types.FlowNode_Destroy:
+		taskDestroyCounter.Add(1)
+		defer taskDestroyCounter.Add(-1)
+	}
 
 	lg := sch.lg
 	taskType := node.FlowType.String()

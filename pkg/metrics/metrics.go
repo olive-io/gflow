@@ -23,6 +23,11 @@ import (
 	"go.uber.org/atomic"
 )
 
+var (
+	DefaultNamespace = "olive"
+	DefaultSubsystem = "server"
+)
+
 type Gauge interface {
 	prometheus.Gauge
 	Get() float64

@@ -15,3 +15,53 @@ limitations under the License.
 */
 
 package scheduler
+
+import (
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/olive-io/gflow/pkg/metrics"
+)
+
+var (
+	processCounter = metrics.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.DefaultNamespace,
+		Subsystem: metrics.DefaultSubsystem,
+		Name:      "process_count",
+		Help:      "the number of Bpmn Process",
+	})
+
+	taskCounter = metrics.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.DefaultNamespace,
+		Subsystem: metrics.DefaultSubsystem,
+		Name:      "task_count",
+		Help:      "the number of Task",
+	})
+
+	taskCommitCounter = metrics.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.DefaultNamespace,
+		Subsystem: metrics.DefaultSubsystem,
+		Name:      "task_commit_count",
+		Help:      "the number of Task on commit",
+	})
+
+	taskRollbackCounter = metrics.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.DefaultNamespace,
+		Subsystem: metrics.DefaultSubsystem,
+		Name:      "task_rollback_count",
+		Help:      "the number of Task on rollback",
+	})
+
+	taskDestroyCounter = metrics.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.DefaultNamespace,
+		Subsystem: metrics.DefaultSubsystem,
+		Name:      "task_destroy_count",
+		Help:      "the number of Task on destroy",
+	})
+)
+
+func init() {
+	prometheus.MustRegister(taskCounter)
+	prometheus.MustRegister(taskCommitCounter)
+	prometheus.MustRegister(taskRollbackCounter)
+	prometheus.MustRegister(taskDestroyCounter)
+}

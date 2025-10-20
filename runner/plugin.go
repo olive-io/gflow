@@ -67,7 +67,7 @@ func (tf *TaskFactory) Register(opts ...plugins.RegisterOption) error {
 	if target == nil {
 		return fmt.Errorf("missing task")
 	}
-	
+
 	var endpoint *types.Endpoint
 	var proxy Task
 	var err error
@@ -197,13 +197,13 @@ func (tp *taskPlugin) Do(ctx context.Context, req *plugins.Request, opts ...plug
 	}
 	defer clean()
 
-	stepCounter.Add(1)
-	defer stepCounter.Add(-1)
+	taskCounter.Add(1)
+	defer taskCounter.Add(-1)
 
 	switch options.Stage {
 	case types.CallTaskStage_Echo, types.CallTaskStage_Commit:
-		stepCommitCounter.Add(1)
-		defer stepCommitCounter.Sub(1)
+		taskCommitCounter.Add(1)
+		defer taskCommitCounter.Sub(1)
 
 		resp, err := taskImpl.Commit(ctx, req)
 		if err != nil {
@@ -213,8 +213,8 @@ func (tp *taskPlugin) Do(ctx context.Context, req *plugins.Request, opts ...plug
 		return resp.(*plugins.Response), nil
 
 	case types.CallTaskStage_Rollback:
-		stepRollbackCounter.Add(1)
-		defer stepRollbackCounter.Sub(1)
+		taskRollbackCounter.Add(1)
+		defer taskRollbackCounter.Sub(1)
 
 		err = taskImpl.Rollback(ctx)
 		if err != nil {
@@ -223,8 +223,8 @@ func (tp *taskPlugin) Do(ctx context.Context, req *plugins.Request, opts ...plug
 		return &plugins.Response{}, nil
 
 	case types.CallTaskStage_Destroy:
-		stepDestroyCounter.Add(1)
-		defer stepDestroyCounter.Sub(1)
+		taskDestroyCounter.Add(1)
+		defer taskDestroyCounter.Sub(1)
 
 		err = taskImpl.Destroy(ctx)
 		if err != nil {
