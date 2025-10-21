@@ -5,3 +5,17 @@ listen = "localhost:6550"
 driver = "sqlite"
 data_root = "./data"
 dbname = "gflow.db"
+
+[plugin]
+[plugin.sendTask.rabbitmq]
+ref = "rabbitmq"
+
+[plugin.receiveTask.rabbitmq]
+ref = "rabbitmq"
+
+[[mq]]
+name = "rabbitmq"
+[mq.rabbitmq]
+username = "xxx"
+password = "xxx"
+host = "localhost:5672"

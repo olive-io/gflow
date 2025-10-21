@@ -598,7 +598,7 @@ func (sch *Scheduler) doTask(
 		plugins.DoWithProcess(node.ProcessId),
 		plugins.DoWithTaskStage(stage),
 	}
-	name, found := headers["name"]
+	name, found := headers[plugins.PrefixTag+"name"]
 	if found {
 		doOptions = append(doOptions, plugins.DoWithName(name))
 	}

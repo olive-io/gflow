@@ -5,7 +5,7 @@ openapi: 3.0.3
 info:
     title: GFlow
     description: Gflow OpenAPI3.0 Document
-    version: 1119cd785f34d5f72b608af3be603670054388d8
+    version: 7f83bfbcde2c3232861c57262b4b7bf6581299fc
 paths:
     /v1/definitions:
         get:
@@ -130,6 +130,30 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.AddEndpointsResponse'
+    /v1/endpoints/{id}/convert:
+        post:
+            tags:
+                - SystemRPC
+            operationId: SystemRPC_ConvertEndpoint
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rpc.ConvertEndpointRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.ConvertEndpointResponse'
     /v1/ping:
         get:
             tags:
@@ -316,6 +340,21 @@ components:
         rpc.AddEndpointsResponse:
             type: object
             properties: {}
+        rpc.ConvertEndpointRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                format:
+                    type: integer
+                    format: enum
+        rpc.ConvertEndpointResponse:
+            type: object
+            properties:
+                contentType:
+                    type: string
+                content:
+                    type: string
         rpc.DeployDefinitionsRequest:
             type: object
             properties:

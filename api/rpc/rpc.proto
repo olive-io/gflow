@@ -71,6 +71,12 @@ service SystemRPC {
       body: "*"
     };
   }
+  rpc ConvertEndpoint(ConvertEndpointRequest) returns (ConvertEndpointResponse) {
+    option (google.api.http) = {
+      post: "/v1/endpoints/{id}/convert"
+      body: "*"
+    };
+  }
   rpc RunnerDispatch(stream RunnerDispatchRequest) returns (stream RunnerDispatchResponse) {};
 }
 
@@ -132,6 +138,21 @@ message AddEndpointsRequest {
 }
 
 message AddEndpointsResponse {}
+
+message ConvertEndpointRequest {
+  enum EndpointFormat {
+    Unknown = 0;
+    BPMN = 1;
+  }
+
+  int64 id = 1;
+  EndpointFormat format = 2;
+}
+
+message ConvertEndpointResponse {
+  string contentType = 1;
+  string content = 2;
+}
 
 message HandshakeRequest {
   types.Runner runner = 1;

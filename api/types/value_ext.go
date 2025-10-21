@@ -31,7 +31,7 @@ func NewValue(value any) *Value {
 
 func FromSchemaValue(sv *schema.Value) *Value {
 	value := &Value{
-		Type:  fromSchemaType(sv.ItemType),
+		Type:  FromSchemaType(sv.ItemType),
 		Value: sv.ItemValue,
 	}
 	return value
@@ -39,7 +39,7 @@ func FromSchemaValue(sv *schema.Value) *Value {
 
 func (in *Value) ToSchemaValue() *schema.Value {
 	sv := &schema.Value{
-		ItemType:  toSchemaType(in.Type),
+		ItemType:  ToSchemaType(in.Type),
 		ItemValue: in.Value,
 	}
 	return sv
@@ -167,7 +167,7 @@ func FromReflectValue(rv reflect.Value) *Value {
 	}
 }
 
-func fromSchemaType(st schema.ItemType) Value_Type {
+func FromSchemaType(st schema.ItemType) Value_Type {
 	switch st {
 	case schema.ItemTypeString:
 		return Value_String
@@ -186,7 +186,7 @@ func fromSchemaType(st schema.ItemType) Value_Type {
 	}
 }
 
-func toSchemaType(vt Value_Type) schema.ItemType {
+func ToSchemaType(vt Value_Type) schema.ItemType {
 	switch vt {
 	case Value_String:
 		return schema.ItemTypeString

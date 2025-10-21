@@ -25,6 +25,8 @@ import (
 )
 
 var (
+	PrefixTag = "ov:"
+
 	DefaultTag    = "gflow"
 	HeaderTag     = "hr" // task header tag
 	DataObjectTag = "dt" // task data object tag
