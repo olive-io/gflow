@@ -17,30 +17,49 @@ limitations under the License.
 package sdk
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"net/http"
 	urlpkg "net/url"
-	"strings"
 	"time"
 
-	"github.com/olive-io/gflow/api/types"
+	"go.uber.org/zap"
 )
 
-type HttpClient struct{}
+type HttpResponse struct {
+	StatusCode int    `json:"status_code"`
+	Message    string `json:"message"`
+}
 
-func New() *HttpClient {
-	hc := &HttpClient{}
+type HTTPConfig struct {
+	URL      string
+	Username string
+	Password string
+	Token    string
+	Timeout  time.Duration
+}
+
+type HTTPClient struct {
+	cfg *HTTPConfig
+	lg  *zap.Logger
+}
+
+func NewHTTPClient(lg *zap.Logger, cfg *HTTPConfig) *HTTPClient {
+	hc := &HTTPClient{
+		cfg: cfg,
+		lg:  lg,
+	}
 	return hc
 }
 
-func (hc *HttpClient) Call(ctx context.Context, req *types.CallTaskRequest) (*types.CallTaskResponse, error) {
-	timeout := time.Duration(req.Timeout) * time.Second
+func (hc *HTTPClient) Do(ctx context.Context, method string, headers map[string]string, body io.Reader, target any) (*HttpResponse, error) {
+	lg := hc.lg
+	cfg := hc.cfg
+
+	timeout := cfg.Timeout
 	transport := &http.Transport{}
 	conn := &http.Client{
 		Transport: transport,
@@ -48,77 +67,43 @@ func (hc *HttpClient) Call(ctx context.Context, req *types.CallTaskRequest) (*ty
 	}
 
 	var url *urlpkg.URL
-	var contentType string
-	method := http.MethodGet
-	header := http.Header{}
-	for name, value := range req.Headers {
-		name = strings.ToLower(name)
-		switch name {
-		case "content-type":
-			contentType = value
-		case "method":
-			method = value
-		case "url":
-			var err error
-			url, err = urlpkg.Parse(value)
-			if err != nil {
-				return nil, fmt.Errorf("parse url: %w", err)
-			}
-		default:
-			header.Set(name, value)
-		}
-	}
-
-	if url == nil {
-		return nil, fmt.Errorf("no url found")
+	url, err := urlpkg.Parse(cfg.URL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid url: %v", err)
 	}
 
 	if url.Scheme == "https" {
 		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
-	if contentType == "" {
-		contentType = "application/json"
-		header.Set("Content-Type", contentType)
-	}
-
-	var body io.Reader
-	switch contentType {
-	case "application/json":
-		data, err := json.Marshal(req.Properties)
-		if err != nil {
-			return nil, fmt.Errorf("encode http body: %w", err)
-		}
-		body = bytes.NewBuffer(data)
-	case "application/multipart-form-data":
-		var buffer bytes.Buffer
-		writer := multipart.NewWriter(&buffer)
-		for name, item := range req.Properties {
-			_ = writer.WriteField(name, item.Value)
-		}
-		writer.Close()
-
-		body = &buffer
-	case "application/form-data":
-		form := urlpkg.Values{}
-		for name, item := range req.Properties {
-			form.Set(name, item.Value)
-		}
-
-		body = bytes.NewBufferString(form.Encode())
-	default:
-		return nil, fmt.Errorf("unsupported content type: %s", contentType)
-	}
-
 	hr, err := http.NewRequestWithContext(ctx, method, url.String(), body)
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
+
+	var ct string
+	header := http.Header{}
+	for name, value := range headers {
+		if name == "Content-Type" {
+			ct = value
+			continue
+		}
+		header.Set(name, value)
+	}
+	if ct == "" {
+		ct = "application/json"
+	}
+	header.Set("Content-Type", ct)
+
 	hr.Header = header
+
+	lg.Debug("http request",
+		zap.String("method", method),
+		zap.String("url", url.String()))
 
 	resp, err := conn.Do(hr)
 	if err != nil {
-		return nil, fmt.Errorf("execute request: %w", err)
+		return nil, fmt.Errorf("request to %s: %w", url.String(), err)
 	}
 	defer resp.Body.Close()
 
@@ -127,16 +112,18 @@ func (hc *HttpClient) Call(ctx context.Context, req *types.CallTaskRequest) (*ty
 		return nil, fmt.Errorf("read response body: %w", err)
 	}
 
-	results := make(map[string]*types.Value)
-	dataObjects := make(map[string]*types.Value)
-
-	results["code"] = types.NewValue(resp.StatusCode)
-	results["result"] = types.NewValue(string(data))
-
-	dresp := &types.CallTaskResponse{
-		Results:     results,
-		DataObjects: dataObjects,
+	hresp := &HttpResponse{
+		StatusCode: resp.StatusCode,
 	}
 
-	return dresp, nil
+	if resp.StatusCode < 400 {
+		err = json.Unmarshal(data, target)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshal response: %w", err)
+		}
+	} else {
+		hresp.Message = string(data)
+	}
+
+	return hresp, nil
 }

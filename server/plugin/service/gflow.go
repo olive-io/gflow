@@ -27,9 +27,9 @@ import (
 	"github.com/olive-io/gflow/server/dispatch"
 )
 
-var _ plugins.Plugin = (*RemoteGflow)(nil)
+var _ plugins.Plugin = (*remoteGflow)(nil)
 
-type RemoteGflow struct {
+type remoteGflow struct {
 	lg         *zap.Logger
 	dispatcher *dispatch.Dispatcher
 	taskType   types.FlowNodeType
@@ -37,8 +37,8 @@ type RemoteGflow struct {
 	target     string
 }
 
-func NewRemoteGflow(lg *zap.Logger, dispatcher *dispatch.Dispatcher, taskType types.FlowNodeType, target string) *RemoteGflow {
-	rgp := &RemoteGflow{
+func newRemoteGflow(lg *zap.Logger, dispatcher *dispatch.Dispatcher, taskType types.FlowNodeType, target string) *remoteGflow {
+	rgp := &remoteGflow{
 		lg:         lg,
 		dispatcher: dispatcher,
 		taskType:   taskType,
@@ -48,9 +48,9 @@ func NewRemoteGflow(lg *zap.Logger, dispatcher *dispatch.Dispatcher, taskType ty
 	return rgp
 }
 
-func (gp *RemoteGflow) Name() string { return gp.typ }
+func (gp *remoteGflow) Name() string { return gp.typ }
 
-func (gp *RemoteGflow) Do(ctx context.Context, req *plugins.Request, opts ...plugins.DoOption) (*plugins.Response, error) {
+func (gp *remoteGflow) Do(ctx context.Context, req *plugins.Request, opts ...plugins.DoOption) (*plugins.Response, error) {
 	var doOptions plugins.DoOptions
 	for _, opt := range opts {
 		opt(&doOptions)

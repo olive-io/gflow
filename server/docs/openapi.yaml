@@ -5,7 +5,7 @@ openapi: 3.0.3
 info:
     title: GFlow
     description: Gflow OpenAPI3.0 Document
-    version: bfa989c2f5c27e80678c9b8d64cd1be43c3c2337
+    version: 1119cd785f34d5f72b608af3be603670054388d8
 paths:
     /v1/definitions:
         get:
@@ -719,7 +719,7 @@ components:
                     type: string
                 timestamp:
                     type: string
-                steps:
+                tasks:
                     type: string
                 commitCount:
                     type: string

@@ -344,6 +344,7 @@ func extractFunc(fn any, options *plugins.RegisterOptions) (*types.Endpoint, *fn
 		name = options.Name
 	}
 	endpoint.Name = name
+
 	taskFn.name = name
 
 	if options.Request != nil {

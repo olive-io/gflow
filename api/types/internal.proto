@@ -92,7 +92,7 @@ message RunnerStat {
 
   int64 timestamp = 6;
 
-  uint64 steps = 11;
+  uint64 tasks = 11;
   uint64 commit_count = 12;
   uint64 rollback_count = 13;
   uint64 destroy_count = 14;

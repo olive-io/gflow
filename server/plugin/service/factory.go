@@ -57,11 +57,11 @@ func (f *remoteFactory) Create(opts ...plugins.Option) (plugins.Plugin, error) {
 	var gp plugins.Plugin
 	switch options.Type {
 	case plugins.GflowPlugin:
-		gp = NewRemoteGflow(lg, f.dispatcher, f.taskType, target)
+		gp = newRemoteGflow(lg, f.dispatcher, f.taskType, target)
 	case plugins.GRPCPlugin:
-		return nil, fmt.Errorf("not implemented yet")
+		gp = newHTTPPlugin(lg, f.taskType)
 	case plugins.HTTPPlugin:
-		return nil, fmt.Errorf("not implemented yet")
+		gp = newGRPCPlugin(lg, f.taskType)
 	default:
 		return nil, fmt.Errorf("invalid plugin type: %s", options.Type)
 	}

@@ -202,10 +202,10 @@ func (r *Runner) generateRunnerStat() *types.RunnerStat {
 	rs := &types.RunnerStat{
 		Uid:           tr.Uid,
 		Timestamp:     time.Now().UnixMilli(),
-		Steps:         uint64(stepCounter.Get()),
-		CommitCount:   uint64(stepCommitCounter.Get()),
-		RollbackCount: uint64(stepRollbackCounter.Get()),
-		DestroyCount:  uint64(stepDestroyCounter.Get()),
+		Tasks:         uint64(taskCounter.Get()),
+		CommitCount:   uint64(taskCommitCounter.Get()),
+		RollbackCount: uint64(taskRollbackCounter.Get()),
+		DestroyCount:  uint64(taskDestroyCounter.Get()),
 	}
 	interval := time.Millisecond * 300
 	percents, _ := cpu.Percent(interval, false)

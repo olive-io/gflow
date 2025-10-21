@@ -45,42 +45,19 @@ func (in *Value) ToSchemaValue() *schema.Value {
 	return sv
 }
 
-func fromSchemaType(st schema.ItemType) Value_Type {
-	switch st {
-	case schema.ItemTypeString:
-		return Value_String
-	case schema.ItemTypeInteger:
-		return Value_Integer
-	case schema.ItemTypeFloat:
-		return Value_Float
-	case schema.ItemTypeBoolean:
-		return Value_Boolean
-	case schema.ItemTypeArray:
-		return Value_Array
-	case schema.ItemTypeObject:
-		return Value_Object
-	default:
-		return Value_String
+func (in *Value) ValueFrom(value any) {
+	vv, ok := value.(*Value)
+	if ok {
+		*in = *vv
+		return
 	}
+
+	out := FromReflectValue(reflect.ValueOf(value))
+	*in = *out
 }
 
-func toSchemaType(vt Value_Type) schema.ItemType {
-	switch vt {
-	case Value_String:
-		return schema.ItemTypeString
-	case Value_Integer:
-		return schema.ItemTypeInteger
-	case Value_Float:
-		return schema.ItemTypeFloat
-	case Value_Boolean:
-		return schema.ItemTypeBoolean
-	case Value_Array:
-		return schema.ItemTypeArray
-	case Value_Object:
-		return schema.ItemTypeObject
-	default:
-		return schema.ItemTypeString
-	}
+func (in *Value) ValueTo(target any) error {
+	return in.ToSchemaValue().ValueTo(target)
 }
 
 func (in *Value) ApplyTo(rv reflect.Value) error {
@@ -187,5 +164,43 @@ func FromReflectValue(rv reflect.Value) *Value {
 		return FromReflectValue(rv.Elem())
 	default:
 		return NewValue("")
+	}
+}
+
+func fromSchemaType(st schema.ItemType) Value_Type {
+	switch st {
+	case schema.ItemTypeString:
+		return Value_String
+	case schema.ItemTypeInteger:
+		return Value_Integer
+	case schema.ItemTypeFloat:
+		return Value_Float
+	case schema.ItemTypeBoolean:
+		return Value_Boolean
+	case schema.ItemTypeArray:
+		return Value_Array
+	case schema.ItemTypeObject:
+		return Value_Object
+	default:
+		return Value_String
+	}
+}
+
+func toSchemaType(vt Value_Type) schema.ItemType {
+	switch vt {
+	case Value_String:
+		return schema.ItemTypeString
+	case Value_Integer:
+		return schema.ItemTypeInteger
+	case Value_Float:
+		return schema.ItemTypeFloat
+	case Value_Boolean:
+		return schema.ItemTypeBoolean
+	case Value_Array:
+		return schema.ItemTypeArray
+	case Value_Object:
+		return schema.ItemTypeObject
+	default:
+		return schema.ItemTypeString
 	}
 }

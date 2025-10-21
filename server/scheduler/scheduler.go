@@ -270,12 +270,14 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 
 					lg.Info("rollback task",
 						zap.String("pid", pid),
-						zap.String("task", node.Name))
+						zap.String("task", node.Name),
+						zap.String("tid", node.FlowId))
 					_, _, doErr := sch.doTask(rctx, stat, node, nil)
 					if doErr != nil {
 						lg.Error("rollback task",
 							zap.String("pid", pid),
-							zap.String("task", node.Name),
+							zap.String("task", node.FlowId),
+							zap.String("tid", node.FlowId),
 							zap.Error(doErr))
 					}
 				}
@@ -292,12 +294,14 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 
 				lg.Info("destroy task",
 					zap.String("pid", pid),
-					zap.String("task", node.Name))
+					zap.String("task", node.Name),
+					zap.String("tid", node.FlowId))
 				_, _, doErr := sch.doTask(rctx, stat, node, nil)
 				if doErr != nil {
 					lg.Error("destroy task",
 						zap.String("pid", pid),
 						zap.String("task", node.Name),
+						zap.String("tid", node.FlowId),
 						zap.Error(doErr))
 				}
 			}
@@ -415,7 +419,10 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 					tname = *name
 				}
 
-				lg.Info("commit task", zap.String("pid", pid), zap.String("task", tname))
+				lg.Info("commit task",
+					zap.String("pid", pid),
+					zap.String("task", tname),
+					zap.String("tid", fid))
 				flowNode, exists := nodeMapping[fid]
 				if !exists {
 					flowNode = &types.FlowNode{
@@ -590,8 +597,12 @@ func (sch *Scheduler) doTask(
 	doOptions := []plugins.DoOption{
 		plugins.DoWithProcess(node.ProcessId),
 		plugins.DoWithTaskStage(stage),
-		plugins.DoWithName(node.Name),
 	}
+	name, found := headers["name"]
+	if found {
+		doOptions = append(doOptions, plugins.DoWithName(name))
+	}
+
 	if extension != nil {
 		taskDefinition := extension.TaskDefinitionField
 		if taskDefinition != nil {
