@@ -26,6 +26,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/olive-io/gflow/api/types"
+	"github.com/olive-io/gflow/pkg/inject"
 	"github.com/olive-io/gflow/plugins"
 )
 
@@ -205,6 +206,10 @@ func (tp *taskPlugin) Do(ctx context.Context, req *plugins.Request, opts ...plug
 		taskCommitCounter.Add(1)
 		defer taskCommitCounter.Sub(1)
 
+		if err = inject.PopulateTarget(taskImpl); err != nil {
+			return nil, fmt.Errorf("inject task '%s': %v", options.Name, err)
+		}
+
 		resp, err := taskImpl.Commit(ctx, req)
 		if err != nil {
 			return nil, err
@@ -239,6 +244,10 @@ func (tp *taskPlugin) Do(ctx context.Context, req *plugins.Request, opts ...plug
 
 func (r *Runner) SetupFactory(factory plugins.Factory) error {
 	return r.pluginManager.Setup(factory)
+}
+
+func (r *Runner) Provide(values ...any) error {
+	return inject.Provide(values...)
 }
 
 func (r *Runner) ListEndpoints() []*types.Endpoint {

@@ -18,7 +18,6 @@ package runner
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -27,6 +26,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
+	json "github.com/bytedance/sonic"
 	"go.uber.org/zap"
 	"sigs.k8s.io/yaml"
 

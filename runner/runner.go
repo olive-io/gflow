@@ -30,6 +30,7 @@ import (
 
 	"github.com/olive-io/gflow/api/types"
 	"github.com/olive-io/gflow/clientgo"
+	"github.com/olive-io/gflow/pkg/inject"
 	"github.com/olive-io/gflow/pkg/version"
 	"github.com/olive-io/gflow/plugins"
 )
@@ -48,6 +49,8 @@ type Runner struct {
 func New(name string, cfg *Config) (*Runner, error) {
 
 	lg := cfg.Logger()
+	inject.InitGraph(lg.Sugar())
+
 	cpuTotal := uint64(0)
 	cpus, err := cpu.Counts(false)
 	if err != nil {
