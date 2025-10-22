@@ -118,7 +118,10 @@ func (r *InnerDao[T]) Get(ctx context.Context, id int64) (*T, error) {
 
 	target := new(T)
 	err := session.Where("id = ?", id).First(&target).Error
-	return target, err
+	if err != nil {
+		return nil, err
+	}
+	return target, nil
 }
 
 func (r *InnerDao[T]) First(ctx context.Context, cond any) (*T, error) {
@@ -130,7 +133,10 @@ func (r *InnerDao[T]) First(ctx context.Context, cond any) (*T, error) {
 
 	target := new(T)
 	err := session.First(&target).Error
-	return target, err
+	if err != nil {
+		return nil, err
+	}
+	return target, nil
 }
 
 func (r *InnerDao[T]) Create(ctx context.Context, value *T) (int64, error) {
@@ -146,13 +152,28 @@ func (r *InnerDao[T]) Update(ctx context.Context, id int64, value any) error {
 	session := r.NewSession(ctx).Model(r.target)
 
 	err := session.Where("id = ?", id).UpdateColumns(value).Error
-	return err
+	if err != nil {
+		return err
+	}
+	if session.RowsAffected == 0 {
+		return fmt.Errorf("%w: get by id %d", gorm.ErrRecordNotFound, id)
+	}
+
+	return nil
 }
 
 func (r *InnerDao[T]) Delete(ctx context.Context, id int64) error {
 	session := r.NewSession(ctx).Model(r.target)
 
-	return session.Delete(r.target, "id = ?", id).Error
+	err := session.Delete(r.target, "id = ?", id).Error
+	if err != nil {
+		return err
+	}
+
+	if session.RowsAffected == 0 {
+		return fmt.Errorf("%w: get by id %d", gorm.ErrRecordNotFound, id)
+	}
+	return nil
 }
 
 func (r *InnerDao[T]) applyCond(session *gorm.DB, cond any) *gorm.DB {
