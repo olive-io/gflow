@@ -5,7 +5,7 @@ openapi: 3.0.3
 info:
     title: GFlow
     description: Gflow OpenAPI3.0 Document
-    version: 7f83bfbcde2c3232861c57262b4b7bf6581299fc
+    version: 27e5853465c8e88a8c6666db6d42ef038fb11e7b
 paths:
     /v1/definitions:
         get:
@@ -130,6 +130,42 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.AddEndpointsResponse'
+    /v1/endpoints/grpc:
+        post:
+            tags:
+                - SystemRPC
+            operationId: SystemRPC_AddGRPCEndpoints
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rpc.AddGRPCEndpointsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.AddGRPCEndpointsResponse'
+    /v1/endpoints/openapi:
+        post:
+            tags:
+                - SystemRPC
+            operationId: SystemRPC_AddOpenAPIEndpoints
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rpc.AddOpenAPIEndpointsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.AddOpenAPIEndpointsResponse'
     /v1/endpoints/{id}/convert:
         post:
             tags:
@@ -340,6 +376,38 @@ components:
         rpc.AddEndpointsResponse:
             type: object
             properties: {}
+        rpc.AddGRPCEndpointsRequest:
+            type: object
+            properties:
+                target:
+                    type: string
+        rpc.AddGRPCEndpointsResponse:
+            type: object
+            properties:
+                runner:
+                    $ref: '#/components/schemas/types.Runner'
+                endpoints:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/types.Endpoint'
+        rpc.AddOpenAPIEndpointsRequest:
+            type: object
+            properties:
+                doc:
+                    type: string
+                contentType:
+                    type: string
+                target:
+                    type: string
+        rpc.AddOpenAPIEndpointsResponse:
+            type: object
+            properties:
+                runner:
+                    $ref: '#/components/schemas/types.Runner'
+                endpoints:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/types.Endpoint'
         rpc.ConvertEndpointRequest:
             type: object
             properties:

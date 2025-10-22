@@ -71,6 +71,18 @@ service SystemRPC {
       body: "*"
     };
   }
+  rpc AddOpenAPIEndpoints(AddOpenAPIEndpointsRequest) returns (AddOpenAPIEndpointsResponse) {
+    option (google.api.http) = {
+      post: "/v1/endpoints/openapi"
+      body: "*"
+    };
+  }
+  rpc AddGRPCEndpoints(AddGRPCEndpointsRequest) returns (AddGRPCEndpointsResponse) {
+    option (google.api.http) = {
+      post: "/v1/endpoints/grpc"
+      body: "*"
+    };
+  }
   rpc ConvertEndpoint(ConvertEndpointRequest) returns (ConvertEndpointResponse) {
     option (google.api.http) = {
       post: "/v1/endpoints/{id}/convert"
@@ -138,6 +150,26 @@ message AddEndpointsRequest {
 }
 
 message AddEndpointsResponse {}
+
+message AddOpenAPIEndpointsRequest {
+  string doc = 1;
+  string contentType = 2;
+  string target = 3;
+}
+
+message AddOpenAPIEndpointsResponse {
+  types.Runner runner = 1;
+  repeated types.Endpoint endpoints = 2;
+}
+
+message AddGRPCEndpointsRequest {
+  string target = 1;
+}
+
+message AddGRPCEndpointsResponse {
+  types.Runner runner = 1;
+  repeated types.Endpoint endpoints = 2;
+}
 
 message ConvertEndpointRequest {
   enum EndpointFormat {

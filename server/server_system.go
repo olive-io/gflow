@@ -174,6 +174,45 @@ func (s *systemGRPCServer) AddEndpoints(ctx context.Context, req *pb.AddEndpoint
 	return resp, nil
 }
 
+func (s *systemGRPCServer) AddOpenAPIEndpoints(ctx context.Context, req *pb.AddOpenAPIEndpointsRequest) (*pb.AddOpenAPIEndpointsResponse, error) {
+	doc := req.Doc
+	contentType := req.ContentType
+
+	runner, endpoints, err := parseDoc(doc, contentType)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	_, err = s.runnerDao.Get(ctx, 0, runner.Uid)
+	if err != nil {
+		if !dao.IsNotFound(err) {
+			return nil, toGRPCErr(err)
+		}
+		_, err = s.runnerDao.Create(ctx, runner)
+		if err != nil {
+			return nil, toGRPCErr(err)
+		}
+	}
+
+	for _, endpoint := range endpoints {
+		if _, err = s.endpointDao.Create(ctx, endpoint); err != nil {
+			return nil, toGRPCErr(err)
+		}
+	}
+
+	resp := &pb.AddOpenAPIEndpointsResponse{
+		Runner:    runner,
+		Endpoints: endpoints,
+	}
+	return resp, nil
+}
+
+func (s *systemGRPCServer) AddGRPCEndpoints(ctx context.Context, req *pb.AddGRPCEndpointsRequest) (*pb.AddGRPCEndpointsResponse, error) {
+
+	resp := &pb.AddGRPCEndpointsResponse{}
+	return resp, nil
+}
+
 func (s *systemGRPCServer) RegisterEndpoint(ctx context.Context, endpoint *types.Endpoint, target string) error {
 	cond := map[string]string{"name": endpoint.Name}
 	value, err := s.endpointDao.First(ctx, cond)
