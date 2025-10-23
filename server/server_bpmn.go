@@ -66,7 +66,7 @@ func (s *bpmnGRPCServer) DeployDefinition(ctx context.Context, req *pb.DeployDef
 	}
 	idPtr, _ := bpmnDef.Id()
 	if idPtr == nil || *idPtr == "" {
-		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("Definitions id is required"))
+		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("definitions id is required"))
 	}
 	uid := *idPtr
 
@@ -152,10 +152,7 @@ func (s *bpmnGRPCServer) ListDefinitions(ctx context.Context, req *pb.ListDefini
 func (s *bpmnGRPCServer) GetDefinitions(ctx context.Context, req *pb.GetDefinitionsRequest) (*pb.GetDefinitionsResponse, error) {
 	definitions, err := s.definitionsDao.GetWithVersion(ctx, 0, req.Uid, req.Version)
 	if err != nil {
-		if dao.IsNotFound(err) {
-			return nil, status.Error(codes.NotFound, err.Error())
-		}
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, toGRPCErr(err)
 	}
 
 	rsp := &pb.GetDefinitionsResponse{
@@ -174,10 +171,7 @@ func (s *bpmnGRPCServer) ExecuteProcess(ctx context.Context, req *pb.ExecuteProc
 
 	definitions, err := s.definitionsDao.GetWithVersion(ctx, 0, definitionUID, version)
 	if err != nil {
-		if dao.IsNotFound(err) {
-			return nil, status.Error(codes.NotFound, err.Error())
-		}
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, toGRPCErr(err)
 	}
 
 	process := &types.Process{
@@ -239,10 +233,7 @@ func (s *bpmnGRPCServer) ListProcess(ctx context.Context, req *pb.ListProcessReq
 func (s *bpmnGRPCServer) GetProcess(ctx context.Context, req *pb.GetProcessRequest) (*pb.GetProcessResponse, error) {
 	process, err := s.processDao.Get(ctx, req.Id)
 	if err != nil {
-		if dao.IsNotFound(err) {
-			return nil, status.Error(codes.NotFound, err.Error())
-		}
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, toGRPCErr(err)
 	}
 
 	nodes, err := s.processDao.ListFlowNodes(ctx, process.Id)

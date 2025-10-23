@@ -19,6 +19,8 @@ package runner
 import (
 	"context"
 	"testing"
+
+	"github.com/olive-io/gflow/plugins"
 )
 
 type Data1 struct {
@@ -61,7 +63,7 @@ func (s SimpleTask) String() string {
 func TestExtractTask(t *testing.T) {
 	st := &SimpleTask{}
 
-	options := NewOptions(WithName("test"), WithRequest(new(TestRequest)), WithResponse(new(TestResponse)))
+	options := plugins.NewRegisterOptions(plugins.WithTaskName("test"), plugins.WithRequest(new(TestRequest)), plugins.WithResponse(new(TestResponse)))
 	endpoint, _, err := extractTask(st, options)
 	if err != nil {
 		t.Fatalf("failed to extract task: %v", err)
@@ -79,28 +81,28 @@ func Fn3() error { return nil }
 func Fn4(request *TestRequest) (*TestRequest, error) { return nil, nil }
 
 func TestExtractFunc(t *testing.T) {
-	endpoint, _, err := extractFunc(Fn1, NewOptions())
+	endpoint, _, err := extractFunc(Fn1, plugins.NewRegisterOptions())
 	if err != nil {
 		t.Fatalf("failed to extract function: %v", err)
 	}
 
 	t.Logf("%+v", endpoint)
 
-	endpoint, _, err = extractFunc(Fn2, NewOptions())
+	endpoint, _, err = extractFunc(Fn2, plugins.NewRegisterOptions())
 	if err != nil {
 		t.Fatalf("failed to extract function: %v", err)
 	}
 
 	t.Logf("%+v", endpoint)
 
-	endpoint, _, err = extractFunc(Fn3, NewOptions())
+	endpoint, _, err = extractFunc(Fn3, plugins.NewRegisterOptions())
 	if err != nil {
 		t.Fatalf("failed to extract function: %v", err)
 	}
 
 	t.Logf("%+v", endpoint)
 
-	endpoint, _, err = extractFunc(Fn4, NewOptions())
+	endpoint, _, err = extractFunc(Fn4, plugins.NewRegisterOptions())
 	if err != nil {
 		t.Fatalf("failed to extract function: %v", err)
 	}

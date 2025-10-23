@@ -81,7 +81,7 @@ message Endpoint {
   int64 create_at = 2 [(tagger.tags) = "gorm:\"autoCreateTime\""];
   int64 update_at = 3 [(tagger.tags) = "gorm:\"autoUpdateTime\""];
 
-  FlowNodeType taskType = 4;
+  FlowNodeType task_type = 4;
   string type = 5;
   string name = 6;
   string description = 7;
@@ -248,11 +248,13 @@ message FlowNode {
 
   string process_uid = 17;
 
-  FlowNodeStage stage = 18;
+  string trace_id = 18;
 
-  FlowNodeStatus status = 19;
+  FlowNodeStage stage = 19;
 
-  string err_msg = 20;
+  FlowNodeStatus status = 20;
+
+  string err_msg = 21;
 }
 
 enum CallTaskStage {
@@ -266,13 +268,15 @@ message CallTaskRequest {
   int64 process = 1;
   uint64 seq_id = 2;
   CallTaskStage stage = 3;
-  FlowNodeType taskType = 4;
+  FlowNodeType task_type = 4;
   string type = 5;
   string name = 6;
   map<string, string> headers = 7;
   map<string, Value> properties = 8;
   map<string, Value> dataObjects = 9;
   int64 timeout = 10;
+
+  string trace_id = 21;
 }
 
 message CallTaskResponse {

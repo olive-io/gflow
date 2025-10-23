@@ -5,7 +5,7 @@ openapi: 3.0.3
 info:
     title: GFlow
     description: Gflow OpenAPI3.0 Document
-    version: 27e5853465c8e88a8c6666db6d42ef038fb11e7b
+    version: 8511a4d39866cb8c65c6e5ed842c0e93168cd0ff
 paths:
     /v1/definitions:
         get:
@@ -695,6 +695,8 @@ components:
                 processId:
                     type: string
                 processUid:
+                    type: string
+                traceId:
                     type: string
                 stage:
                     type: integer

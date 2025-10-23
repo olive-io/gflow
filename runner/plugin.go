@@ -199,7 +199,7 @@ func (tp *taskPlugin) Do(ctx context.Context, req *plugins.Request, opts ...plug
 	defer clean()
 
 	taskCounter.Add(1)
-	defer taskCounter.Add(-1)
+	defer taskCounter.Sub(1)
 
 	switch options.Stage {
 	case types.CallTaskStage_Echo, types.CallTaskStage_Commit:

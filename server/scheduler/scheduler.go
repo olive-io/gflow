@@ -209,7 +209,7 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 		}
 
 		sch.setProcess(stat.Process)
-		processCounter.Add(-1)
+		processCounter.Sub(1)
 	}()
 
 	activeStack := make([]*types.FlowNode, 0)
@@ -546,18 +546,18 @@ func (sch *Scheduler) doTask(
 	node *types.FlowNode, extension *schema.ExtensionElements,
 ) (map[string]*types.Value, map[string]*types.Value, error) {
 	taskCounter.Add(1)
-	defer taskCounter.Add(-1)
+	defer taskCounter.Sub(1)
 
 	switch node.Stage {
 	case types.FlowNode_Commit:
 		taskCommitCounter.Add(1)
-		defer taskCommitCounter.Add(-1)
+		defer taskCommitCounter.Sub(1)
 	case types.FlowNode_Rollback:
 		taskRollbackCounter.Add(1)
-		defer taskRollbackCounter.Add(-1)
+		defer taskRollbackCounter.Sub(1)
 	case types.FlowNode_Destroy:
 		taskDestroyCounter.Add(1)
-		defer taskDestroyCounter.Add(-1)
+		defer taskDestroyCounter.Sub(1)
 	}
 
 	lg := sch.lg
