@@ -19,7 +19,7 @@ package scheduler
 import (
 	"runtime"
 
-	"go.uber.org/zap"
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 )
 
 var (
@@ -27,13 +27,15 @@ var (
 )
 
 type Options struct {
-	Logger          *zap.Logger
+	Logger          *otelzap.Logger
+	Name            string
 	ExecutePoolSize int
 }
 
-func NewOptions(lg *zap.Logger) *Options {
+func NewOptions(lg *otelzap.Logger, name string) *Options {
 	options := &Options{
 		Logger:          lg,
+		Name:            name,
 		ExecutePoolSize: DefaultExecutePoolSize,
 	}
 	return options

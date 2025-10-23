@@ -25,7 +25,7 @@ import (
 	json "github.com/bytedance/sonic"
 	"github.com/fullstorydev/grpcurl"
 	"github.com/jhump/protoreflect/grpcreflect"
-	"go.uber.org/zap"
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
@@ -39,12 +39,12 @@ type GRPCConfig struct {
 
 type GRPCClient struct {
 	cfg    *GRPCConfig
-	lg     *zap.Logger
+	lg     *otelzap.Logger
 	source grpcurl.DescriptorSource
 	cc     *grpc.ClientConn
 }
 
-func NewGRPCClient(lg *zap.Logger, cfg *GRPCConfig) (*GRPCClient, error) {
+func NewGRPCClient(lg *otelzap.Logger, cfg *GRPCConfig) (*GRPCClient, error) {
 	network := "tcp"
 	var creds credentials.TransportCredentials
 	var options []grpc.DialOption

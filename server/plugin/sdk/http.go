@@ -26,6 +26,7 @@ import (
 	urlpkg "net/url"
 	"time"
 
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"go.uber.org/zap"
 )
 
@@ -44,10 +45,10 @@ type HTTPConfig struct {
 
 type HTTPClient struct {
 	cfg *HTTPConfig
-	lg  *zap.Logger
+	lg  *otelzap.Logger
 }
 
-func NewHTTPClient(lg *zap.Logger, cfg *HTTPConfig) *HTTPClient {
+func NewHTTPClient(lg *otelzap.Logger, cfg *HTTPConfig) *HTTPClient {
 	hc := &HTTPClient{
 		cfg: cfg,
 		lg:  lg,

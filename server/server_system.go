@@ -24,6 +24,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
@@ -42,7 +43,7 @@ type systemGRPCServer struct {
 	pb.UnimplementedSystemRPCServer
 
 	ctx context.Context
-	lg  *zap.Logger
+	lg  *otelzap.Logger
 	cfg *config.Config
 
 	runnerDao   *dao.RunnerDao
@@ -52,7 +53,7 @@ type systemGRPCServer struct {
 }
 
 func newSystemGRPCServer(
-	ctx context.Context, lg *zap.Logger, cfg *config.Config,
+	ctx context.Context, lg *otelzap.Logger, cfg *config.Config,
 	runnerDao *dao.RunnerDao, endpointDao *dao.EndpointDao,
 	dispatcher *dispatch.Dispatcher) *systemGRPCServer {
 

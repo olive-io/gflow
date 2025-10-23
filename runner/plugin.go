@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 
 	"github.com/olive-io/gflow/api/types"
@@ -271,8 +272,21 @@ func (r *Runner) Handle(ctx context.Context, request *types.CallTaskRequest) *ty
 		DataObjects: map[string]*types.Value{},
 	}
 
+	var err error
+	var span trace.Span
+	ctx, span = r.Tracer().Start(ctx, request.Name,
+		trace.WithSpanKind(trace.SpanKindClient))
+
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+		}
+		span.End()
+	}()
+
 	kind := request.TaskType.String()
-	factory, err := r.pluginManager.Get(kind)
+	var factory plugins.Factory
+	factory, err = r.pluginManager.Get(kind)
 	if err != nil {
 		response.Error = fmt.Sprintf("plugin factory '%s' not found", kind)
 		return response
@@ -281,7 +295,9 @@ func (r *Runner) Handle(ctx context.Context, request *types.CallTaskRequest) *ty
 	typ := request.Type
 	options := make([]plugins.Option, 0)
 	options = append(options, plugins.WithType(typ))
-	plugin, err := factory.Create(options...)
+
+	var plugin plugins.Plugin
+	plugin, err = factory.Create(options...)
 	if err != nil {
 		response.Error = fmt.Sprintf("plugin '%s' not found", typ)
 		return response
@@ -305,7 +321,9 @@ func (r *Runner) Handle(ctx context.Context, request *types.CallTaskRequest) *ty
 		zap.String("task", request.Name))
 
 	ctx = context.WithValue(ctx, originKey, request)
-	resp, err := plugin.Do(ctx, req, doOptions...)
+
+	var resp *plugins.Response
+	resp, err = plugin.Do(ctx, req, doOptions...)
 	if err != nil {
 		response.Error = err.Error()
 		return response

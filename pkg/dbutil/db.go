@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
@@ -35,7 +35,7 @@ type DB struct {
 	*gorm.DB
 }
 
-func NewDB(lg *zap.Logger, cfg *Config) (*DB, error) {
+func NewDB(lg *otelzap.Logger, cfg *Config) (*DB, error) {
 	var (
 		traceStr     = "%s\n[%.3fms] [rows:%v] %s"
 		traceWarnStr = "%s %s\n[%.3fms] [rows:%v] %s"

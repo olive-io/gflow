@@ -29,6 +29,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"go.uber.org/zap"
 
 	"github.com/olive-io/gflow/api/types"
@@ -53,8 +54,8 @@ func LoadTestFile(filename string, definitions any) {
 }
 
 func TestScheduler(t *testing.T) {
-	lg := zap.NewExample()
-	options := NewOptions(lg)
+	lg := otelzap.New(zap.NewExample())
+	options := NewOptions(lg, "")
 	ctx := context.Background()
 	sche, err := NewScheduler(ctx, options)
 	if !assert.NoError(t, err) {
@@ -74,15 +75,15 @@ func TestScheduler(t *testing.T) {
 		Priority: 1,
 		Args: &types.BpmnArgs{
 			Headers:     map[string]string{},
-			Properties:  map[string]string{},
-			DataObjects: map[string]string{},
+			Properties:  map[string]*types.Value{},
+			DataObjects: map[string]*types.Value{},
 		},
 		DefinitionsUid:     "Definitions_04fu1l0",
 		DefinitionsVersion: 1,
 		DefinitionsProcess: "test",
 		Context: &types.ProcessContext{
-			Variables:   map[string]string{},
-			DataObjects: map[string]string{},
+			Variables:   map[string]*types.Value{},
+			DataObjects: map[string]*types.Value{},
 		},
 		Attempts: 0,
 		Status:   types.Process_Waiting,

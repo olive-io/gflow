@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"google.golang.org/grpc/codes"
 
 	"github.com/olive-io/gflow/api/types"
@@ -32,12 +32,12 @@ import (
 var _ plugins.Plugin = (*grpcPlugin)(nil)
 
 type grpcPlugin struct {
-	lg       *zap.Logger
+	lg       *otelzap.Logger
 	flowType types.FlowNodeType
 	typ      string
 }
 
-func newGRPCPlugin(lg *zap.Logger, flowType types.FlowNodeType) *grpcPlugin {
+func newGRPCPlugin(lg *otelzap.Logger, flowType types.FlowNodeType) *grpcPlugin {
 	hp := &grpcPlugin{
 		lg:       lg,
 		flowType: flowType,

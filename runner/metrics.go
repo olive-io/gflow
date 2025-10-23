@@ -17,72 +17,77 @@ limitations under the License.
 package runner
 
 import (
+	"context"
+	"fmt"
 	goruntime "runtime"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/version"
+	"go.opentelemetry.io/otel/attribute"
+	otelMetric "go.opentelemetry.io/otel/metric"
 
 	"github.com/olive-io/gflow/pkg/metrics"
 )
 
 var (
-	currentVersion = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metrics.DefaultNamespace,
-		Subsystem: metrics.DefaultSubsystem,
-		Name:      "version",
-		Help:      "Which version is running. 1 for 'runner_version' label with current version.",
-	},
-		[]string{"runner_version"})
-	currentGoVersion = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metrics.DefaultNamespace,
-		Subsystem: metrics.DefaultSubsystem,
-		Name:      "go_version",
-		Help:      "Which Go version runner is running with. 1 for 'runner_go_version' label with current version.",
-	},
-		[]string{"runner_go_version"})
+	currentVersion   otelMetric.Int64Gauge
+	currentGoVersion otelMetric.Int64Gauge
 
-	taskCounter = metrics.NewGauge(prometheus.GaugeOpts{
-		Namespace: metrics.DefaultNamespace,
-		Subsystem: metrics.DefaultSubsystem,
-		Name:      "task_count",
-		Help:      "the number of Task",
-	})
-
-	taskCommitCounter = metrics.NewGauge(prometheus.GaugeOpts{
-		Namespace: metrics.DefaultNamespace,
-		Subsystem: metrics.DefaultSubsystem,
-		Name:      "task_commit_count",
-		Help:      "the number of Task on commit",
-	})
-
-	taskRollbackCounter = metrics.NewGauge(prometheus.GaugeOpts{
-		Namespace: metrics.DefaultNamespace,
-		Subsystem: metrics.DefaultSubsystem,
-		Name:      "task_rollback_count",
-		Help:      "the number of Task on rollback",
-	})
-
-	taskDestroyCounter = metrics.NewGauge(prometheus.GaugeOpts{
-		Namespace: metrics.DefaultNamespace,
-		Subsystem: metrics.DefaultSubsystem,
-		Name:      "task_destroy_count",
-		Help:      "the number of Task on destroy",
-	})
+	taskCounter         metrics.ObserveGauge
+	taskCommitCounter   metrics.ObserveGauge
+	taskRollbackCounter metrics.ObserveGauge
+	taskDestroyCounter  metrics.ObserveGauge
 )
 
-func init() {
-	prometheus.MustRegister(currentVersion)
-	prometheus.MustRegister(currentGoVersion)
-	prometheus.MustRegister(taskCounter)
-	prometheus.MustRegister(taskCommitCounter)
-	prometheus.MustRegister(taskRollbackCounter)
-	prometheus.MustRegister(taskDestroyCounter)
+func InitMetrics(name string) error {
+	if err := metrics.InitMeter(name); err != nil {
+		return fmt.Errorf("initialize metrics: %w", err)
+	}
 
-	currentVersion.With(prometheus.Labels{
-		"runner_version": version.Version,
-	}).Set(1)
+	var err error
 
-	currentGoVersion.With(prometheus.Labels{
-		"runner_go_version": goruntime.Version(),
-	}).Set(1)
+	ctx := context.Background()
+	currentVersion, err = metrics.NewInt64Gauge("gflow_version", otelMetric.WithDescription("Which version is running. 1 for 'runner_version' label with current version."))
+	if err != nil {
+		return err
+	}
+
+	opts := otelMetric.WithAttributes(
+		attribute.Key("namespace").String(metrics.DefaultNamespace),
+		attribute.Key("subsystem").String(metrics.DefaultSubsystem),
+		attribute.Key("runner_version").String(version.Version),
+	)
+	currentVersion.Record(ctx, 1, opts)
+
+	currentGoVersion, err = metrics.NewInt64Gauge("gflow_go_version", otelMetric.WithDescription("Which Go version runner is running with. 1 for 'runner_go_version' label with current version."))
+	if err != nil {
+		return err
+	}
+	opts = otelMetric.WithAttributes(
+		attribute.Key("namespace").String(metrics.DefaultNamespace),
+		attribute.Key("subsystem").String(metrics.DefaultSubsystem),
+		attribute.Key("runner_go_version").String(goruntime.Version()),
+	)
+	currentGoVersion.Record(ctx, 1, opts)
+
+	taskCounter, err = metrics.NewObserveGauge("task_count", otelMetric.WithDescription("the number of Task"))
+	if err != nil {
+		return err
+	}
+
+	taskCommitCounter, err = metrics.NewObserveGauge("task_commit_count", otelMetric.WithDescription("the number of Task commit"))
+	if err != nil {
+		return err
+	}
+
+	taskRollbackCounter, err = metrics.NewObserveGauge("task_rollback_count", otelMetric.WithDescription("the number of Task rollback"))
+	if err != nil {
+		return err
+	}
+
+	taskDestroyCounter, err = metrics.NewObserveGauge("task_destroy_count", otelMetric.WithDescription("the number of Task destroy"))
+	if err != nil {
+		return err
+	}
+
+	return err
 }

@@ -17,40 +17,52 @@ limitations under the License.
 package server
 
 import (
+	"context"
+	"fmt"
 	goruntime "runtime"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/version"
+	"go.opentelemetry.io/otel/attribute"
+	otelMetric "go.opentelemetry.io/otel/metric"
 
 	"github.com/olive-io/gflow/pkg/metrics"
 )
 
 var (
-	currentVersion = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metrics.DefaultNamespace,
-		Subsystem: metrics.DefaultSubsystem,
-		Name:      "version",
-		Help:      "Which version is running. 1 for 'runner_version' label with current version.",
-	},
-		[]string{"runner_version"})
-	currentGoVersion = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metrics.DefaultNamespace,
-		Subsystem: metrics.DefaultSubsystem,
-		Name:      "go_version",
-		Help:      "Which Go version runner is running with. 1 for 'runner_go_version' label with current version.",
-	},
-		[]string{"runner_go_version"})
+	currentVersion   otelMetric.Int64Gauge
+	currentGoVersion otelMetric.Int64Gauge
 )
 
-func init() {
-	prometheus.MustRegister(currentVersion)
-	prometheus.MustRegister(currentGoVersion)
+func InitMetrics(name string) error {
+	if err := metrics.InitMeter(name); err != nil {
+		return fmt.Errorf("initialize metrics: %w", err)
+	}
 
-	currentVersion.With(prometheus.Labels{
-		"runner_version": version.Version,
-	}).Set(1)
+	var err error
 
-	currentGoVersion.With(prometheus.Labels{
-		"runner_go_version": goruntime.Version(),
-	}).Set(1)
+	ctx := context.Background()
+	currentVersion, err = metrics.NewInt64Gauge("gflow_version", otelMetric.WithDescription("Which version is running. 1 for 'runner_version' label with current version."))
+	if err != nil {
+		return err
+	}
+
+	opts := otelMetric.WithAttributes(
+		attribute.Key("namespace").String(metrics.DefaultNamespace),
+		attribute.Key("subsystem").String(metrics.DefaultSubsystem),
+		attribute.Key("runner_version").String(version.Version),
+	)
+	currentVersion.Record(ctx, 1, opts)
+
+	currentGoVersion, err = metrics.NewInt64Gauge("gflow_go_version", otelMetric.WithDescription("Which Go version runner is running with. 1 for 'runner_go_version' label with current version."))
+	if err != nil {
+		return err
+	}
+	opts = otelMetric.WithAttributes(
+		attribute.Key("namespace").String(metrics.DefaultNamespace),
+		attribute.Key("subsystem").String(metrics.DefaultSubsystem),
+		attribute.Key("runner_go_version").String(goruntime.Version()),
+	)
+	currentGoVersion.Record(ctx, 1, opts)
+
+	return err
 }

@@ -23,6 +23,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
@@ -39,7 +40,7 @@ type Event struct {
 type Dispatcher struct {
 	ctx context.Context
 
-	lg *zap.Logger
+	lg *otelzap.Logger
 
 	id string
 
@@ -58,7 +59,7 @@ type Dispatcher struct {
 	done chan struct{}
 }
 
-func (c *Client) NewDispatcher(ctx context.Context, lg *zap.Logger, runner *types.Runner) (*Dispatcher, error) {
+func (c *Client) NewDispatcher(ctx context.Context, lg *otelzap.Logger, runner *types.Runner) (*Dispatcher, error) {
 	opts := c.buildCallOptions()
 	if lg == nil {
 		lcfg := logutil.NewLogConfig()

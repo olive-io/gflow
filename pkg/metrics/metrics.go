@@ -17,63 +17,112 @@ limitations under the License.
 package metrics
 
 import (
+	"context"
+	"fmt"
+	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/prometheus"
+	otelMetric "go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/sdk/metric"
 	"go.uber.org/atomic"
 )
 
 var (
 	DefaultNamespace = "olive"
-	DefaultSubsystem = "server"
+	DefaultSubsystem = "gflow"
+
+	meter otelMetric.Meter
+	once  sync.Once
 )
 
-type Gauge interface {
-	prometheus.Gauge
+func InitMeter(name string) error {
+	var err error
+	once.Do(func() {
+		var exporter *prometheus.Exporter
+		exporter, err = prometheus.New()
+		if err != nil {
+			err = fmt.Errorf("initialize prometheus exporter: %w", err)
+			return
+		}
+		provider := metric.NewMeterProvider(metric.WithReader(exporter))
+		meter = provider.Meter(name)
+	})
+
+	return err
+}
+
+func NewInt64Gauge(name string, opts ...otelMetric.Int64GaugeOption) (otelMetric.Int64Gauge, error) {
+	gauge, err := meter.Int64Gauge(name, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	return gauge, nil
+}
+
+type ObserveGauge interface {
+	otelMetric.Float64ObservableGauge
+	Set(v float64)
+	Inc()
+	Dec()
+	Add(v float64)
+	Sub(v float64)
+	SetToCurrentTime()
 	Get() float64
 }
 
-type gaugeFunc struct {
-	prometheus.GaugeFunc
+type gaugeImpl struct {
+	otelMetric.Float64ObservableGauge
 	value *atomic.Float64
 }
 
-func NewGauge(opts prometheus.GaugeOpts) Gauge {
-	gf := gaugeFunc{
+func NewObserveGauge(name string, opts ...otelMetric.Float64ObservableGaugeOption) (ObserveGauge, error) {
+	gi := &gaugeImpl{
 		value: atomic.NewFloat64(0),
 	}
-	fn := prometheus.NewGaugeFunc(opts, func() float64 {
-		return gf.value.Load()
-	})
-	gf.GaugeFunc = fn
+	gauge, err := meter.Float64ObservableGauge(name, opts...)
+	if err != nil {
+		return nil, err
+	}
+	_, err = meter.RegisterCallback(func(ctx context.Context, observer otelMetric.Observer) error {
+		observer.ObserveFloat64(gauge, gi.value.Load(),
+			otelMetric.WithAttributes(
+				attribute.String("namespace", DefaultNamespace),
+				attribute.String("subsystem", DefaultSubsystem)))
+		return nil
+	}, gauge)
 
-	return &gf
+	gi.Float64ObservableGauge = gauge
+
+	return gi, nil
 }
 
-func (g *gaugeFunc) Set(v float64) {
+func (g *gaugeImpl) Set(v float64) {
 	g.value.Store(v)
 }
 
-func (g *gaugeFunc) Inc() {
+func (g *gaugeImpl) Inc() {
 	g.value.Add(1)
 }
 
-func (g *gaugeFunc) Dec() {
+func (g *gaugeImpl) Dec() {
 	g.value.Sub(1)
 }
 
-func (g *gaugeFunc) Add(v float64) {
+func (g *gaugeImpl) Add(v float64) {
 	g.value.Add(v)
 }
 
-func (g *gaugeFunc) Sub(v float64) {
+func (g *gaugeImpl) Sub(v float64) {
 	g.value.Sub(v)
 }
 
-func (g *gaugeFunc) SetToCurrentTime() {
+func (g *gaugeImpl) SetToCurrentTime() {
 	g.Set(float64(time.Now().Unix()))
 }
 
-func (g *gaugeFunc) Get() float64 {
+func (g *gaugeImpl) Get() float64 {
 	return g.value.Load()
 }

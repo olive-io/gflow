@@ -19,6 +19,7 @@ package receive
 import (
 	"fmt"
 
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"go.uber.org/zap"
 
 	"github.com/olive-io/gflow/api/types"
@@ -30,13 +31,13 @@ var _ plugins.Factory = (*sendFactory)(nil)
 
 type sendFactory struct {
 	*plugins.TaskFactoryImpl
-	lg       *zap.Logger
+	lg       *otelzap.Logger
 	taskType types.FlowNodeType
 
 	cfg *config.ReceiveTaskPluginConfig
 }
 
-func NewFactory(lg *zap.Logger, cfg *config.ReceiveTaskPluginConfig) (plugins.Factory, error) {
+func NewFactory(lg *otelzap.Logger, cfg *config.ReceiveTaskPluginConfig) (plugins.Factory, error) {
 	taskType := types.FlowNodeType_ReceiveTask
 	impl := plugins.NewTaskFactory(taskType.String())
 	factory := &sendFactory{

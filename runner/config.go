@@ -27,7 +27,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	json "github.com/bytedance/sonic"
-	"go.uber.org/zap"
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"sigs.k8s.io/yaml"
 
 	"github.com/olive-io/gflow/pkg/logutil"
@@ -155,6 +155,6 @@ func (cfg *Config) TargetURLs() []string {
 	return targets
 }
 
-func (cfg *Config) Logger() *zap.Logger {
+func (cfg *Config) Logger() *otelzap.Logger {
 	return cfg.Log.GetLogger()
 }

@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -30,7 +31,7 @@ import (
 
 type gormLogger struct {
 	level logger.LogLevel
-	lg    *zap.SugaredLogger
+	lg    *otelzap.SugaredLogger
 
 	SlowThreshold time.Duration
 

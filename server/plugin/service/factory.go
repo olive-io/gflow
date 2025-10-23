@@ -19,7 +19,7 @@ package service
 import (
 	"fmt"
 
-	"go.uber.org/zap"
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 
 	"github.com/olive-io/gflow/api/types"
 	"github.com/olive-io/gflow/plugins"
@@ -29,12 +29,12 @@ import (
 var _ plugins.Factory = (*remoteFactory)(nil)
 
 type remoteFactory struct {
-	lg         *zap.Logger
+	lg         *otelzap.Logger
 	taskType   types.FlowNodeType
 	dispatcher *dispatch.Dispatcher
 }
 
-func NewFactory(lg *zap.Logger, dispatcher *dispatch.Dispatcher) (plugins.Factory, error) {
+func NewFactory(lg *otelzap.Logger, dispatcher *dispatch.Dispatcher) (plugins.Factory, error) {
 	factory := &remoteFactory{
 		lg:         lg,
 		taskType:   types.FlowNodeType_ServiceTask,

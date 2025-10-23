@@ -27,7 +27,7 @@ import (
 	"sync"
 
 	"github.com/BurntSushi/toml"
-	"go.uber.org/zap"
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"sigs.k8s.io/yaml"
 
 	"github.com/olive-io/gflow/pkg/dbutil"
@@ -257,6 +257,6 @@ func (cfg *Config) FormatPluginConfig() (*PluginConfig, error) {
 	return cfg.Plugin, nil
 }
 
-func (cfg *Config) Logger() *zap.Logger {
+func (cfg *Config) Logger() *otelzap.Logger {
 	return cfg.Log.GetLogger()
 }

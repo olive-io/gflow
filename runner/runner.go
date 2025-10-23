@@ -26,6 +26,9 @@ import (
 
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 
 	"github.com/olive-io/gflow/api/types"
@@ -36,7 +39,7 @@ import (
 )
 
 type Runner struct {
-	lg  *zap.Logger
+	lg  *otelzap.Logger
 	cfg *Config
 
 	name string
@@ -50,6 +53,9 @@ func New(name string, cfg *Config) (*Runner, error) {
 
 	lg := cfg.Logger()
 	inject.InitGraph(lg.Sugar())
+	if err := InitMetrics(cfg.ID); err != nil {
+		return nil, err
+	}
 
 	cpuTotal := uint64(0)
 	cpus, err := cpu.Counts(false)
@@ -222,4 +228,8 @@ func (r *Runner) generateRunnerStat() *types.RunnerStat {
 	}
 
 	return rs
+}
+
+func (r *Runner) Tracer() trace.Tracer {
+	return otel.Tracer(r.name)
 }

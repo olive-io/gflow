@@ -61,6 +61,10 @@ type Server struct {
 }
 
 func NewServer(name string, cfg *config.Config) (*Server, error) {
+	if err := InitMetrics(cfg.Server.ID); err != nil {
+		return nil, err
+	}
+
 	server := &Server{
 		name: name,
 		cfg:  cfg,
@@ -172,7 +176,7 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 		}
 	}
 
-	schedulerOptions := scheduler.NewOptions(lg)
+	schedulerOptions := scheduler.NewOptions(lg, s.cfg.Server.ID)
 	sch, err := scheduler.NewScheduler(ctx, schedulerOptions)
 	if err != nil {
 		return nil, fmt.Errorf("creates scheduler: %w", err)

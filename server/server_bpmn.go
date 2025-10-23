@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/olive-io/bpmn/schema"
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -38,7 +39,7 @@ type bpmnGRPCServer struct {
 	pb.UnimplementedBpmnRPCServer
 
 	ctx context.Context
-	lg  *zap.Logger
+	lg  *otelzap.Logger
 
 	sch *scheduler.Scheduler
 
@@ -46,7 +47,7 @@ type bpmnGRPCServer struct {
 	processDao     *dao.ProcessDao
 }
 
-func newBpmnServer(ctx context.Context, lg *zap.Logger, sch *scheduler.Scheduler, definitionsDao *dao.DefinitionsDao, processDao *dao.ProcessDao) *bpmnGRPCServer {
+func newBpmnServer(ctx context.Context, lg *otelzap.Logger, sch *scheduler.Scheduler, definitionsDao *dao.DefinitionsDao, processDao *dao.ProcessDao) *bpmnGRPCServer {
 	wch := sch.Watch(ctx, "bpmn-grpc-rpc")
 	server := &bpmnGRPCServer{
 		ctx:            ctx,

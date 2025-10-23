@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	"go.uber.org/zap"
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 
 	"github.com/olive-io/gflow/api/types"
 	"github.com/olive-io/gflow/plugins"
@@ -30,14 +30,14 @@ import (
 var _ plugins.Plugin = (*remoteGflow)(nil)
 
 type remoteGflow struct {
-	lg         *zap.Logger
+	lg         *otelzap.Logger
 	dispatcher *dispatch.Dispatcher
 	taskType   types.FlowNodeType
 	typ        string
 	target     string
 }
 
-func newRemoteGflow(lg *zap.Logger, dispatcher *dispatch.Dispatcher, taskType types.FlowNodeType, target string) *remoteGflow {
+func newRemoteGflow(lg *otelzap.Logger, dispatcher *dispatch.Dispatcher, taskType types.FlowNodeType, target string) *remoteGflow {
 	rgp := &remoteGflow{
 		lg:         lg,
 		dispatcher: dispatcher,

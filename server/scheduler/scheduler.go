@@ -27,6 +27,9 @@ import (
 	"github.com/olive-io/bpmn/v2"
 	"github.com/olive-io/bpmn/v2/pkg/tracing"
 	"github.com/panjf2000/ants/v2"
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 
 	"github.com/olive-io/gflow/api/types"
@@ -34,7 +37,7 @@ import (
 )
 
 type antLogger struct {
-	lg *zap.SugaredLogger
+	lg *otelzap.SugaredLogger
 }
 
 func (l *antLogger) Printf(format string, args ...any) {
@@ -58,7 +61,7 @@ type Scheduler struct {
 	cancel  context.CancelFunc
 	options *Options
 
-	lg *zap.Logger
+	lg *otelzap.Logger
 
 	queue *SyncPriorityQueue[*ProcessStat]
 
@@ -73,7 +76,10 @@ type Scheduler struct {
 func NewScheduler(pctx context.Context, options *Options) (*Scheduler, error) {
 	lg := options.Logger
 	if lg == nil {
-		lg = zap.NewNop()
+		lg = otelzap.New(zap.NewNop())
+	}
+	if err := InitMetrics(); err != nil {
+		return nil, err
 	}
 
 	poolOpts := []ants.Option{
@@ -197,6 +203,10 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 
 	processCounter.Add(1)
 
+	tracer := sch.openTracer()
+	ctx, span := tracer.Start(ctx, "start process "+stat.Name)
+	defer span.End()
+
 	var err error
 	defer func() {
 		stat.EndAt = time.Now().UnixMilli()
@@ -204,6 +214,7 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 
 		stat.Status = types.Process_Success
 		if err != nil {
+			span.RecordError(err)
 			stat.ErrMsg = err.Error()
 			stat.Status = types.Process_Failed
 		}
@@ -653,4 +664,8 @@ func (sch *Scheduler) deleteWatcher(name string) {
 	sch.wmu.Lock()
 	delete(sch.watchers, name)
 	sch.wmu.Unlock()
+}
+
+func (sch *Scheduler) openTracer() trace.Tracer {
+	return otel.Tracer(sch.options.Name)
 }

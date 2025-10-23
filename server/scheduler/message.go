@@ -20,7 +20,7 @@ import (
 	"context"
 	"errors"
 
-	"go.uber.org/zap"
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 
 	"github.com/olive-io/gflow/api/types"
 )
@@ -40,7 +40,7 @@ type WatchChan struct {
 	ctx context.Context
 
 	name string
-	lg   *zap.Logger
+	lg   *otelzap.Logger
 
 	ch   chan *WatchMessage
 	done chan struct{}
@@ -48,7 +48,7 @@ type WatchChan struct {
 	closed <-chan struct{}
 }
 
-func newWatchChan(ctx context.Context, name string, lg *zap.Logger, closed <-chan struct{}) *WatchChan {
+func newWatchChan(ctx context.Context, name string, lg *otelzap.Logger, closed <-chan struct{}) *WatchChan {
 	w := &WatchChan{
 		ctx:    ctx,
 		name:   name,

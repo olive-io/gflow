@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"sync"
 
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
@@ -60,7 +61,7 @@ type LogConfig struct {
 	// and "setupLogging" must be called before starting server.
 	// Do not set logger directly.
 	loggerMu sync.RWMutex
-	logger   *zap.Logger
+	logger   *otelzap.Logger
 }
 
 // LogRotationConfig Log rotation is disabled by default.
@@ -82,12 +83,12 @@ func NewLogConfig() LogConfig {
 		Level:   DefaultLogLevel,
 		Format:  DefaultLogFormat,
 		Outputs: []string{DefaultLogOutput},
-		logger:  zap.NewNop(),
+		logger:  otelzap.New(zap.NewNop()),
 	}
 }
 
 // GetLogger returns the logger.
-func (cfg *LogConfig) GetLogger() *zap.Logger {
+func (cfg *LogConfig) GetLogger() *otelzap.Logger {
 	cfg.loggerMu.RLock()
 	l := cfg.logger
 	cfg.loggerMu.RUnlock()
@@ -223,7 +224,7 @@ func NewZapLoggerBuilder(lg *zap.Logger) func(*LogConfig) error {
 	return func(cfg *LogConfig) error {
 		cfg.loggerMu.Lock()
 		defer cfg.loggerMu.Unlock()
-		cfg.logger = lg
+		cfg.logger = otelzap.New(lg)
 		return nil
 	}
 }
@@ -238,11 +239,12 @@ func (cfg *LogConfig) SetupGlobalLoggers() {
 	if lg != nil {
 		if cfg.Level == "debug" {
 			grpc.EnableTracing = true
-			grpclog.SetLoggerV2(zapgrpc.NewLogger(lg, zapgrpc.WithDebug()))
+			grpclog.SetLoggerV2(zapgrpc.NewLogger(lg.Logger, zapgrpc.WithDebug()))
 		} else {
-			grpclog.SetLoggerV2(zapgrpc.NewLogger(lg, zapgrpc.WithWarn()))
+			grpclog.SetLoggerV2(zapgrpc.NewLogger(lg.Logger, zapgrpc.WithWarn()))
 		}
-		zap.ReplaceGlobals(lg)
+		zap.ReplaceGlobals(lg.Logger)
+		otelzap.ReplaceGlobals(lg)
 	}
 }
 

@@ -23,7 +23,7 @@ import (
 	"time"
 
 	json "github.com/bytedance/sonic"
-	"go.uber.org/zap"
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 
 	"github.com/olive-io/gflow/api/types"
 	"github.com/olive-io/gflow/plugins"
@@ -33,12 +33,12 @@ import (
 var _ plugins.Plugin = (*httpPlugin)(nil)
 
 type httpPlugin struct {
-	lg       *zap.Logger
+	lg       *otelzap.Logger
 	flowType types.FlowNodeType
 	typ      string
 }
 
-func newHTTPPlugin(lg *zap.Logger, flowType types.FlowNodeType) *httpPlugin {
+func newHTTPPlugin(lg *otelzap.Logger, flowType types.FlowNodeType) *httpPlugin {
 	hp := &httpPlugin{
 		lg:       lg,
 		flowType: flowType,
