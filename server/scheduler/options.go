@@ -20,6 +20,7 @@ import (
 	"runtime"
 
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -28,15 +29,15 @@ var (
 
 type Options struct {
 	Logger          *otelzap.Logger
-	Name            string
 	ExecutePoolSize int
+	Tracer          trace.Tracer
 }
 
-func NewOptions(lg *otelzap.Logger, name string) *Options {
+func NewOptions(lg *otelzap.Logger, tracer trace.Tracer) *Options {
 	options := &Options{
 		Logger:          lg,
-		Name:            name,
 		ExecutePoolSize: DefaultExecutePoolSize,
+		Tracer:          tracer,
 	}
 	return options
 }

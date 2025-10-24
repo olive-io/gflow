@@ -27,13 +27,14 @@ import (
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
-	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 
 	"github.com/olive-io/gflow/api/types"
 	"github.com/olive-io/gflow/clientgo"
 	"github.com/olive-io/gflow/pkg/inject"
+	traceutil "github.com/olive-io/gflow/pkg/trace"
 	"github.com/olive-io/gflow/pkg/version"
 	"github.com/olive-io/gflow/plugins"
 )
@@ -45,6 +46,8 @@ type Runner struct {
 	name string
 
 	tr *atomic.Pointer[types.Runner]
+
+	tracerProvider *sdktrace.TracerProvider
 
 	pluginManager *plugins.Manager
 }
@@ -77,8 +80,9 @@ func New(name string, cfg *Config) (*Runner, error) {
 		return nil, fmt.Errorf("read system hostname: %w", err)
 	}
 
+	runnerID := cfg.ID
 	tr := &types.Runner{
-		Uid:         cfg.ID,
+		Uid:         runnerID,
 		Version:     version.GitTag,
 		HeartbeatMs: cfg.HeartBeatInterval.Milliseconds(),
 		Hostname:    hostname,
@@ -90,13 +94,15 @@ func New(name string, cfg *Config) (*Runner, error) {
 	trPtr := atomic.Pointer[types.Runner]{}
 	trPtr.Store(tr)
 
+	tracerProvider := traceutil.DefaultProvider()
 	pm := plugins.NewManager()
 	runner := &Runner{
-		lg:            lg,
-		cfg:           cfg,
-		name:          name,
-		tr:            &trPtr,
-		pluginManager: pm,
+		lg:             lg,
+		cfg:            cfg,
+		name:           name,
+		tr:             &trPtr,
+		tracerProvider: tracerProvider,
+		pluginManager:  pm,
 	}
 
 	return runner, nil
@@ -231,5 +237,5 @@ func (r *Runner) generateRunnerStat() *types.RunnerStat {
 }
 
 func (r *Runner) Tracer() trace.Tracer {
-	return otel.Tracer(r.name)
+	return r.tracerProvider.Tracer(r.name)
 }

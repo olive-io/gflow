@@ -29,6 +29,7 @@ import (
 	gwrt "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/tmc/grpc-websocket-proxy/wsproxy"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
@@ -38,6 +39,7 @@ import (
 
 	pb "github.com/olive-io/gflow/api/rpc"
 	"github.com/olive-io/gflow/pkg/dbutil"
+	traceutil "github.com/olive-io/gflow/pkg/trace"
 	"github.com/olive-io/gflow/plugins"
 	"github.com/olive-io/gflow/server/config"
 	"github.com/olive-io/gflow/server/dao"
@@ -58,6 +60,8 @@ type Server struct {
 	name string
 
 	cfg *config.Config
+
+	tracerProvider *sdktrace.TracerProvider
 }
 
 func NewServer(name string, cfg *config.Config) (*Server, error) {
@@ -65,9 +69,12 @@ func NewServer(name string, cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 
+	traceProvider := traceutil.DefaultProvider()
 	server := &Server{
 		name: name,
 		cfg:  cfg,
+
+		tracerProvider: traceProvider,
 	}
 
 	return server, nil
@@ -112,6 +119,9 @@ func (s *Server) Start(ctx context.Context) error {
 	lg.Sugar().Infof("shutting down %s", s.name)
 	if err = hs.Shutdown(ctx); err != nil {
 		return fmt.Errorf("shutdown %s: %w", s.name, err)
+	}
+	if err = s.tracerProvider.Shutdown(ctx); err != nil {
+		return fmt.Errorf("shutdown trace provider: %w", err)
 	}
 
 	return nil
@@ -176,7 +186,9 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 		}
 	}
 
-	schedulerOptions := scheduler.NewOptions(lg, s.cfg.Server.ID)
+	serverID := s.cfg.Server.ID
+	tracer := s.tracerProvider.Tracer(serverID)
+	schedulerOptions := scheduler.NewOptions(lg, tracer)
 	sch, err := scheduler.NewScheduler(ctx, schedulerOptions)
 	if err != nil {
 		return nil, fmt.Errorf("creates scheduler: %w", err)

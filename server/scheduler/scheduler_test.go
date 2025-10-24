@@ -55,7 +55,7 @@ func LoadTestFile(filename string, definitions any) {
 
 func TestScheduler(t *testing.T) {
 	lg := otelzap.New(zap.NewExample())
-	options := NewOptions(lg, "")
+	options := NewOptions(lg)
 	ctx := context.Background()
 	sche, err := NewScheduler(ctx, options)
 	if !assert.NoError(t, err) {

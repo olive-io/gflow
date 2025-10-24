@@ -276,7 +276,7 @@ message CallTaskRequest {
   map<string, Value> dataObjects = 9;
   int64 timeout = 10;
 
-  string trace_id = 21;
+  SpanContext trace_span_context = 11;
 }
 
 message CallTaskResponse {
@@ -285,4 +285,12 @@ message CallTaskResponse {
   map<string, Value> results = 3;
   map<string, Value> dataObjects = 4;
   string error = 5;
+}
+
+message SpanContext {
+  string trace_id = 1;
+  string span_id = 2;
+  int32 flags = 3;
+  string state = 4;
+  bool remote = 5;
 }

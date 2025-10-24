@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/olive-io/gflow/api/types"
 	"github.com/olive-io/gflow/plugins"
@@ -74,6 +75,18 @@ func (gp *remoteGflow) Do(ctx context.Context, req *plugins.Request, opts ...plu
 		DataObjects: req.DataObjects,
 		Timeout:     doOptions.Timeout,
 	}
+
+	// set trace span config
+	span := trace.SpanFromContext(ctx)
+	sc := span.SpanContext()
+	traceSpan := &types.SpanContext{
+		TraceId: sc.TraceID().String(),
+		SpanId:  sc.SpanID().String(),
+		Flags:   int32(sc.TraceFlags()),
+		State:   sc.TraceState().String(),
+		Remote:  true,
+	}
+	callRequest.TraceSpanContext = traceSpan
 
 	callOptions := make([]dispatch.CallOption, 0)
 	callOptions = append(callOptions, dispatch.WithUID(gp.target))

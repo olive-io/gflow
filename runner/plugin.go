@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 
@@ -272,10 +273,36 @@ func (r *Runner) Handle(ctx context.Context, request *types.CallTaskRequest) *ty
 		DataObjects: map[string]*types.Value{},
 	}
 
+	if sc := request.TraceSpanContext; sc != nil {
+		cfg := trace.SpanContextConfig{
+			TraceID:    trace.TraceID{},
+			SpanID:     trace.SpanID{},
+			TraceFlags: 0,
+			TraceState: trace.TraceState{},
+			Remote:     false,
+		}
+		traceID, terr := trace.TraceIDFromHex(sc.TraceId)
+		if terr == nil {
+			cfg.TraceID = traceID
+		}
+		spanID, terr := trace.SpanIDFromHex(sc.SpanId)
+		if terr == nil {
+			cfg.SpanID = spanID
+		}
+		cfg.TraceFlags = trace.TraceFlags(byte(sc.Flags))
+		state, terr := trace.ParseTraceState(sc.State)
+		if terr == nil {
+			cfg.TraceState = state
+		}
+		cfg.Remote = sc.Remote
+		ctx = trace.ContextWithRemoteSpanContext(ctx, trace.NewSpanContext(cfg))
+	}
+
 	var err error
 	var span trace.Span
 	ctx, span = r.Tracer().Start(ctx, request.Name,
-		trace.WithSpanKind(trace.SpanKindClient))
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(attribute.String("stage", request.Stage.String())))
 
 	defer func() {
 		if err != nil {

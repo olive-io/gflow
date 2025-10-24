@@ -28,7 +28,6 @@ import (
 	"github.com/olive-io/bpmn/v2/pkg/tracing"
 	"github.com/panjf2000/ants/v2"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 
@@ -624,6 +623,10 @@ func (sch *Scheduler) doTask(
 		}
 	}
 
+	var span trace.Span
+	ctx, span = sch.openTracer().Start(ctx, name)
+	defer span.End()
+
 	resp, err := pluginImpl.Do(ctx, req, doOptions...)
 	if err != nil {
 		return nil, nil, err
@@ -667,5 +670,6 @@ func (sch *Scheduler) deleteWatcher(name string) {
 }
 
 func (sch *Scheduler) openTracer() trace.Tracer {
-	return otel.Tracer(sch.options.Name)
+	tracer := sch.options.Tracer
+	return tracer
 }
