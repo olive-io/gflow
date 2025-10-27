@@ -57,7 +57,7 @@ func New(name string, cfg *Config) (*Runner, error) {
 	lg := cfg.Logger()
 	inject.InitGraph(lg.Sugar())
 	if err := InitMetrics(cfg.ID); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("initializing metrics: %w", err)
 	}
 
 	cpuTotal := uint64(0)
@@ -95,6 +95,14 @@ func New(name string, cfg *Config) (*Runner, error) {
 	trPtr.Store(tr)
 
 	tracerProvider := traceutil.DefaultProvider()
+	if cfg.Trace != nil {
+		ctx := context.Background()
+		tracerProvider, err = traceutil.NewJaegerTraceProvider(ctx, cfg.Trace)
+		if err != nil {
+			return nil, fmt.Errorf("build jaeger trace provider: %w", err)
+		}
+	}
+
 	pm := plugins.NewManager()
 	runner := &Runner{
 		lg:             lg,

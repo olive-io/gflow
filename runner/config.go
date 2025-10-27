@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/olive-io/gflow/pkg/logutil"
+	traceutil "github.com/olive-io/gflow/pkg/trace"
 )
 
 var (
@@ -42,8 +43,6 @@ var (
 type Config struct {
 	once sync.Once
 
-	Log *logutil.LogConfig `json:"log" toml:"log"`
-
 	ID      string `json:"id" toml:"id"`
 	Targets string `json:"targets" toml:"targets"`
 
@@ -54,6 +53,10 @@ type Config struct {
 	HeartBeatInterval time.Duration `json:"heartbeat_interval" toml:"heartbeat_interval"`
 
 	Metadata map[string]string `json:"metadata" toml:"metadata"`
+
+	Log *logutil.LogConfig `json:"log" toml:"log"`
+
+	Trace *traceutil.Config `json:"trace" toml:"trace"`
 }
 
 func NewConfig() *Config {

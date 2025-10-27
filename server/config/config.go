@@ -32,6 +32,7 @@ import (
 
 	"github.com/olive-io/gflow/pkg/dbutil"
 	"github.com/olive-io/gflow/pkg/logutil"
+	traceutil "github.com/olive-io/gflow/pkg/trace"
 )
 
 var (
@@ -100,6 +101,8 @@ type Config struct {
 	Database *dbutil.Config `json:"database" toml:"database"`
 
 	Log *logutil.LogConfig `json:"log" toml:"log"`
+
+	Trace *traceutil.Config `json:"trace" toml:"trace"`
 
 	Plugin *PluginConfig `json:"plugin" toml:"plugin"`
 

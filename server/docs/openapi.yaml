@@ -5,7 +5,7 @@ openapi: 3.0.3
 info:
     title: GFlow
     description: Gflow OpenAPI3.0 Document
-    version: 0d5f6a4ec80f08b6dce136cda5f14bfa4be41a9a
+    version: b56249a8c033dbe8c52bf95bfcca83112ff6e486
 paths:
     /v1/definitions:
         get:

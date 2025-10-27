@@ -65,11 +65,20 @@ type Server struct {
 }
 
 func NewServer(name string, cfg *config.Config) (*Server, error) {
-	if err := InitMetrics(cfg.Server.ID); err != nil {
-		return nil, err
+	err := InitMetrics(cfg.Server.ID)
+	if err != nil {
+		return nil, fmt.Errorf("initialize metrics: %w", err)
 	}
 
 	traceProvider := traceutil.DefaultProvider()
+	if cfg.Trace != nil {
+		ctx := context.Background()
+		traceProvider, err = traceutil.NewJaegerTraceProvider(ctx, cfg.Trace)
+		if err != nil {
+			return nil, fmt.Errorf("build jaeger trace provider: %w", err)
+		}
+	}
+
 	server := &Server{
 		name: name,
 		cfg:  cfg,
