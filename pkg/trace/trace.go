@@ -18,10 +18,15 @@ package trace
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+)
+
+var (
+	DefaultTimeout = 5 * time.Second
 )
 
 type Config struct {
@@ -32,7 +37,6 @@ type Config struct {
 
 func NewJaegerTraceProvider(ctx context.Context, cfg *Config) (*sdktrace.TracerProvider, error) {
 	var opts []otlptracehttp.Option
-
 	if cfg.Endpoint != "" {
 		opts = append(opts, otlptracehttp.WithEndpoint(cfg.Endpoint))
 	}
@@ -42,13 +46,13 @@ func NewJaegerTraceProvider(ctx context.Context, cfg *Config) (*sdktrace.TracerP
 
 	traceExporter, err := otlptracehttp.New(ctx, opts...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create http exporter: %w", err)
 	}
 
 	var providerOptions []sdktrace.TracerProviderOption
 	timeout := cfg.Timeout
 	if timeout == 0 {
-		timeout = 5 * time.Second
+		timeout = DefaultTimeout
 	}
 	batcher := sdktrace.WithBatcher(traceExporter, sdktrace.WithBatchTimeout(timeout))
 	providerOptions = append(providerOptions, batcher)

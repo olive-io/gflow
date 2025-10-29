@@ -273,36 +273,34 @@ func (r *Runner) Handle(ctx context.Context, request *types.CallTaskRequest) *ty
 		DataObjects: map[string]*types.Value{},
 	}
 
-	if sc := request.TraceSpanContext; sc != nil {
-		cfg := trace.SpanContextConfig{
-			TraceID:    trace.TraceID{},
-			SpanID:     trace.SpanID{},
-			TraceFlags: 0,
-			TraceState: trace.TraceState{},
-			Remote:     false,
-		}
-		traceID, terr := trace.TraceIDFromHex(sc.TraceId)
+	if tsc := request.TraceSpanContext; tsc != nil {
+		sc := trace.SpanContextConfig{}
+		traceID, terr := trace.TraceIDFromHex(tsc.TraceId)
 		if terr == nil {
-			cfg.TraceID = traceID
+			sc.TraceID = traceID
 		}
-		spanID, terr := trace.SpanIDFromHex(sc.SpanId)
+		spanID, terr := trace.SpanIDFromHex(tsc.SpanId)
 		if terr == nil {
-			cfg.SpanID = spanID
+			sc.SpanID = spanID
 		}
-		cfg.TraceFlags = trace.TraceFlags(byte(sc.Flags))
-		state, terr := trace.ParseTraceState(sc.State)
+		sc.TraceFlags = trace.TraceFlags(byte(tsc.Flags))
+		state, terr := trace.ParseTraceState(tsc.State)
 		if terr == nil {
-			cfg.TraceState = state
+			sc.TraceState = state
 		}
-		cfg.Remote = sc.Remote
-		ctx = trace.ContextWithRemoteSpanContext(ctx, trace.NewSpanContext(cfg))
+		sc.Remote = tsc.Remote
+		ctx = trace.ContextWithRemoteSpanContext(ctx, trace.NewSpanContext(sc))
 	}
 
 	var err error
 	var span trace.Span
 	ctx, span = r.Tracer().Start(ctx, request.Name,
 		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(attribute.String("stage", request.Stage.String())))
+		trace.WithAttributes(
+			attribute.Int64("process", request.Process),
+			attribute.String("task", request.Stage.String()),
+			attribute.String("stage", request.Stage.String()),
+		))
 
 	defer func() {
 		if err != nil {
