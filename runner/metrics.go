@@ -46,7 +46,8 @@ func InitMetrics(name string) error {
 	var err error
 
 	ctx := context.Background()
-	currentVersion, err = metrics.NewInt64Gauge("gflow_version", otelMetric.WithDescription("Which version is running. 1 for 'runner_version' label with current version."))
+	currentVersion, err = metrics.NewInt64Gauge("gflow_version",
+		otelMetric.WithDescription("Which version is running. 1 for 'runner_version' label with current version."))
 	if err != nil {
 		return err
 	}
@@ -58,7 +59,8 @@ func InitMetrics(name string) error {
 	)
 	currentVersion.Record(ctx, 1, opts)
 
-	currentGoVersion, err = metrics.NewInt64Gauge("gflow_go_version", otelMetric.WithDescription("Which Go version runner is running with. 1 for 'runner_go_version' label with current version."))
+	currentGoVersion, err = metrics.NewInt64Gauge("gflow_go_version",
+		otelMetric.WithDescription("Which Go version runner is running with. 1 for 'runner_go_version' label with current version."))
 	if err != nil {
 		return err
 	}
@@ -69,22 +71,26 @@ func InitMetrics(name string) error {
 	)
 	currentGoVersion.Record(ctx, 1, opts)
 
-	taskCounter, err = metrics.NewObserveGauge("task_count", otelMetric.WithDescription("the number of Task"))
+	taskCounter, err = metrics.NewObserveGauge("task_count",
+		otelMetric.WithDescription("the number of Task"))
 	if err != nil {
 		return err
 	}
 
-	taskCommitCounter, err = metrics.NewObserveGauge("task_commit_count", otelMetric.WithDescription("the number of Task commit"))
+	taskCommitCounter, err = metrics.NewObserveGauge("task_commit_count",
+		otelMetric.WithDescription("the number of Task commit"))
 	if err != nil {
 		return err
 	}
 
-	taskRollbackCounter, err = metrics.NewObserveGauge("task_rollback_count", otelMetric.WithDescription("the number of Task rollback"))
+	taskRollbackCounter, err = metrics.NewObserveGauge("task_rollback_count",
+		otelMetric.WithDescription("the number of Task rollback"))
 	if err != nil {
 		return err
 	}
 
-	taskDestroyCounter, err = metrics.NewObserveGauge("task_destroy_count", otelMetric.WithDescription("the number of Task destroy"))
+	taskDestroyCounter, err = metrics.NewObserveGauge("task_destroy_count",
+		otelMetric.WithDescription("the number of Task destroy"))
 	if err != nil {
 		return err
 	}

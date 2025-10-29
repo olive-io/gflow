@@ -39,27 +39,32 @@ func InitMetrics() error {
 		return fmt.Errorf("initialize meter: %v", err)
 	}
 
-	processCounter, err = metrics.NewObserveGauge("process_count", otelMetric.WithDescription("the number of Bpmn Process"))
+	processCounter, err = metrics.NewObserveGauge("process_count",
+		otelMetric.WithDescription("the number of Bpmn Process"))
 	if err != nil {
 		return err
 	}
 
-	taskCounter, err = metrics.NewObserveGauge("task_count", otelMetric.WithDescription("the number of Task"))
+	taskCounter, err = metrics.NewObserveGauge("task_count",
+		otelMetric.WithDescription("the number of Task"))
 	if err != nil {
 		return err
 	}
 
-	taskCommitCounter, err = metrics.NewObserveGauge("task_commit_count", otelMetric.WithDescription("the number of Task commit"))
+	taskCommitCounter, err = metrics.NewObserveGauge("task_commit_count",
+		otelMetric.WithDescription("the number of Task commit"))
 	if err != nil {
 		return err
 	}
 
-	taskRollbackCounter, err = metrics.NewObserveGauge("task_rollback_count", otelMetric.WithDescription("the number of Task rollback"))
+	taskRollbackCounter, err = metrics.NewObserveGauge("task_rollback_count",
+		otelMetric.WithDescription("the number of Task rollback"))
 	if err != nil {
 		return err
 	}
 
-	taskDestroyCounter, err = metrics.NewObserveGauge("task_destroy_count", otelMetric.WithDescription("the number of Task destroy"))
+	taskDestroyCounter, err = metrics.NewObserveGauge("task_destroy_count",
+		otelMetric.WithDescription("the number of Task destroy"))
 	if err != nil {
 		return err
 	}
