@@ -89,7 +89,7 @@ func startRunner(ctx context.Context, name string, cfg *runner.Config) error {
 	factory := runner.NewFactory(types.FlowNodeType_ServiceTask)
 	//TODO: register plugins
 	if err = app.SetupFactory(factory); err != nil {
-		return fmt.Errorf("register %s: %w", name, err)
+		return fmt.Errorf("setup factory %s: %w", name, err)
 	}
 
 	return app.Start(ctx)

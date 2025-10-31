@@ -40,7 +40,6 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 		Short:   "the server component of gflow system",
 		Version: version.ReleaseVersion(),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-
 			var err error
 			cfgPath, _ := cmd.Flags().GetString("config")
 			cfg, err = config.FromPath(cfgPath)

@@ -26,6 +26,7 @@ import (
 	"github.com/fullstorydev/grpcurl"
 	"github.com/jhump/protoreflect/grpcreflect"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
@@ -71,6 +72,7 @@ func NewGRPCClient(lg *otelzap.Logger, cfg *GRPCConfig) (*GRPCClient, error) {
 }
 
 func (c *GRPCClient) Call(ctx context.Context, name string, headers map[string]string, req, resp any) (*status.Status, error) {
+	lg := c.lg
 	options := grpcurl.FormatOptions{
 		EmitJSONDefaultFields: true,
 		IncludeTextSeparator:  true,
@@ -89,6 +91,10 @@ func (c *GRPCClient) Call(ctx context.Context, name string, headers map[string]s
 		return nil, fmt.Errorf("parse request: %w", err)
 	}
 	verbosityLevel := 0
+
+	lg.Debug("grpc curl",
+		zap.String("format", string(format)),
+		zap.String("name", name))
 
 	out := bytes.NewBufferString("")
 	h := &grpcurl.DefaultEventHandler{

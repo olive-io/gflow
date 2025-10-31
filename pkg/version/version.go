@@ -30,7 +30,6 @@ var (
 
 func ReleaseVersion() string {
 	var version string
-
 	if GitTag != "" {
 		version = GitTag
 	}
@@ -59,8 +58,7 @@ func GoV() string {
 }
 
 func GetVersionTemplate() string {
-	var tpl string
-	tpl += fmt.Sprintf("maco Version: %s\n", GitTag)
+	tpl := fmt.Sprintf("GFlow Version: %s\n", GitTag)
 	tpl += fmt.Sprintf("Git SHA: %s\n", GitSHA)
 	tpl += fmt.Sprintf("Go Version: %s\n", runtime.Version())
 	tpl += fmt.Sprintf("Go OS/Arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
