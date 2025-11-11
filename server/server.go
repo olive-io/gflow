@@ -203,6 +203,7 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 		return nil, fmt.Errorf("creates scheduler: %w", err)
 	}
 
+	authRPC, authInterceptor := newAuthServer(ctx, lg)
 	bpmnRPC := newBpmnServer(ctx, lg, sch, definitionsDao, processDao)
 	systemRPC := newSystemGRPCServer(ctx, lg, s.cfg, runnerDao, endpointDao, dispatcher)
 
@@ -229,6 +230,7 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 
 	sopts := []grpc.ServerOption{
 		grpc.UnaryInterceptor(validateInterceptor),
+		grpc.UnaryInterceptor(authInterceptor),
 		grpc.KeepaliveEnforcementPolicy(kaep),
 		grpc.KeepaliveParams(kasp),
 	}
@@ -236,6 +238,11 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 
 	muxOpts := []gwrt.ServeMuxOption{}
 	gwmux := gwrt.NewServeMux(muxOpts...)
+
+	pb.RegisterAuthRPCServer(gs, authRPC)
+	if err = pb.RegisterAuthRPCHandlerServer(ctx, gwmux, authRPC); err != nil {
+		return nil, fmt.Errorf("register auth handler: %w", err)
+	}
 
 	pb.RegisterBpmnRPCServer(gs, bpmnRPC)
 	if err = pb.RegisterBpmnRPCHandlerServer(ctx, gwmux, bpmnRPC); err != nil {

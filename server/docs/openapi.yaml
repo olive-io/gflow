@@ -5,7 +5,7 @@ openapi: 3.0.3
 info:
     title: Gflow
     description: Gflow OpenAPI3.0 Document
-    version: 5a81ade547f446c6b777da45e9db63a3a1a4d6b7
+    version: dae903685f17f1af3bcbf9ed9df4ded2328b54d4
 paths:
     /v1/definitions:
         get:
@@ -30,6 +30,9 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.ListDefinitionsResponse'
+            security:
+                - bearerAuth:
+                    - Definitions:get
         post:
             tags:
                 - BpmnRPC
@@ -47,6 +50,9 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.DeployDefinitionsResponse'
+            security:
+                - bearerAuth:
+                    - Definitions:post
     /v1/definitions/{uid}:
         get:
             tags:
@@ -69,6 +75,9 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.GetDefinitionsResponse'
+            security:
+                - bearerAuth:
+                    - Definitions:get
         delete:
             tags:
                 - BpmnRPC
@@ -90,6 +99,9 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.RemoveDefinitionsResponse'
+            security:
+                - bearerAuth:
+                    - Definitions:delete
     /v1/endpoints:
         get:
             tags:
@@ -113,6 +125,9 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.ListEndpointsResponse'
+            security:
+                - bearerAuth:
+                    - Endpoint:get
         post:
             tags:
                 - SystemRPC
@@ -130,6 +145,9 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.AddEndpointsResponse'
+            security:
+                - bearerAuth:
+                    - Endpoint:post
     /v1/endpoints/grpc:
         post:
             tags:
@@ -148,6 +166,9 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.AddGRPCEndpointsResponse'
+            security:
+                - bearerAuth:
+                    - Endpoint:post
     /v1/endpoints/openapi:
         post:
             tags:
@@ -166,6 +187,9 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.AddOpenAPIEndpointsResponse'
+            security:
+                - bearerAuth:
+                    - Endpoint:post
     /v1/endpoints/{id}/convert:
         post:
             tags:
@@ -190,6 +214,27 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.ConvertEndpointResponse'
+            security:
+                - bearerAuth:
+                    - Endpoint:patch
+    /v1/login:
+        post:
+            tags:
+                - AuthRPC
+            operationId: AuthRPC_Login
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rpc.LoginRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.LoginResponse'
     /v1/ping:
         get:
             tags:
@@ -243,6 +288,9 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.ListProcessResponse'
+            security:
+                - bearerAuth:
+                    - Process:get
     /v1/processes/execute:
         post:
             tags:
@@ -261,6 +309,9 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.ExecuteProcessResponse'
+            security:
+                - bearerAuth:
+                    - Process:post
     /v1/processes/{id}:
         get:
             tags:
@@ -279,6 +330,149 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.GetProcessResponse'
+            security:
+                - bearerAuth:
+                    - Process:get
+    /v1/roles:
+        get:
+            tags:
+                - AuthRPC
+            operationId: AuthRPC_ListRoles
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: size
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.ListRolesResponse'
+            security:
+                - bearerAuth:
+                    - Role:get
+    /v1/roles/{id}:
+        get:
+            tags:
+                - AuthRPC
+            operationId: AuthRPC_GetRole
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.GetRoleResponse'
+            security:
+                - bearerAuth:
+                    - Role:get
+    /v1/routes:
+        get:
+            tags:
+                - AuthRPC
+            operationId: AuthRPC_ListRoutes
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: size
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.ListRoutesResponse'
+            security:
+                - bearerAuth:
+                    - Route:get
+        post:
+            tags:
+                - AuthRPC
+            operationId: AuthRPC_CreateRoute
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rpc.CreateRouteRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.CreateRouteResponse'
+            security:
+                - bearerAuth:
+                    - Route:post
+    /v1/routes/{id}:
+        get:
+            tags:
+                - AuthRPC
+            operationId: AuthRPC_GetRoute
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.GetRouteResponse'
+            security:
+                - bearerAuth:
+                    - Route:get
+        post:
+            tags:
+                - AuthRPC
+            operationId: AuthRPC_DeleteRoute
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rpc.DeleteRouteRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.DeleteRouteResponse'
+            security:
+                - bearerAuth:
+                    - Route:delete
     /v1/runners:
         get:
             tags:
@@ -302,6 +496,9 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.ListRunnersResponse'
+            security:
+                - bearerAuth:
+                    - Runner:get
     /v1/runners/disregister:
         post:
             tags:
@@ -321,6 +518,9 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.DisregisterResponse'
+            security:
+                - bearerAuth:
+                    - Runner:delete
     /v1/runners/register:
         post:
             tags:
@@ -340,6 +540,9 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.RegisterResponse'
+            security:
+                - bearerAuth:
+                    - Runner:post
     /v1/runners/{id}:
         get:
             tags:
@@ -362,6 +565,169 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.GetRunnerResponse'
+            security:
+                - bearerAuth:
+                    - Runner:get
+    /v1/tokens:
+        get:
+            tags:
+                - AuthRPC
+            operationId: AuthRPC_ListTokens
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: size
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.ListTokensResponse'
+            security:
+                - bearerAuth:
+                    - Token:get
+    /v1/tokens/{id}:
+        get:
+            tags:
+                - AuthRPC
+            operationId: AuthRPC_GetToken
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.GetTokenResponse'
+            security:
+                - bearerAuth:
+                    - Token:get
+        delete:
+            tags:
+                - AuthRPC
+            operationId: AuthRPC_DeleteToken
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.DeleteTokenResponse'
+            security:
+                - bearerAuth:
+                    - Token:delete
+    /v1/users:
+        get:
+            tags:
+                - AuthRPC
+            operationId: AuthRPC_ListUsers
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: size
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.ListUsersResponse'
+            security:
+                - bearerAuth:
+                    - User:get
+    /v1/users/{id}:
+        get:
+            tags:
+                - AuthRPC
+            operationId: AuthRPC_GetUser
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.GetUserResponse'
+            security:
+                - bearerAuth:
+                    - User:get
+        delete:
+            tags:
+                - AuthRPC
+            operationId: AuthRPC_DeleteUser
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.DeleteUserResponse'
+            security:
+                - bearerAuth:
+                    - User:delete
+        patch:
+            tags:
+                - AuthRPC
+            operationId: AuthRPC_UpdateUser
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rpc.UpdateUserRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.UpdateUserResponse'
+            security:
+                - bearerAuth:
+                    - User:patch
 components:
     schemas:
         rpc.AddEndpointsRequest:
@@ -423,6 +789,36 @@ components:
                     type: string
                 content:
                     type: string
+        rpc.CreateRouteRequest:
+            type: object
+            properties:
+                routes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/types.Route'
+        rpc.CreateRouteResponse:
+            type: object
+            properties: {}
+        rpc.DeleteRouteRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+        rpc.DeleteRouteResponse:
+            type: object
+            properties:
+                route:
+                    $ref: '#/components/schemas/types.Route'
+        rpc.DeleteTokenResponse:
+            type: object
+            properties:
+                token:
+                    $ref: '#/components/schemas/types.Token'
+        rpc.DeleteUserResponse:
+            type: object
+            properties:
+                user:
+                    $ref: '#/components/schemas/types.User'
         rpc.DeployDefinitionsRequest:
             type: object
             properties:
@@ -495,6 +891,16 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/types.FlowNode'
+        rpc.GetRoleResponse:
+            type: object
+            properties:
+                role:
+                    $ref: '#/components/schemas/types.Role'
+        rpc.GetRouteResponse:
+            type: object
+            properties:
+                route:
+                    $ref: '#/components/schemas/types.Route'
         rpc.GetRunnerResponse:
             type: object
             properties:
@@ -502,6 +908,16 @@ components:
                     $ref: '#/components/schemas/types.Runner'
                 stat:
                     $ref: '#/components/schemas/types.RunnerStat'
+        rpc.GetTokenResponse:
+            type: object
+            properties:
+                user:
+                    $ref: '#/components/schemas/types.User'
+        rpc.GetUserResponse:
+            type: object
+            properties:
+                user:
+                    $ref: '#/components/schemas/types.User'
         rpc.ListDefinitionsResponse:
             type: object
             properties:
@@ -529,6 +945,24 @@ components:
                         $ref: '#/components/schemas/types.Process'
                 total:
                     type: string
+        rpc.ListRolesResponse:
+            type: object
+            properties:
+                roles:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/types.Role'
+                total:
+                    type: string
+        rpc.ListRoutesResponse:
+            type: object
+            properties:
+                routes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/types.Route'
+                total:
+                    type: string
         rpc.ListRunnersResponse:
             type: object
             properties:
@@ -538,6 +972,36 @@ components:
                         $ref: '#/components/schemas/types.Runner'
                 total:
                     type: string
+        rpc.ListTokensResponse:
+            type: object
+            properties:
+                tokens:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/types.Token'
+                total:
+                    type: string
+        rpc.ListUsersResponse:
+            type: object
+            properties:
+                users:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/types.User'
+                total:
+                    type: string
+        rpc.LoginRequest:
+            type: object
+            properties:
+                username:
+                    type: string
+                password:
+                    type: string
+        rpc.LoginResponse:
+            type: object
+            properties:
+                token:
+                    $ref: '#/components/schemas/types.Token'
         rpc.PingResponse:
             type: object
             properties:
@@ -558,6 +1022,16 @@ components:
             properties:
                 definitions:
                     $ref: '#/components/schemas/types.Definitions'
+        rpc.UpdateUserRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+        rpc.UpdateUserResponse:
+            type: object
+            properties:
+                user:
+                    $ref: '#/components/schemas/types.User'
         types.BpmnArgs:
             type: object
             properties:
@@ -764,6 +1238,58 @@ components:
                     type: object
                     additionalProperties:
                         $ref: '#/components/schemas/types.Value'
+        types.Role:
+            type: object
+            properties:
+                id:
+                    type: string
+                createAt:
+                    type: string
+                updateAt:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                metadata:
+                    type: object
+                    additionalProperties:
+                        type: string
+                type:
+                    type: integer
+                    format: enum
+        types.Route:
+            type: object
+            properties:
+                id:
+                    type: string
+                type:
+                    type: integer
+                    format: enum
+                name:
+                    type: string
+                summary:
+                    type: string
+                description:
+                    type: string
+                method:
+                    type: string
+                url:
+                    type: string
+                tags:
+                    type: array
+                    items:
+                        type: string
+                security:
+                    type: object
+                    additionalProperties:
+                        type: string
+                metadata:
+                    type: object
+                    additionalProperties:
+                        type: string
+                deprecated:
+                    type: boolean
         types.Runner:
             type: object
             properties:
@@ -836,6 +1362,54 @@ components:
                     type: string
                 destroyCount:
                     type: string
+        types.Token:
+            type: object
+            properties:
+                id:
+                    type: string
+                createAt:
+                    type: string
+                source:
+                    type: integer
+                    format: enum
+                text:
+                    type: string
+                expireAt:
+                    type: string
+                enable:
+                    type: integer
+                    format: int32
+                owner:
+                    type: string
+        types.User:
+            type: object
+            properties:
+                id:
+                    type: string
+                uid:
+                    type: string
+                createAt:
+                    type: string
+                updateAt:
+                    type: string
+                username:
+                    type: string
+                email:
+                    type: string
+                description:
+                    type: string
+                metadata:
+                    type: object
+                    additionalProperties:
+                        type: string
+                password:
+                    type: string
+                hashedPassword:
+                    type: string
+                lastLogon:
+                    type: string
+                roleId:
+                    type: string
         types.Value:
             type: object
             properties:
@@ -848,6 +1422,12 @@ components:
                     type: string
                 default:
                     type: string
+    securitySchemes:
+        bearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
 tags:
+    - name: AuthRPC
     - name: BpmnRPC
     - name: SystemRPC

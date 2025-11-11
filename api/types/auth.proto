@@ -96,3 +96,24 @@ message Token {
   int64 owner = 7;
 }
 
+message Route {
+  enum Type {
+    Unknown = 0;
+    Front = 1;
+    Backend = 2;
+  }
+
+  int64 id = 1 [(tagger.tags) = "gorm:\"primary\""];
+
+  Type type = 2;
+
+  string name = 3;
+  string summary = 4;
+  string description = 5;
+  string method = 6;
+  string url = 7;
+  repeated string tags = 8 [(tagger.tags) = "gorm:\"serializer:json\""];
+  map<string, string> security = 9;
+  map<string, string> metadata = 10 [(tagger.tags) = "gorm:\"serializer:json\""];
+  bool deprecated = 11;
+}
