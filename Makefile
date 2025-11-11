@@ -66,9 +66,8 @@ apis:
     		$(RPC_PROTO_FILES)
 	protoc --proto_path=./api \
 			--proto_path=./third-party \
-			--openapi_out=fq_schema_naming=true,title="GFlow",description="Gflow OpenAPI3.0 Document",version=$(GIT_TAG),default_response=false:./server/docs \
+			--openapi_out=fq_schema_naming=true,title="Gflow",description="Gflow OpenAPI3.0 Document",version=$(GIT_TAG),default_response=false:./server/docs \
 			$(OPENAPI_PROTO_FILES)
-
 
 docker:
 

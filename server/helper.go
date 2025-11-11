@@ -104,6 +104,8 @@ func convertToTask(ep *types.Endpoint) schema.TaskInterface {
 		st = &schema.ReceiveTask{}
 	case types.FlowNodeType_ServiceTask:
 		st = &schema.ServiceTask{}
+	case types.FlowNodeType_SendTask:
+		st = &schema.SendTask{}
 	case types.FlowNodeType_UserTask:
 		st = &schema.UserTask{}
 	case types.FlowNodeType_ScriptTask:

@@ -209,7 +209,7 @@ message RunnerDispatchRequest {
 
 message RunnerDispatchResponse {
   HandshakeResponse handshake = 1;
-  HeartBeatResponse HeartBeat = 2;
+  HeartBeatResponse heartBeat = 2;
   types.CallTaskRequest callTask = 3;
 }
 
@@ -309,7 +309,7 @@ message ExecuteProcessResponse {
 }
 
 message ListProcessRequest {
-  int32 page = 1 [(validate.rules).int32.gt = 0];
+  int32 page = 1;
   int32 size = 2 [(validate.rules).int32.gt = 0];
   string definitions_uid = 3;
   uint64 definitions_version = 4;

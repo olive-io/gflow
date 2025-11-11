@@ -215,6 +215,10 @@ func (r *Runner) Start(ctx context.Context) error {
 
 	<-ctx.Done()
 
+	if err := r.tracerProvider.Shutdown(ctx); err != nil {
+		return fmt.Errorf("shutdown trace provider: %w", err)
+	}
+
 	lg.Sugar().Infof("shutdown %s", r.name)
 	return nil
 }

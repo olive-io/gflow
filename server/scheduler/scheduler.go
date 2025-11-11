@@ -350,14 +350,14 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 	go func(ech chan<- error) {
 		defer close(done)
 		for {
-			var trace tracing.ITrace
+			var tr tracing.ITrace
 			select {
-			case trace = <-traces:
+			case tr = <-traces:
 			case <-ctx.Done():
 			}
 
-			trace = tracing.Unwrap(trace)
-			switch tt := trace.(type) {
+			tr = tracing.Unwrap(tr)
+			switch tt := tr.(type) {
 			case bpmn.VisitTrace:
 				elem := tt.Node
 				var fid string

@@ -159,6 +159,7 @@ func (tf *TaskFactory) createPrototype(options *plugins.DoOptions) (Task, func()
 		}
 
 		return cacheTask, cancel, nil
+
 	default:
 		return nil, cancel, fmt.Errorf("unknown stage '%s'", options.Stage)
 	}
