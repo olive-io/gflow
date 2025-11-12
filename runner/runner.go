@@ -215,7 +215,12 @@ func (r *Runner) Start(ctx context.Context) error {
 		}()
 	}
 
-	<-ctx.Done()
+	select {
+	case <-ctx.Done():
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), time.Second*3)
+		defer cancel()
+	}
 
 	if err := r.tracerProvider.Shutdown(ctx); err != nil {
 		return fmt.Errorf("shutdown trace provider: %w", err)

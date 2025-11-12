@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/casbin/casbin/v2"
+	gwrt "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -33,7 +34,11 @@ import (
 	"github.com/olive-io/gflow/server/dao"
 )
 
-var userInfoKey = "userInfoKey"
+var (
+	httpMethodKey = gwrt.MetadataPrefix + "Http-Method"
+	httpPathKey   = gwrt.MetadataPrefix + "Http-Path"
+	userInfoKey   = "User-Info"
+)
 
 type UserInfo struct {
 	authutil.Claims

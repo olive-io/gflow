@@ -40,6 +40,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
@@ -130,6 +131,9 @@ func (s *Server) Start(ctx context.Context) error {
 	case err = <-ech:
 		return fmt.Errorf("start %s: %w", s.name, err)
 	case <-ctx.Done():
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), time.Second*3)
+		defer cancel()
 	}
 
 	lg.Sugar().Infof("shutting down %s", s.name)
@@ -279,7 +283,16 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	}
 
 	// creates grpc gateway server
-	muxOpts := []gwrt.ServeMuxOption{}
+	muxOpts := []gwrt.ServeMuxOption{
+		gwrt.WithMiddlewares(func(handlerFunc gwrt.HandlerFunc) gwrt.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+				rctx := r.Context()
+				rctx = context.WithValue(rctx, httpMethodKey, r.Method)
+				r = r.WithContext(rctx)
+				handlerFunc(w, r, pathParams)
+			}
+		}),
+	}
 	gwmux := gwrt.NewServeMux(muxOpts...)
 
 	// registers grpc handler with grpc client
@@ -386,6 +399,17 @@ func (s *Server) buildGRPCConn() (*grpc.ClientConn, error) {
 		grpc.WithTransportCredentials(creds),
 		grpc.WithKeepaliveParams(kacp),
 		grpc.WithIdleTimeout(defaultTimeout),
+		grpc.WithChainUnaryInterceptor(func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+			httpPath, ok := gwrt.HTTPPathPattern(ctx)
+			if ok {
+				ctx = metadata.AppendToOutgoingContext(ctx, httpPathKey, httpPath)
+			}
+			httpMethod, ok := ctx.Value(httpMethodKey).(string)
+			if ok {
+				ctx = metadata.AppendToOutgoingContext(ctx, httpMethodKey, httpMethod)
+			}
+			return invoker(ctx, method, req, reply, cc, opts...)
+		}),
 	}
 
 	conn, err := grpc.NewClient(s.cfg.Server.Listen, dialOpts...)
