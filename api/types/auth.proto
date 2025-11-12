@@ -75,25 +75,18 @@ message User {
 }
 
 message Token {
-  enum Source {
-    Unknown = 0;
-    Node = 1;
-    Client = 2;
-    User = 3;
-  }
-
   int64 id = 1 [(tagger.tags) = "gorm:\"primary\""];
   int64 create_at = 2 [(tagger.tags) = "gorm:\"autoCreateTime\""];
 
-  Source source = 3;
+  string text = 3;
 
-  string text = 4;
+  int64 expire_at = 4;
 
-  int64 expire_at = 5;
+  int32 enable = 5;
 
-  int32 enable = 6;
+  int64 user_id = 6;
 
-  int64 owner = 7;
+  int64 role_id = 7;
 }
 
 message Route {
@@ -113,7 +106,7 @@ message Route {
   string method = 6;
   string url = 7;
   repeated string tags = 8 [(tagger.tags) = "gorm:\"serializer:json\""];
-  map<string, string> security = 9;
+  map<string, string> security = 9 [(tagger.tags) = "gorm:\"serializer:json\""];
   map<string, string> metadata = 10 [(tagger.tags) = "gorm:\"serializer:json\""];
   bool deprecated = 11;
 }

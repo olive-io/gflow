@@ -46,9 +46,10 @@ type Config struct {
 	ID      string `json:"id" toml:"id"`
 	Targets string `json:"targets" toml:"targets"`
 
-	CertFile string `json:"cert_file" toml:"cert_file"`
-	KeyFile  string `json:"key_file" toml:"key_file"`
-	CaFile   string `json:"ca_file" toml:"ca_file"`
+	CertFile   string `json:"cert_file" toml:"cert_file"`
+	KeyFile    string `json:"key_file" toml:"key_file"`
+	CaFile     string `json:"ca_file" toml:"ca_file"`
+	ServerName string `json:"server_name" toml:"server_name"`
 
 	HeartBeatInterval time.Duration `json:"heartbeat_interval" toml:"heartbeat_interval"`
 

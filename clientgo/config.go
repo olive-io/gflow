@@ -17,7 +17,14 @@ limitations under the License.
 package clientgo
 
 import (
+	"context"
+	"errors"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
+	"github.com/olive-io/gflow/pkg/authutil"
 )
 
 const (
@@ -25,9 +32,10 @@ const (
 )
 
 type ConfigTLS struct {
-	CertFile string
-	KeyFile  string
-	CaFile   string
+	CertFile   string
+	KeyFile    string
+	CaFile     string
+	ServerName string
 }
 
 type Config struct {
@@ -36,6 +44,10 @@ type Config struct {
 	RequestTimeout time.Duration
 
 	TLS *ConfigTLS
+
+	IsRunner bool
+
+	Token string
 }
 
 func NewConfig(target string) *Config {
@@ -45,4 +57,31 @@ func NewConfig(target string) *Config {
 		RequestTimeout: DefaultTimeout,
 	}
 	return opts
+}
+
+func (cfg *Config) Validate() error {
+	if cfg.Target == "" {
+		return errors.New("target is required")
+	}
+	if cfg.DialTimeout < 0 {
+		cfg.DialTimeout = DefaultTimeout
+	}
+	if cfg.RequestTimeout < 0 {
+		cfg.RequestTimeout = DefaultTimeout
+	}
+
+	return nil
+}
+
+func (cfg *Config) buildUnaryInterceptor() grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		if cfg.Token != "" {
+			ctx = metadata.AppendToOutgoingContext(ctx, "Authorization", "Bearer "+cfg.Token)
+		}
+		if cfg.IsRunner {
+			ctx = authutil.AppendGflowAgent(ctx)
+		}
+
+		return invoker(ctx, method, req, reply, cc, opts...)
+	}
 }

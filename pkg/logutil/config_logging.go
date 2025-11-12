@@ -241,7 +241,7 @@ func (cfg *LogConfig) SetupGlobalLoggers() {
 			grpc.EnableTracing = true
 			grpclog.SetLoggerV2(zapgrpc.NewLogger(lg.Logger, zapgrpc.WithDebug()))
 		} else {
-			grpclog.SetLoggerV2(zapgrpc.NewLogger(lg.Logger, zapgrpc.WithWarn()))
+			grpclog.SetLoggerV2(zapgrpc.NewLogger(lg.Logger, zapgrpc.WithErr()))
 		}
 		zap.ReplaceGlobals(lg.Logger)
 		otelzap.ReplaceGlobals(lg)

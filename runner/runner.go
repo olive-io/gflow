@@ -122,11 +122,13 @@ func (r *Runner) Start(ctx context.Context) error {
 	runner := r.tr.Load()
 	for _, targetURL := range r.cfg.TargetURLs() {
 		ccfg := clientgo.NewConfig(targetURL)
+		ccfg.IsRunner = true
 		if r.cfg.CertFile != "" && r.cfg.KeyFile != "" {
 			ccfg.TLS = &clientgo.ConfigTLS{
-				CertFile: r.cfg.CertFile,
-				KeyFile:  r.cfg.KeyFile,
-				CaFile:   r.cfg.CaFile,
+				CertFile:   r.cfg.CertFile,
+				KeyFile:    r.cfg.KeyFile,
+				CaFile:     r.cfg.CaFile,
+				ServerName: r.cfg.ServerName,
 			}
 		}
 

@@ -39,6 +39,23 @@ var (
 	DefaultListenAddr = "localhost:6550"
 )
 
+var (
+	defaultCasbinModel = `[request_definition]
+r = sub, obj, act
+
+[policy_definition]
+p = sub, obj, act
+
+[role_definition]
+g = _, _
+
+[policy_effect]
+e = some(where (p.eft == allow))
+
+[matchers]
+m = g(r.sub, p.sub) && keyMatch(r.obj, p.obj) && regexMatch(r.act, p.act) || r.sub == "administrator" || r.sub == "admin" || r.sub == "root"`
+)
+
 type TLS struct {
 	CaFile   string `json:"ca_file" toml:"ca_file"`
 	CertFile string `json:"cert_file" toml:"cert_file"`
@@ -49,6 +66,15 @@ type ServerConfig struct {
 	ID     string `json:"id" toml:"id"`
 	Listen string `json:"listen" toml:"listen"`
 	TLS    *TLS   `json:"tls" toml:"tls"`
+
+	AuthorityModel string `toml:"authority_model" json:"authority_model"`
+}
+
+type GatewayConfig struct {
+	CertFile   string `json:"cert_file" toml:"cert_file"`
+	KeyFile    string `json:"key_file" toml:"key_file"`
+	CaFile     string `json:"ca_file" toml:"ca_file"`
+	ServerName string `json:"server_name" toml:"server_name"`
 }
 
 type MessageQueueConfig struct {
@@ -98,6 +124,7 @@ type Config struct {
 	once sync.Once
 
 	Server   ServerConfig   `json:"server" toml:"server"`
+	Gateway  *GatewayConfig `json:"gateway" toml:"gateway"`
 	Database *dbutil.Config `json:"database" toml:"database"`
 
 	Log *logutil.LogConfig `json:"log" toml:"log"`
@@ -151,9 +178,19 @@ func (cfg *Config) init() error {
 	if cfg.Server.ID == "" {
 		return errors.New("server id is required")
 	}
+	if modelFile := cfg.Server.AuthorityModel; modelFile == "" {
+		modelFile = filepath.Join(os.TempDir(), "gflow_model.config")
+		if _, err = os.Stat(modelFile); os.IsNotExist(err) {
+			err = os.WriteFile(modelFile, []byte(defaultCasbinModel), 0600)
+			if err != nil {
+				return fmt.Errorf("save auth model: %w", err)
+			}
+		}
+		cfg.Server.AuthorityModel = modelFile
+	}
 
 	if cfg.Database.DataRoot != "" {
-		_, err := os.Stat(cfg.Database.DataRoot)
+		_, err = os.Stat(cfg.Database.DataRoot)
 		if err != nil {
 			if !os.IsNotExist(err) {
 				return fmt.Errorf("read data root directory: %w", err)

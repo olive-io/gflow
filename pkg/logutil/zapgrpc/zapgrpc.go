@@ -93,23 +93,43 @@ func WithWarn() Option {
 	})
 }
 
+// WithErr redirects the fatal level to the error level, which makes testing
+// easier. This is intentionally unexported.
+func WithErr() Option {
+	return optionFunc(func(logger *Logger) {
+		logger.levelEnabler = levelEnabler(zapcore.WarnLevel)
+		logger.print = &printer{
+			enab:   logger.levelEnabler,
+			level:  zapcore.WarnLevel,
+			print:  logger.delegate.Error,
+			printf: logger.delegate.Errorf,
+		}
+		logger.fatal = &printer{
+			enab:   logger.levelEnabler,
+			level:  zapcore.ErrorLevel,
+			print:  logger.delegate.Error,
+			printf: logger.delegate.Errorf,
+		}
+	})
+}
+
 // NewLogger returns a new Logger.
 func NewLogger(l *zap.Logger, options ...Option) *Logger {
 	logger := &Logger{
 		delegate:     l.Sugar(),
-		levelEnabler: levelEnabler(l.Level()),
+		levelEnabler: levelEnabler(zapcore.ErrorLevel),
 	}
 	logger.print = &printer{
-		enab:   levelEnabler(zapcore.InfoLevel),
-		level:  zapcore.InfoLevel,
-		print:  logger.delegate.Info,
-		printf: logger.delegate.Infof,
+		enab:   levelEnabler(zapcore.ErrorLevel),
+		level:  zapcore.ErrorLevel,
+		print:  logger.delegate.Error,
+		printf: logger.delegate.Errorf,
 	}
 	logger.fatal = &printer{
-		enab:   levelEnabler(zapcore.FatalLevel),
-		level:  zapcore.FatalLevel,
-		print:  logger.delegate.Fatal,
-		printf: logger.delegate.Fatalf,
+		enab:   levelEnabler(zapcore.ErrorLevel),
+		level:  zapcore.ErrorLevel,
+		print:  logger.delegate.Error,
+		printf: logger.delegate.Errorf,
 	}
 	for _, option := range options {
 		option.apply(logger)
@@ -129,11 +149,15 @@ type printer struct {
 }
 
 func (v *printer) Print(args ...interface{}) {
-	v.print(args...)
+	if v.enab.Enabled(v.level) {
+		v.print(args...)
+	}
 }
 
 func (v *printer) Printf(format string, args ...interface{}) {
-	v.printf(format, args...)
+	if v.enab.Enabled(v.level) {
+		v.printf(format, args...)
+	}
 }
 
 func (v *printer) Println(args ...interface{}) {

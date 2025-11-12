@@ -5,7 +5,7 @@ openapi: 3.0.3
 info:
     title: Gflow
     description: Gflow OpenAPI3.0 Document
-    version: dae903685f17f1af3bcbf9ed9df4ded2328b54d4
+    version: b059f09b529ce362bcdb3d7949072d210be350bd
 paths:
     /v1/definitions:
         get:
@@ -1369,9 +1369,6 @@ components:
                     type: string
                 createAt:
                     type: string
-                source:
-                    type: integer
-                    format: enum
                 text:
                     type: string
                 expireAt:
@@ -1379,7 +1376,9 @@ components:
                 enable:
                     type: integer
                     format: int32
-                owner:
+                userId:
+                    type: string
+                roleId:
                     type: string
         types.User:
             type: object

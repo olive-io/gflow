@@ -18,10 +18,13 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net"
 	"net/http"
 	"net/http/pprof"
+	"os"
 	"strings"
 	"time"
 
@@ -34,10 +37,14 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
 	pb "github.com/olive-io/gflow/api/rpc"
+	"github.com/olive-io/gflow/pkg/casbin"
 	"github.com/olive-io/gflow/pkg/dbutil"
 	traceutil "github.com/olive-io/gflow/pkg/trace"
 	"github.com/olive-io/gflow/plugins"
@@ -139,11 +146,35 @@ func (s *Server) Start(ctx context.Context) error {
 func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	lg := s.cfg.Logger()
 
+	lg.Info("initializing database")
 	db, err := dbutil.NewDB(lg, s.cfg.Database)
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
 	}
 
+	lg.Info("initializing casbin")
+	enforcer, err := casbin.CreateAdapter(db.DB, s.cfg.Server.AuthorityModel)
+	if err != nil {
+		return nil, fmt.Errorf("create casbin enforcer: %w", err)
+	}
+
+	lg.Info("initializing dao layer")
+	roleDao, err := dao.NewRoleDao(db)
+	if err != nil {
+		return nil, fmt.Errorf("create role dao: %w", err)
+	}
+	userDao, err := dao.NewUserDao(db)
+	if err != nil {
+		return nil, fmt.Errorf("create user dao: %w", err)
+	}
+	tokenDao, err := dao.NewTokenDao(db)
+	if err != nil {
+		return nil, fmt.Errorf("create token dao: %w", err)
+	}
+	routeDao, err := dao.NewRouteDao(db)
+	if err != nil {
+		return nil, fmt.Errorf("create route dao: %w", err)
+	}
 	definitionsDao, err := dao.NewDefinitionsDao(db)
 	if err != nil {
 		return nil, fmt.Errorf("creates definitions dao: %w", err)
@@ -203,7 +234,7 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 		return nil, fmt.Errorf("creates scheduler: %w", err)
 	}
 
-	authRPC, authInterceptor := newAuthServer(ctx, lg)
+	authRPC, authInterceptor := newAuthServer(ctx, lg, enforcer, roleDao, userDao, tokenDao, routeDao)
 	bpmnRPC := newBpmnServer(ctx, lg, sch, definitionsDao, processDao)
 	systemRPC := newSystemGRPCServer(ctx, lg, s.cfg, runnerDao, endpointDao, dispatcher)
 
@@ -229,28 +260,36 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	}
 
 	sopts := []grpc.ServerOption{
-		grpc.UnaryInterceptor(validateInterceptor),
-		grpc.UnaryInterceptor(authInterceptor),
+		grpc.ChainUnaryInterceptor(validateInterceptor, authInterceptor),
 		grpc.KeepaliveEnforcementPolicy(kaep),
 		grpc.KeepaliveParams(kasp),
 	}
-	gs := grpc.NewServer(sopts...)
 
+	// registers grpc server
+	gs := grpc.NewServer(sopts...)
+	pb.RegisterAuthRPCServer(gs, authRPC)
+	pb.RegisterBpmnRPCServer(gs, bpmnRPC)
+	pb.RegisterSystemRPCServer(gs, systemRPC)
+	reflection.Register(gs)
+
+	// creates internal grpc client
+	grpcConn, err := s.buildGRPCConn()
+	if err != nil {
+		return nil, fmt.Errorf("create gRPC connection: %w", err)
+	}
+
+	// creates grpc gateway server
 	muxOpts := []gwrt.ServeMuxOption{}
 	gwmux := gwrt.NewServeMux(muxOpts...)
 
-	pb.RegisterAuthRPCServer(gs, authRPC)
-	if err = pb.RegisterAuthRPCHandlerServer(ctx, gwmux, authRPC); err != nil {
+	// registers grpc handler with grpc client
+	if err = pb.RegisterAuthRPCHandlerClient(ctx, gwmux, pb.NewAuthRPCClient(grpcConn)); err != nil {
 		return nil, fmt.Errorf("register auth handler: %w", err)
 	}
-
-	pb.RegisterBpmnRPCServer(gs, bpmnRPC)
-	if err = pb.RegisterBpmnRPCHandlerServer(ctx, gwmux, bpmnRPC); err != nil {
+	if err = pb.RegisterBpmnRPCHandlerClient(ctx, gwmux, pb.NewBpmnRPCClient(grpcConn)); err != nil {
 		return nil, fmt.Errorf("register bpmn handler: %w", err)
 	}
-
-	pb.RegisterSystemRPCServer(gs, systemRPC)
-	if err = pb.RegisterSystemRPCHandlerServer(ctx, gwmux, systemRPC); err != nil {
+	if err = pb.RegisterSystemRPCHandlerClient(ctx, gwmux, pb.NewSystemRPCClient(grpcConn)); err != nil {
 		return nil, fmt.Errorf("register system handler: %w", err)
 	}
 
@@ -294,6 +333,67 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	serveMux.PathPrefix("/").Handler(gwmux)
 
 	return grpcWithHttp(gs, serveMux), nil
+}
+
+func (s *Server) buildGRPCConn() (*grpc.ClientConn, error) {
+	var tlsConfig *tls.Config
+	if gwCfg := s.cfg.Gateway; gwCfg != nil {
+		cert, err := tls.LoadX509KeyPair(gwCfg.CertFile, gwCfg.KeyFile)
+		if err != nil {
+			return nil, fmt.Errorf("load certificate pair: %w", err)
+		}
+
+		tlsConfig = &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			MinVersion:   tls.VersionTLS12,
+			MaxVersion:   tls.VersionTLS13,
+			CipherSuites: []uint16{
+				tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			},
+		}
+
+		if gwCfg.CaFile != "" {
+			caCert, err := os.ReadFile(gwCfg.CaFile)
+			if err != nil {
+				return nil, fmt.Errorf("load certificate CA: %w", err)
+			}
+			caPool := x509.NewCertPool()
+			caPool.AppendCertsFromPEM(caCert)
+			tlsConfig.RootCAs = caPool
+			if gwCfg.ServerName != "" {
+				tlsConfig.ServerName = gwCfg.ServerName
+			}
+		}
+	}
+
+	var creds credentials.TransportCredentials
+	if tlsConfig != nil {
+		creds = credentials.NewTLS(tlsConfig)
+	} else {
+		creds = insecure.NewCredentials()
+	}
+
+	defaultTimeout := time.Minute
+
+	kacp := keepalive.ClientParameters{
+		Time:                10 * time.Second, // send pings every 10 seconds if there is no activity
+		Timeout:             5 * time.Second,  // wait 5 second for ping ack before considering the connection dead
+		PermitWithoutStream: true,             // send pings even without active streams
+	}
+
+	dialOpts := []grpc.DialOption{
+		grpc.WithTransportCredentials(creds),
+		grpc.WithKeepaliveParams(kacp),
+		grpc.WithIdleTimeout(defaultTimeout),
+	}
+
+	conn, err := grpc.NewClient(s.cfg.Server.Listen, dialOpts...)
+	if err != nil {
+		return nil, fmt.Errorf("initialize grpc client: %w", err)
+	}
+
+	return conn, nil
 }
 
 func grpcWithHttp(gh *grpc.Server, hh http.Handler) http.Handler {

@@ -99,6 +99,9 @@ func NewClient(cfg *Config) (*Client, error) {
 			caPool := x509.NewCertPool()
 			caPool.AppendCertsFromPEM(caCert)
 			tlsConfig.RootCAs = caPool
+			if cfgTLS.ServerName != "" {
+				tlsConfig.ServerName = cfgTLS.ServerName
+			}
 		}
 	}
 
@@ -115,13 +118,14 @@ func NewClient(cfg *Config) (*Client, error) {
 		PermitWithoutStream: true,             // send pings even without active streams
 	}
 
-	DialOpts := []grpc.DialOption{
+	dialOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(creds),
 		grpc.WithKeepaliveParams(kacp),
 		grpc.WithIdleTimeout(DefaultTimeout),
+		grpc.WithChainUnaryInterceptor(cfg.buildUnaryInterceptor()),
 	}
 
-	conn, err := grpc.NewClient(target, DialOpts...)
+	conn, err := grpc.NewClient(target, dialOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("initialize grpc client: %w", err)
 	}
