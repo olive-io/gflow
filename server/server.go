@@ -28,6 +28,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gorilla/mux"
 	gwrt "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -43,6 +44,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+	"sigs.k8s.io/yaml"
 
 	pb "github.com/olive-io/gflow/api/rpc"
 	"github.com/olive-io/gflow/pkg/casbin"
@@ -230,6 +232,15 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 		}
 	}
 
+	openapiYAML, err := docs.GetOpenYAML()
+	if err != nil {
+		return nil, fmt.Errorf("open openapi yaml: %w", err)
+	}
+	gflowOpenAPI := &openapi3.T{}
+	if err = yaml.Unmarshal(openapiYAML, gflowOpenAPI); err != nil {
+		return nil, fmt.Errorf("read openapi yaml: %w", err)
+	}
+
 	serverID := s.cfg.Server.ID
 	tracer := s.tracerProvider.Tracer(serverID)
 	schedulerOptions := scheduler.NewOptions(lg, tracer)
@@ -238,7 +249,7 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 		return nil, fmt.Errorf("creates scheduler: %w", err)
 	}
 
-	authRPC, authInterceptor := newAuthServer(ctx, lg, enforcer, roleDao, userDao, tokenDao, routeDao)
+	authRPC, authInterceptor := newAuthServer(ctx, lg, gflowOpenAPI, enforcer, roleDao, userDao, tokenDao, routeDao)
 	bpmnRPC := newBpmnServer(ctx, lg, sch, definitionsDao, processDao)
 	systemRPC := newSystemGRPCServer(ctx, lg, s.cfg, runnerDao, endpointDao, dispatcher)
 
@@ -332,7 +343,7 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	)
 
 	serveMux.HandleFunc("/openapi.yaml", func(w http.ResponseWriter, r *http.Request) {
-		openapiYAML, _ := docs.GetOpenYAML()
+		openapiYAML, _ = docs.GetOpenYAML()
 		w.WriteHeader(http.StatusOK)
 		w.Write(openapiYAML)
 	})

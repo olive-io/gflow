@@ -5,8 +5,34 @@ openapi: 3.0.3
 info:
     title: Gflow
     description: Gflow OpenAPI3.0 Document
-    version: b059f09b529ce362bcdb3d7949072d210be350bd
+    version: 3de211eb37b604068e11dc0f117a4f2250da63b3
 paths:
+    /v1/current:
+        get:
+            tags:
+                - AuthRPC
+            operationId: AuthRPC_GetSelf
+            parameters:
+                - name: id
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.GetSelfResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth:
+                    - User:get
     /v1/definitions:
         get:
             tags:
@@ -30,6 +56,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.ListDefinitionsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Definitions:get
@@ -50,6 +82,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.DeployDefinitionsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Definitions:post
@@ -75,6 +113,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.GetDefinitionsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Definitions:get
@@ -99,6 +143,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.RemoveDefinitionsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Definitions:delete
@@ -125,6 +175,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.ListEndpointsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Endpoint:get
@@ -145,6 +201,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.AddEndpointsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Endpoint:post
@@ -166,6 +228,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.AddGRPCEndpointsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Endpoint:post
@@ -187,6 +255,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.AddOpenAPIEndpointsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Endpoint:post
@@ -214,13 +288,41 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.ConvertEndpointResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Endpoint:patch
+    /v1/interfaces:
+        get:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_ListInterfaces
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.ListInterfacesResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth: []
     /v1/login:
         post:
             tags:
                 - AuthRPC
+            summary: user login
+            description: user login
             operationId: AuthRPC_Login
             requestBody:
                 content:
@@ -235,10 +337,18 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.LoginResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
     /v1/ping:
         get:
             tags:
                 - SystemRPC
+            summary: check the healthy of gflow server
+            description: check the healthy of gflow server
             operationId: SystemRPC_Ping
             responses:
                 "200":
@@ -247,6 +357,82 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.PingResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+    /v1/policies:
+        get:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_ListPolicies
+            parameters:
+                - name: subject
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.ListPoliciesResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+        post:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_AddPolicy
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rpc.AddPolicyRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.AddPolicyResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth:
+                    - Policy:post
+    /v1/policy:
+        delete:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_DeletePolicy
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.DeletePolicyResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth:
+                    - Policy:delete
     /v1/processes:
         get:
             tags:
@@ -288,6 +474,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.ListProcessResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Process:get
@@ -309,6 +501,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.ExecuteProcessResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Process:post
@@ -330,14 +528,20 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.GetProcessResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Process:get
     /v1/roles:
         get:
             tags:
-                - AuthRPC
-            operationId: AuthRPC_ListRoles
+                - AdminRPC
+            operationId: AdminRPC_ListRoles
             parameters:
                 - name: page
                   in: query
@@ -356,14 +560,20 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.ListRolesResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Role:get
     /v1/roles/{id}:
         get:
             tags:
-                - AuthRPC
-            operationId: AuthRPC_GetRole
+                - AdminRPC
+            operationId: AdminRPC_GetRole
             parameters:
                 - name: id
                   in: path
@@ -377,14 +587,20 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.GetRoleResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Role:get
     /v1/routes:
         get:
             tags:
-                - AuthRPC
-            operationId: AuthRPC_ListRoutes
+                - AdminRPC
+            operationId: AdminRPC_ListRoutes
             parameters:
                 - name: page
                   in: query
@@ -403,13 +619,19 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.ListRoutesResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Route:get
         post:
             tags:
-                - AuthRPC
-            operationId: AuthRPC_CreateRoute
+                - AdminRPC
+            operationId: AdminRPC_CreateRoute
             requestBody:
                 content:
                     application/json:
@@ -423,14 +645,20 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.CreateRouteResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Route:post
     /v1/routes/{id}:
         get:
             tags:
-                - AuthRPC
-            operationId: AuthRPC_GetRoute
+                - AdminRPC
+            operationId: AdminRPC_GetRoute
             parameters:
                 - name: id
                   in: path
@@ -444,13 +672,19 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.GetRouteResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Route:get
         post:
             tags:
-                - AuthRPC
-            operationId: AuthRPC_DeleteRoute
+                - AdminRPC
+            operationId: AdminRPC_DeleteRoute
             parameters:
                 - name: id
                   in: path
@@ -470,6 +704,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.DeleteRouteResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Route:delete
@@ -496,6 +736,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.ListRunnersResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Runner:get
@@ -518,6 +764,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.DisregisterResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Runner:delete
@@ -540,6 +792,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.RegisterResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Runner:post
@@ -565,14 +823,20 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.GetRunnerResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Runner:get
     /v1/tokens:
         get:
             tags:
-                - AuthRPC
-            operationId: AuthRPC_ListTokens
+                - AdminRPC
+            operationId: AdminRPC_ListTokens
             parameters:
                 - name: page
                   in: query
@@ -591,14 +855,20 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.ListTokensResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Token:get
     /v1/tokens/{id}:
         get:
             tags:
-                - AuthRPC
-            operationId: AuthRPC_GetToken
+                - AdminRPC
+            operationId: AdminRPC_GetToken
             parameters:
                 - name: id
                   in: path
@@ -612,13 +882,19 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.GetTokenResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Token:get
         delete:
             tags:
-                - AuthRPC
-            operationId: AuthRPC_DeleteToken
+                - AdminRPC
+            operationId: AdminRPC_DeleteToken
             parameters:
                 - name: id
                   in: path
@@ -632,14 +908,20 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.DeleteTokenResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - Token:delete
     /v1/users:
         get:
             tags:
-                - AuthRPC
-            operationId: AuthRPC_ListUsers
+                - AdminRPC
+            operationId: AdminRPC_ListUsers
             parameters:
                 - name: page
                   in: query
@@ -658,14 +940,20 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.ListUsersResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - User:get
     /v1/users/{id}:
         get:
             tags:
-                - AuthRPC
-            operationId: AuthRPC_GetUser
+                - AdminRPC
+            operationId: AdminRPC_GetUser
             parameters:
                 - name: id
                   in: path
@@ -679,13 +967,19 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.GetUserResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - User:get
         delete:
             tags:
-                - AuthRPC
-            operationId: AuthRPC_DeleteUser
+                - AdminRPC
+            operationId: AdminRPC_DeleteUser
             parameters:
                 - name: id
                   in: path
@@ -699,13 +993,19 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.DeleteUserResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - User:delete
         patch:
             tags:
-                - AuthRPC
-            operationId: AuthRPC_UpdateUser
+                - AdminRPC
+            operationId: AdminRPC_UpdateUser
             parameters:
                 - name: id
                   in: path
@@ -725,11 +1025,41 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/rpc.UpdateUserResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
             security:
                 - bearerAuth:
                     - User:patch
 components:
     schemas:
+        google.protobuf.Any:
+            type: object
+            properties:
+                '@type':
+                    type: string
+                    description: The type of the serialized message.
+            additionalProperties: true
+            description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.
+        google.rpc.Status:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    description: The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code].
+                    format: int32
+                message:
+                    type: string
+                    description: A developer-facing error message, which should be in English. Any user-facing error message should be localized and sent in the [google.rpc.Status.details][google.rpc.Status.details] field, or localized by the client.
+                details:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/google.protobuf.Any'
+                    description: A list of messages that carry the error details.  There is a common set of message types for APIs to use.
+            description: 'The `Status` type defines a logical error model that is suitable for different programming environments, including REST APIs and RPC APIs. It is used by [gRPC](https://github.com/grpc). Each `Status` message contains three pieces of data: error code, error message, and error details. You can find out more about this error model and how to work with it in the [API Design Guide](https://cloud.google.com/apis/design/errors).'
         rpc.AddEndpointsRequest:
             type: object
             properties:
@@ -774,6 +1104,16 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/types.Endpoint'
+        rpc.AddPolicyRequest:
+            type: object
+            properties:
+                policies:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/types.Policy'
+        rpc.AddPolicyResponse:
+            type: object
+            properties: {}
         rpc.ConvertEndpointRequest:
             type: object
             properties:
@@ -797,6 +1137,9 @@ components:
                     items:
                         $ref: '#/components/schemas/types.Route'
         rpc.CreateRouteResponse:
+            type: object
+            properties: {}
+        rpc.DeletePolicyResponse:
             type: object
             properties: {}
         rpc.DeleteRouteRequest:
@@ -908,6 +1251,11 @@ components:
                     $ref: '#/components/schemas/types.Runner'
                 stat:
                     $ref: '#/components/schemas/types.RunnerStat'
+        rpc.GetSelfResponse:
+            type: object
+            properties:
+                user:
+                    $ref: '#/components/schemas/types.User'
         rpc.GetTokenResponse:
             type: object
             properties:
@@ -936,6 +1284,20 @@ components:
                         $ref: '#/components/schemas/types.Endpoint'
                 total:
                     type: string
+        rpc.ListInterfacesResponse:
+            type: object
+            properties:
+                interfaces:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/types.Interface'
+        rpc.ListPoliciesResponse:
+            type: object
+            properties:
+                policies:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/types.Policy'
         rpc.ListProcessResponse:
             type: object
             properties:
@@ -1022,6 +1384,16 @@ components:
             properties:
                 definitions:
                     $ref: '#/components/schemas/types.Definitions'
+        rpc.UpdateSelfRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+        rpc.UpdateSelfResponse:
+            type: object
+            properties:
+                user:
+                    $ref: '#/components/schemas/types.User'
         rpc.UpdateUserRequest:
             type: object
             properties:
@@ -1179,6 +1551,44 @@ components:
                     type: integer
                     format: enum
                 errMsg:
+                    type: string
+        types.Interface:
+            type: object
+            properties:
+                operationId:
+                    type: string
+                fullMethod:
+                    type: string
+                summary:
+                    type: string
+                description:
+                    type: string
+                method:
+                    type: string
+                url:
+                    type: string
+                tags:
+                    type: array
+                    items:
+                        type: string
+                security:
+                    type: object
+                    additionalProperties:
+                        type: string
+                metadata:
+                    type: object
+                    additionalProperties:
+                        type: string
+                deprecated:
+                    type: boolean
+        types.Policy:
+            type: object
+            properties:
+                subject:
+                    type: string
+                object:
+                    type: string
+                action:
                     type: string
         types.Process:
             type: object
@@ -1426,7 +1836,20 @@ components:
             type: http
             scheme: bearer
             bearerFormat: JWT
+        bearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+        bearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+        bearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
 tags:
+    - name: AdminRPC
     - name: AuthRPC
     - name: BpmnRPC
     - name: SystemRPC

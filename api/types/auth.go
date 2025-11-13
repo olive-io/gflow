@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package authutil
+package types
 
 import (
 	"context"
@@ -23,8 +23,11 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc/metadata"
+)
 
-	"github.com/olive-io/gflow/api/types"
+const (
+	DefaultAdministratorRule = "administrator"
+	DefaultAdministratorUser = "admin"
 )
 
 var (
@@ -33,6 +36,8 @@ var (
 
 	defaultAgentKey   = "gflow-agent"
 	defaultAgentValue = "runner"
+
+	userInfoKey = "User-Info"
 )
 
 type Claims struct {
@@ -41,7 +46,7 @@ type Claims struct {
 	RoleId int64 `json:"roleId"`
 }
 
-func GenerateToken(userId, roleId int64) (*types.Token, error) {
+func GenerateToken(userId, roleId int64) (*Token, error) {
 	nowTime := time.Now()
 	expireTime := nowTime.Add(2 * time.Hour)
 
@@ -59,7 +64,7 @@ func GenerateToken(userId, roleId int64) (*types.Token, error) {
 		return nil, fmt.Errorf("generate token: %w", err)
 	}
 
-	token := &types.Token{
+	token := &Token{
 		Text:     tok,
 		ExpireAt: expireTime.Unix(),
 		Enable:   1,
@@ -103,4 +108,65 @@ func IsGflowAgent(ctx context.Context) bool {
 		return false
 	}
 	return values[0] == defaultAgentValue
+}
+
+func ParsePolicy(rules []string) *Policy {
+	p := &Policy{}
+	if len(rules) > 0 {
+		p.Subject = rules[0]
+	}
+	if len(rules) > 1 {
+		p.Object = rules[1]
+	}
+	if len(rules) > 2 {
+		p.Action = rules[2]
+	}
+	return p
+}
+
+func (p *Policy) Rules() []string {
+	return []string{p.Subject, p.Object, p.Action}
+}
+
+type UserInfo struct {
+	Claims
+
+	User *User
+	Role *Role
+}
+
+func (u *UserInfo) IsAdmin() bool {
+	role := u.Role
+	if role == nil {
+		return false
+	}
+	return role.Type == Role_Root
+}
+
+func (u *UserInfo) IsManager() bool {
+	role := u.Role
+	if role == nil {
+		return false
+	}
+
+	return role.Type == Role_Root || role.Type == Role_System
+}
+
+func (u *UserInfo) IsUser() bool {
+	role := u.Role
+	if role == nil {
+		return false
+	}
+
+	return role.Type == Role_Root || role.Type == Role_System || role.Type == Role_Operator
+}
+
+func GetUserInfo(ctx context.Context) (*UserInfo, bool) {
+	userInfo, ok := ctx.Value(userInfoKey).(*UserInfo)
+	return userInfo, ok
+}
+
+func SetUserInfo(ctx context.Context, userInfo *UserInfo) context.Context {
+	ctx = context.WithValue(ctx, userInfoKey, userInfo)
+	return ctx
 }

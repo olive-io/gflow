@@ -35,7 +35,7 @@ message Role {
     Unknown = 0;
     Root = 1;
     System = 2;
-    Viewer = 3;
+    Operator = 3;
   }
 
   int64 id = 1 [(tagger.tags) = "gorm:\"primary\""];
@@ -89,6 +89,19 @@ message Token {
   int64 role_id = 7;
 }
 
+message Interface {
+  string operationId = 1;
+  string fullMethod = 2;
+  string summary = 3;
+  string description = 4;
+  string method = 5;
+  string url = 6;
+  repeated string tags = 7;
+  map<string, string> security = 8;
+  map<string, string> metadata = 9;
+  bool deprecated = 10;
+}
+
 message Route {
   enum Type {
     Unknown = 0;
@@ -109,4 +122,10 @@ message Route {
   map<string, string> security = 9 [(tagger.tags) = "gorm:\"serializer:json\""];
   map<string, string> metadata = 10 [(tagger.tags) = "gorm:\"serializer:json\""];
   bool deprecated = 11;
+}
+
+message Policy {
+  string subject = 1;
+  string object = 2;
+  string action = 3;
 }

@@ -1,0 +1,346 @@
+/*
+Copyright 2025 The gflow Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+syntax = "proto3";
+
+package rpc;
+
+import "types/bpmn.proto";
+import "types/internal.proto";
+// for grpc-gateway
+import "google/api/annotations.proto";
+// for openapi
+import "openapi/v3/annotations.proto";
+
+import "validate/validate.proto";
+
+option go_package = "github.com/olive-io/gflow/api/rpc;rpc";
+option java_multiple_files = true;
+option java_package = "io.olive.gflow.api.rpc";
+option java_outer_classname = "GFlowRPC";
+
+option (openapi.v3.document) = {
+  components: {
+    security_schemes: {
+      additional_properties: {
+        name: "bearerAuth"
+        value: {
+          security_scheme: {
+            type: "http",
+            scheme: "bearer",
+            bearer_format: "JWT"
+          }
+        }
+      }
+    }
+  }
+};
+
+service SystemRPC {
+  rpc Ping(PingRequest) returns (PingResponse) {
+    option (google.api.http) = {
+      get: "/v1/ping"
+    };
+    option (openapi.v3.operation) = {
+      summary: "check the healthy of gflow server"
+      description: "check the healthy of gflow server",
+    };
+  }
+
+  // Register registers runner
+  rpc Register(RegisterRequest) returns (RegisterResponse) {
+    option (google.api.http) = {
+      post: "/v1/runners/register"
+      body: "*"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Runner:post"],
+            }
+          }
+        }
+      ]
+    };
+  }
+  // Disregister disregisters runner
+  rpc Disregister(DisregisterRequest) returns (DisregisterResponse) {
+    option (google.api.http) = {
+      post: "/v1/runners/disregister"
+      body: "*"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Runner:delete"],
+            }
+          }
+        }
+      ]
+    };
+  }
+  rpc ListRunners(ListRunnersRequest) returns (ListRunnersResponse) {
+    option (google.api.http) = {
+      get: "/v1/runners"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Runner:get"],
+            }
+          }
+        }
+      ]
+    };
+  };
+  rpc GetRunner(GetRunnerRequest) returns (GetRunnerResponse) {
+    option (google.api.http) = {
+      get: "/v1/runners/{id}"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Runner:get"],
+            }
+          }
+        }
+      ]
+    };
+  };
+  rpc ListEndpoints(ListEndpointsRequest) returns (ListEndpointsResponse) {
+    option (google.api.http) = {
+      get: "/v1/endpoints"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Endpoint:get"],
+            }
+          }
+        }
+      ]
+    };
+  }
+  rpc AddEndpoints(AddEndpointsRequest) returns (AddEndpointsResponse) {
+    option (google.api.http) = {
+      post: "/v1/endpoints"
+      body: "*"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Endpoint:post"],
+            }
+          }
+        }
+      ]
+    };
+  }
+  rpc AddOpenAPIEndpoints(AddOpenAPIEndpointsRequest) returns (AddOpenAPIEndpointsResponse) {
+    option (google.api.http) = {
+      post: "/v1/endpoints/openapi"
+      body: "*"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Endpoint:post"],
+            }
+          }
+        }
+      ]
+    };
+  }
+  rpc AddGRPCEndpoints(AddGRPCEndpointsRequest) returns (AddGRPCEndpointsResponse) {
+    option (google.api.http) = {
+      post: "/v1/endpoints/grpc"
+      body: "*"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Endpoint:post"],
+            }
+          }
+        }
+      ]
+    };
+  }
+  rpc ConvertEndpoint(ConvertEndpointRequest) returns (ConvertEndpointResponse) {
+    option (google.api.http) = {
+      post: "/v1/endpoints/{id}/convert"
+      body: "*"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Endpoint:patch"],
+            }
+          }
+        }
+      ]
+    };
+  }
+  rpc RunnerDispatch(stream RunnerDispatchRequest) returns (stream RunnerDispatchResponse) {};
+}
+
+message PingRequest {}
+
+message PingResponse {
+  string reply = 1;
+}
+
+message RegisterRequest {
+  types.Runner runner = 1;
+}
+
+message RegisterResponse {
+  types.Runner runner = 1;
+}
+
+message DisregisterRequest {
+  string id = 1;
+}
+
+message DisregisterResponse {
+  types.Runner runner = 1;
+}
+
+message ListRunnersRequest {
+  int32 page = 1;
+  int32 size = 2;
+}
+
+message ListRunnersResponse {
+  repeated types.Runner runners = 1;
+  int64 total = 2;
+}
+
+message GetRunnerRequest {
+  int64 id = 1;
+  string uid = 2;
+}
+
+message GetRunnerResponse {
+  types.Runner runner = 1;
+  types.RunnerStat stat = 2;
+}
+
+message ListEndpointsRequest {
+  int32 page = 1;
+  int32 size = 2;
+}
+
+message ListEndpointsResponse {
+  repeated types.Endpoint endpoints = 1;
+  int64 total = 2;
+}
+
+message AddEndpointsRequest {
+  repeated types.Endpoint endpoints = 1;
+  string target = 2;
+}
+
+message AddEndpointsResponse {}
+
+message AddOpenAPIEndpointsRequest {
+  string doc = 1;
+  string contentType = 2;
+  string target = 3;
+}
+
+message AddOpenAPIEndpointsResponse {
+  types.Runner runner = 1;
+  repeated types.Endpoint endpoints = 2;
+}
+
+message AddGRPCEndpointsRequest {
+  string target = 1;
+}
+
+message AddGRPCEndpointsResponse {
+  types.Runner runner = 1;
+  repeated types.Endpoint endpoints = 2;
+}
+
+message ConvertEndpointRequest {
+  enum EndpointFormat {
+    Unknown = 0;
+    BPMN = 1;
+  }
+
+  int64 id = 1;
+  EndpointFormat format = 2;
+}
+
+message ConvertEndpointResponse {
+  string contentType = 1;
+  string content = 2;
+}
+
+message HandshakeRequest {
+  types.Runner runner = 1;
+}
+
+message HandshakeResponse {
+  string serverID = 1;
+  types.Runner runner = 2;
+}
+
+message HeartBeatRequest {
+  types.RunnerStat stat = 1;
+}
+
+message HeartBeatResponse {}
+
+message RunnerDispatchRequest {
+  HandshakeRequest handshake = 1;
+  HeartBeatRequest heartbeat = 2;
+  types.CallTaskResponse callTask = 3;
+}
+
+message RunnerDispatchResponse {
+  HandshakeResponse handshake = 1;
+  HeartBeatResponse heartBeat = 2;
+  types.CallTaskRequest callTask = 3;
+}

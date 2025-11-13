@@ -1,0 +1,484 @@
+/*
+Copyright 2025 The gflow Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+syntax = "proto3";
+
+package rpc;
+
+import "types/auth.proto";
+// for grpc-gateway
+import "google/api/annotations.proto";
+// for openapi
+import "openapi/v3/annotations.proto";
+
+import "validate/validate.proto";
+
+option go_package = "github.com/olive-io/gflow/api/rpc;rpc";
+option java_multiple_files = true;
+option java_package = "io.olive.gflow.api.rpc";
+option java_outer_classname = "GFlowRPC";
+
+option (openapi.v3.document) = {
+  components: {
+    security_schemes: {
+      additional_properties: {
+        name: "bearerAuth"
+        value: {
+          security_scheme: {
+            type: "http",
+            scheme: "bearer",
+            bearer_format: "JWT"
+          }
+        }
+      }
+    }
+  }
+};
+
+service AdminRPC {
+  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse) {
+    option (google.api.http) = {
+      get: "/v1/roles"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Role:get"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
+  rpc GetRole(GetRoleRequest) returns (GetRoleResponse) {
+    option (google.api.http) = {
+      get: "/v1/roles/{id}"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Role:get"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
+    option (google.api.http) = {
+      get: "/v1/users"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["User:get"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {
+    option (google.api.http) = {
+      get: "/v1/users/{id}"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["User:get"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse) {
+    option (google.api.http) = {
+      patch: "/v1/users/{id}"
+      body: "*"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["User:patch"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {
+    option (google.api.http) = {
+      delete: "/v1/users/{id}"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["User:delete"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
+  rpc ListTokens(ListTokensRequest) returns (ListTokensResponse) {
+    option (google.api.http) = {
+      get: "/v1/tokens"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Token:get"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
+  rpc GetToken(GetTokenRequest) returns (GetTokenResponse) {
+    option (google.api.http) = {
+      get: "/v1/tokens/{id}"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Token:get"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
+  rpc DeleteToken(DeleteTokenRequest) returns (DeleteTokenResponse) {
+    option (google.api.http) = {
+      delete: "/v1/tokens/{id}"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Token:delete"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
+  rpc ListInterfaces(ListInterfacesRequest) returns (ListInterfacesResponse) {
+    option (google.api.http) = {
+      get: "/v1/interfaces"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {}
+          }
+        }
+      ]
+    };
+  }
+
+  rpc ListPolicies(ListPoliciesRequest) returns (ListPoliciesResponse) {
+    option (google.api.http) = {
+      get: "/v1/policies"
+    };
+  }
+
+  rpc AddPolicy(AddPolicyRequest) returns (AddPolicyResponse) {
+    option (google.api.http) = {
+      post: "/v1/policies"
+      body: "*"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Policy:post"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
+  rpc DeletePolicy(DeletePolicyRequest) returns (DeletePolicyResponse) {
+    option (google.api.http) = {
+      delete: "/v1/policy"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Policy:delete"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
+  rpc ListRoutes(ListRoutesRequest) returns (ListRoutesResponse) {
+    option (google.api.http) = {
+      get: "/v1/routes"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Route:get"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
+  rpc GetRoute(GetRouteRequest) returns (GetRouteResponse) {
+    option (google.api.http) = {
+      get: "/v1/routes/{id}"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Route:get"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
+  rpc CreateRoute(CreateRouteRequest) returns (CreateRouteResponse) {
+    option (google.api.http) = {
+      post: "/v1/routes"
+      body: "*"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Route:post"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
+  rpc DeleteRoute(DeleteRouteRequest) returns (DeleteRouteResponse) {
+    option (google.api.http) = {
+      post: "/v1/routes/{id}"
+      body: "*"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Route:delete"],
+            }
+          }
+        }
+      ]
+    };
+  }
+}
+
+message ListRolesRequest {
+  int32 page = 1;
+  int32 size = 2 [(validate.rules).int32.gt = 0];
+}
+
+message ListRolesResponse {
+  repeated types.Role roles = 1;
+  int64 total = 2;
+}
+
+message GetRoleRequest {
+  int64 id = 1;
+}
+
+message GetRoleResponse {
+  types.Role role = 1;
+}
+
+message ListUsersRequest {
+  int32 page = 1;
+  int32 size = 2 [(validate.rules).int32.gt = 0];
+}
+
+message ListUsersResponse {
+  repeated types.User users = 1;
+  int64 total = 2;
+}
+
+message GetUserRequest {
+  int64 id = 1;
+}
+
+message GetUserResponse {
+  types.User user = 1;
+}
+
+message UpdateUserRequest {
+  int64 id = 1;
+}
+
+message UpdateUserResponse {
+  types.User user = 1;
+}
+
+
+message DeleteUserRequest {
+  int64 id = 1;
+}
+
+message DeleteUserResponse {
+  types.User user = 1;
+}
+
+message ListTokensRequest {
+  int32 page = 1;
+  int32 size = 2 [(validate.rules).int32.gt = 0];
+}
+
+message ListTokensResponse {
+  repeated types.Token tokens = 1;
+  int64 total = 2;
+}
+
+message GetTokenRequest {
+  int64 id = 1;
+}
+
+message GetTokenResponse {
+  types.User user = 1;
+}
+
+message DeleteTokenRequest {
+  int64 id = 1;
+}
+
+message DeleteTokenResponse {
+  types.Token token = 1;
+}
+
+message ListInterfacesRequest {}
+
+message ListInterfacesResponse {
+  repeated types.Interface interfaces = 1;
+}
+
+message ListPoliciesRequest {
+  string subject = 1;
+}
+
+message ListPoliciesResponse {
+  repeated types.Policy policies = 1;
+}
+
+message AddPolicyRequest {
+  repeated types.Policy policies = 1;
+}
+
+message AddPolicyResponse {}
+
+message DeletePolicyRequest {
+  repeated types.Policy policies = 1;
+}
+
+message DeletePolicyResponse {}
+
+message ListRoutesRequest {
+  int32 page = 1;
+  int32 size = 2 [(validate.rules).int32.gt = 0];
+}
+
+message ListRoutesResponse {
+  repeated types.Route routes = 1;
+  int64 total = 2;
+}
+
+message GetRouteRequest {
+  int64 id = 1;
+}
+
+message GetRouteResponse {
+  types.Route route = 1;
+}
+
+message CreateRouteRequest {
+  repeated types.Route routes = 1;
+}
+
+message CreateRouteResponse {}
+
+message DeleteRouteRequest {
+  int64 id = 1;
+}
+
+message DeleteRouteResponse {
+  types.Route route = 1;
+}
