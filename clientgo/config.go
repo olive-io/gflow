@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/olive-io/gflow/pkg/authutil"
+	"github.com/olive-io/gflow/api/types"
 )
 
 const (
@@ -79,7 +79,7 @@ func (cfg *Config) buildUnaryInterceptor() grpc.UnaryClientInterceptor {
 			ctx = metadata.AppendToOutgoingContext(ctx, "Authorization", "Bearer "+cfg.Token)
 		}
 		if cfg.IsRunner {
-			ctx = authutil.AppendGflowAgent(ctx)
+			ctx = types.AppendGflowAgent(ctx)
 		}
 
 		return invoker(ctx, method, req, reply, cc, opts...)

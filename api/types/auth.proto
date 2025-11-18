@@ -42,13 +42,15 @@ message Role {
   int64 create_at = 2 [(tagger.tags) = "gorm:\"autoCreateTime\""];
   int64 update_at = 3 [(tagger.tags) = "gorm:\"autoUpdateTime\""];
 
-  string name = 4;
+  Type type = 4;
 
-  string description = 5;
+  string name = 5;
 
-  map<string, string> metadata = 6 [(tagger.tags) = "gorm:\"serializer:json\""];
+  string display_name = 6;
 
-  Type type = 7;
+  string description = 7;
+
+  map<string, string> metadata = 8 [(tagger.tags) = "gorm:\"serializer:json\""];
 }
 
 message User {

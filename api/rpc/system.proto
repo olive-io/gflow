@@ -257,7 +257,7 @@ message ListRunnersResponse {
 }
 
 message GetRunnerRequest {
-  int64 id = 1;
+  int64 id = 1 [(validate.rules).int64.gt = 0];
   string uid = 2;
 }
 

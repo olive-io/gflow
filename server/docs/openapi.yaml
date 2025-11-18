@@ -5,7 +5,7 @@ openapi: 3.0.3
 info:
     title: Gflow
     description: Gflow OpenAPI3.0 Document
-    version: 3de211eb37b604068e11dc0f117a4f2250da63b3
+    version: 3764c5a1c22cf92010856050b854594fa2bf9a1f
 paths:
     /v1/current:
         get:
@@ -1657,7 +1657,12 @@ components:
                     type: string
                 updateAt:
                     type: string
+                type:
+                    type: integer
+                    format: enum
                 name:
+                    type: string
+                displayName:
                     type: string
                 description:
                     type: string
@@ -1665,9 +1670,6 @@ components:
                     type: object
                     additionalProperties:
                         type: string
-                type:
-                    type: integer
-                    format: enum
         types.Route:
             type: object
             properties:

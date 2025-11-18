@@ -40,6 +40,29 @@ var (
 	userInfoKey = "User-Info"
 )
 
+type systemRole map[uint64]*Role
+
+var SystemRoles = systemRole{
+	1: &Role{
+		Id:       1,
+		Type:     Role_Root,
+		Name:     DefaultAdministratorUser,
+		Metadata: map[string]string{},
+	},
+	2: &Role{
+		Id:       2,
+		Type:     Role_System,
+		Name:     "system",
+		Metadata: map[string]string{},
+	},
+	3: &Role{
+		Id:       3,
+		Type:     Role_Operator,
+		Name:     "operator",
+		Metadata: map[string]string{},
+	},
+}
+
 type Claims struct {
 	jwt.RegisteredClaims
 	UserId int64 `json:"userId"`

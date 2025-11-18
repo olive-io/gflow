@@ -5,7 +5,7 @@ go 1.24.5
 require (
 	github.com/BurntSushi/toml v1.5.0
 	github.com/bytedance/sonic v1.14.2
-	github.com/casbin/casbin/v2 v2.132.0
+	github.com/casbin/casbin/v2 v2.134.0
 	github.com/casbin/gorm-adapter/v3 v3.37.0
 	github.com/coreos/go-systemd/v22 v22.6.0
 	github.com/envoyproxy/protoc-gen-validate v1.2.1
@@ -43,7 +43,6 @@ require (
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/net v0.46.0
-	golang.org/x/oauth2 v0.32.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20250929231259-57b25ae835d4
 	google.golang.org/grpc v1.76.0
 	google.golang.org/protobuf v1.36.10
@@ -56,7 +55,6 @@ require (
 )
 
 require (
-	cloud.google.com/go/compute/metadata v0.7.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/ChrisTrenkamp/xsel v0.9.16 // indirect
 	github.com/Chronokeeper/anyxml v0.0.0-20160530174208-54457d8e98c6 // indirect
