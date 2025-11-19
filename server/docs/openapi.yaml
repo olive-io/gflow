@@ -5,15 +5,35 @@ openapi: 3.0.3
 info:
     title: Gflow
     description: Gflow OpenAPI3.0 Document
-    version: 3764c5a1c22cf92010856050b854594fa2bf9a1f
+    version: 56de177b6f041d9bf46c6a6c2dd53f34de12cb8a
 paths:
-    /v1/current:
+    /v1/admin/interfaces:
         get:
             tags:
-                - AuthRPC
-            operationId: AuthRPC_GetSelf
+                - AdminRPC
+            operationId: AdminRPC_ListInterfaces
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.ListInterfacesResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth: []
+    /v1/admin/policies:
+        get:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_ListPolicies
             parameters:
-                - name: id
+                - name: subject
                   in: query
                   schema:
                     type: string
@@ -23,7 +43,344 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/rpc.GetSelfResponse'
+                                $ref: '#/components/schemas/rpc.ListPoliciesResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+        post:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_AddPolicy
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rpc.AddPolicyRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.AddPolicyResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth:
+                    - Policy:post
+    /v1/admin/policy:
+        delete:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_DeletePolicy
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.DeletePolicyResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth:
+                    - Policy:delete
+    /v1/admin/roles:
+        get:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_ListRoles
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: size
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.ListRolesResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth:
+                    - Role:get
+    /v1/admin/roles/{id}:
+        get:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_GetRole
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.GetRoleResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth:
+                    - Role:get
+    /v1/admin/routes:
+        get:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_ListRoutes
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: size
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.ListRoutesResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth:
+                    - Route:get
+        post:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_CreateRoute
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rpc.CreateRouteRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.CreateRouteResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth:
+                    - Route:post
+    /v1/admin/routes/{id}:
+        get:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_GetRoute
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.GetRouteResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth:
+                    - Route:get
+        post:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_DeleteRoute
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rpc.DeleteRouteRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.DeleteRouteResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth:
+                    - Route:delete
+    /v1/admin/tokens:
+        get:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_ListTokens
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: size
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.ListTokensResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth:
+                    - Token:get
+    /v1/admin/tokens/{id}:
+        get:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_GetToken
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.GetTokenResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth:
+                    - Token:get
+        delete:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_DeleteToken
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.DeleteTokenResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth:
+                    - Token:delete
+    /v1/admin/users:
+        get:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_ListUsers
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: size
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.ListUsersResponse'
                 default:
                     description: Default error response
                     content:
@@ -33,6 +390,91 @@ paths:
             security:
                 - bearerAuth:
                     - User:get
+    /v1/admin/users/{id}:
+        get:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_GetUser
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.GetUserResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth:
+                    - User:get
+        delete:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_DeleteUser
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.DeleteUserResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth:
+                    - User:delete
+        patch:
+            tags:
+                - AdminRPC
+            operationId: AdminRPC_UpdateUser
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/rpc.UpdateUserRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/rpc.UpdateUserResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/google.rpc.Status'
+            security:
+                - bearerAuth:
+                    - User:patch
     /v1/definitions:
         get:
             tags:
@@ -297,26 +739,6 @@ paths:
             security:
                 - bearerAuth:
                     - Endpoint:patch
-    /v1/interfaces:
-        get:
-            tags:
-                - AdminRPC
-            operationId: AdminRPC_ListInterfaces
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/rpc.ListInterfacesResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/google.rpc.Status'
-            security:
-                - bearerAuth: []
     /v1/login:
         post:
             tags:
@@ -363,76 +785,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/google.rpc.Status'
-    /v1/policies:
-        get:
-            tags:
-                - AdminRPC
-            operationId: AdminRPC_ListPolicies
-            parameters:
-                - name: subject
-                  in: query
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/rpc.ListPoliciesResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/google.rpc.Status'
-        post:
-            tags:
-                - AdminRPC
-            operationId: AdminRPC_AddPolicy
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/rpc.AddPolicyRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/rpc.AddPolicyResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/google.rpc.Status'
-            security:
-                - bearerAuth:
-                    - Policy:post
-    /v1/policy:
-        delete:
-            tags:
-                - AdminRPC
-            operationId: AdminRPC_DeletePolicy
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/rpc.DeletePolicyResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/google.rpc.Status'
-            security:
-                - bearerAuth:
-                    - Policy:delete
     /v1/processes:
         get:
             tags:
@@ -537,182 +889,6 @@ paths:
             security:
                 - bearerAuth:
                     - Process:get
-    /v1/roles:
-        get:
-            tags:
-                - AdminRPC
-            operationId: AdminRPC_ListRoles
-            parameters:
-                - name: page
-                  in: query
-                  schema:
-                    type: integer
-                    format: int32
-                - name: size
-                  in: query
-                  schema:
-                    type: integer
-                    format: int32
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/rpc.ListRolesResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/google.rpc.Status'
-            security:
-                - bearerAuth:
-                    - Role:get
-    /v1/roles/{id}:
-        get:
-            tags:
-                - AdminRPC
-            operationId: AdminRPC_GetRole
-            parameters:
-                - name: id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/rpc.GetRoleResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/google.rpc.Status'
-            security:
-                - bearerAuth:
-                    - Role:get
-    /v1/routes:
-        get:
-            tags:
-                - AdminRPC
-            operationId: AdminRPC_ListRoutes
-            parameters:
-                - name: page
-                  in: query
-                  schema:
-                    type: integer
-                    format: int32
-                - name: size
-                  in: query
-                  schema:
-                    type: integer
-                    format: int32
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/rpc.ListRoutesResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/google.rpc.Status'
-            security:
-                - bearerAuth:
-                    - Route:get
-        post:
-            tags:
-                - AdminRPC
-            operationId: AdminRPC_CreateRoute
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/rpc.CreateRouteRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/rpc.CreateRouteResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/google.rpc.Status'
-            security:
-                - bearerAuth:
-                    - Route:post
-    /v1/routes/{id}:
-        get:
-            tags:
-                - AdminRPC
-            operationId: AdminRPC_GetRoute
-            parameters:
-                - name: id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/rpc.GetRouteResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/google.rpc.Status'
-            security:
-                - bearerAuth:
-                    - Route:get
-        post:
-            tags:
-                - AdminRPC
-            operationId: AdminRPC_DeleteRoute
-            parameters:
-                - name: id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/rpc.DeleteRouteRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/rpc.DeleteRouteResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/google.rpc.Status'
-            security:
-                - bearerAuth:
-                    - Route:delete
     /v1/runners:
         get:
             tags:
@@ -832,114 +1008,18 @@ paths:
             security:
                 - bearerAuth:
                     - Runner:get
-    /v1/tokens:
+    /v1/users/self:
         get:
             tags:
-                - AdminRPC
-            operationId: AdminRPC_ListTokens
-            parameters:
-                - name: page
-                  in: query
-                  schema:
-                    type: integer
-                    format: int32
-                - name: size
-                  in: query
-                  schema:
-                    type: integer
-                    format: int32
+                - AuthRPC
+            operationId: AuthRPC_GetSelf
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/rpc.ListTokensResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/google.rpc.Status'
-            security:
-                - bearerAuth:
-                    - Token:get
-    /v1/tokens/{id}:
-        get:
-            tags:
-                - AdminRPC
-            operationId: AdminRPC_GetToken
-            parameters:
-                - name: id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/rpc.GetTokenResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/google.rpc.Status'
-            security:
-                - bearerAuth:
-                    - Token:get
-        delete:
-            tags:
-                - AdminRPC
-            operationId: AdminRPC_DeleteToken
-            parameters:
-                - name: id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/rpc.DeleteTokenResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/google.rpc.Status'
-            security:
-                - bearerAuth:
-                    - Token:delete
-    /v1/users:
-        get:
-            tags:
-                - AdminRPC
-            operationId: AdminRPC_ListUsers
-            parameters:
-                - name: page
-                  in: query
-                  schema:
-                    type: integer
-                    format: int32
-                - name: size
-                  in: query
-                  schema:
-                    type: integer
-                    format: int32
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/rpc.ListUsersResponse'
+                                $ref: '#/components/schemas/rpc.GetSelfResponse'
                 default:
                     description: Default error response
                     content:
@@ -949,74 +1029,15 @@ paths:
             security:
                 - bearerAuth:
                     - User:get
-    /v1/users/{id}:
-        get:
-            tags:
-                - AdminRPC
-            operationId: AdminRPC_GetUser
-            parameters:
-                - name: id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/rpc.GetUserResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/google.rpc.Status'
-            security:
-                - bearerAuth:
-                    - User:get
-        delete:
-            tags:
-                - AdminRPC
-            operationId: AdminRPC_DeleteUser
-            parameters:
-                - name: id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/rpc.DeleteUserResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/google.rpc.Status'
-            security:
-                - bearerAuth:
-                    - User:delete
         patch:
             tags:
-                - AdminRPC
-            operationId: AdminRPC_UpdateUser
-            parameters:
-                - name: id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
+                - AuthRPC
+            operationId: AuthRPC_UpdateSelf
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/rpc.UpdateUserRequest'
+                            $ref: '#/components/schemas/rpc.UpdateSelfRequest'
                 required: true
             responses:
                 "200":
@@ -1024,7 +1045,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/rpc.UpdateUserResponse'
+                                $ref: '#/components/schemas/rpc.UpdateSelfResponse'
                 default:
                     description: Default error response
                     content:
@@ -1256,6 +1277,12 @@ components:
             properties:
                 user:
                     $ref: '#/components/schemas/types.User'
+                role:
+                    $ref: '#/components/schemas/types.Role'
+                policies:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/types.Policy'
         rpc.GetTokenResponse:
             type: object
             properties:
@@ -1387,8 +1414,18 @@ components:
         rpc.UpdateSelfRequest:
             type: object
             properties:
-                id:
+                oldPassword:
                     type: string
+                password:
+                    type: string
+                email:
+                    type: string
+                description:
+                    type: string
+                metadata:
+                    type: object
+                    additionalProperties:
+                        type: string
         rpc.UpdateSelfResponse:
             type: object
             properties:
@@ -1817,6 +1854,8 @@ components:
                     type: string
                 hashedPassword:
                     type: string
+                firstLogon:
+                    type: string
                 lastLogon:
                     type: string
                 roleId:
@@ -1834,18 +1873,6 @@ components:
                 default:
                     type: string
     securitySchemes:
-        bearerAuth:
-            type: http
-            scheme: bearer
-            bearerFormat: JWT
-        bearerAuth:
-            type: http
-            scheme: bearer
-            bearerFormat: JWT
-        bearerAuth:
-            type: http
-            scheme: bearer
-            bearerFormat: JWT
         bearerAuth:
             type: http
             scheme: bearer

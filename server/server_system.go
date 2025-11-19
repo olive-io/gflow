@@ -52,10 +52,7 @@ type systemGRPCServer struct {
 	dispatcher *dispatch.Dispatcher
 }
 
-func newSystemGRPCServer(
-	ctx context.Context, lg *otelzap.Logger, cfg *config.Config,
-	runnerDao *dao.RunnerDao, endpointDao *dao.EndpointDao,
-	dispatcher *dispatch.Dispatcher) *systemGRPCServer {
+func newSystemGRPCServer(ctx context.Context, lg *otelzap.Logger, cfg *config.Config, runnerDao *dao.RunnerDao, endpointDao *dao.EndpointDao, dispatcher *dispatch.Dispatcher) (*systemGRPCServer, error) {
 
 	server := &systemGRPCServer{
 		ctx: ctx,
@@ -67,7 +64,7 @@ func newSystemGRPCServer(
 		dispatcher:  dispatcher,
 	}
 
-	return server
+	return server, nil
 }
 
 func (s *systemGRPCServer) Ping(ctx context.Context, req *pb.PingRequest) (*pb.PingResponse, error) {
@@ -130,7 +127,7 @@ func (s *systemGRPCServer) Disregister(ctx context.Context, req *pb.DisregisterR
 }
 
 func (s *systemGRPCServer) ListRunners(ctx context.Context, req *pb.ListRunnersRequest) (*pb.ListRunnersResponse, error) {
-	page, size := int(req.Page), int(req.Size)
+	page, size := getPageSize(req)
 	list, total, err := s.runnerDao.PageList(ctx, page, size, nil)
 	if err != nil {
 		return nil, toGRPCErr(err)
@@ -152,7 +149,7 @@ func (s *systemGRPCServer) GetRunner(ctx context.Context, req *pb.GetRunnerReque
 }
 
 func (s *systemGRPCServer) ListEndpoints(ctx context.Context, req *pb.ListEndpointsRequest) (*pb.ListEndpointsResponse, error) {
-	page, size := int(req.Page), int(req.Size)
+	page, size := getPageSize(req)
 	list, total, err := s.endpointDao.PageList(ctx, page, size, nil)
 	if err != nil {
 		return nil, toGRPCErr(err)

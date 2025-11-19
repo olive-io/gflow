@@ -65,7 +65,7 @@ func NewProcessDao(db *dbutil.DB) (*ProcessDao, error) {
 	return dao, nil
 }
 
-func (dao *ProcessDao) ListProcesses(ctx context.Context, page, size int32, options *ListProcessOptions) ([]*types.Process, int64, error) {
+func (dao *ProcessDao) ListProcesses(ctx context.Context, page, size int, options *ListProcessOptions) ([]*types.Process, int64, error) {
 	tx := dao.db.NewSession(ctx).Model(&types.Process{})
 
 	countTx := dao.db.NewSession(ctx).Model(&types.Process{})
@@ -92,15 +92,9 @@ func (dao *ProcessDao) ListProcesses(ctx context.Context, page, size int32, opti
 		return nil, 0, err
 	}
 
-	offset := int((page - 1) * size)
-	limit := int(size)
 	processes := make([]*types.Process, 0)
-
-	if offset > 0 {
-		tx.Offset(offset)
-	}
-	if limit > 0 {
-		tx.Limit(limit)
+	if page > 0 && size > 0 {
+		tx.Offset((page - 1) * size).Limit(size)
 	}
 
 	tx = tx.Order("id desc")

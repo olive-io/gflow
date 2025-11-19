@@ -249,9 +249,22 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 		return nil, fmt.Errorf("creates scheduler: %w", err)
 	}
 
-	authRPC, authInterceptor := newAuthServer(ctx, lg, gflowOpenAPI, enforcer, roleDao, userDao, tokenDao, routeDao)
-	bpmnRPC := newBpmnServer(ctx, lg, sch, definitionsDao, processDao)
-	systemRPC := newSystemGRPCServer(ctx, lg, s.cfg, runnerDao, endpointDao, dispatcher)
+	adminRPC, adminInterceptor, err := newAdminServer(ctx, lg, gflowOpenAPI, enforcer, roleDao, userDao, tokenDao, routeDao)
+	if err != nil {
+		return nil, fmt.Errorf("create auth rpc server: %w", err)
+	}
+	authRPC, authInterceptor, err := newAuthServer(ctx, lg, enforcer, roleDao, userDao)
+	if err != nil {
+		return nil, fmt.Errorf("create auth rpc server: %w", err)
+	}
+	bpmnRPC, err := newBpmnServer(ctx, lg, sch, definitionsDao, processDao)
+	if err != nil {
+		return nil, fmt.Errorf("create bpmn rpc server: %w", err)
+	}
+	systemRPC, err := newSystemGRPCServer(ctx, lg, s.cfg, runnerDao, endpointDao, dispatcher)
+	if err != nil {
+		return nil, fmt.Errorf("create system rpc server: %w", err)
+	}
 
 	endpoints := plugins.ListEndpoints()
 	targetID := s.cfg.Server.ID
@@ -275,13 +288,14 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	}
 
 	sopts := []grpc.ServerOption{
-		grpc.ChainUnaryInterceptor(validateInterceptor, authInterceptor),
+		grpc.ChainUnaryInterceptor(validateInterceptor, authInterceptor, adminInterceptor),
 		grpc.KeepaliveEnforcementPolicy(kaep),
 		grpc.KeepaliveParams(kasp),
 	}
 
 	// registers grpc server
 	gs := grpc.NewServer(sopts...)
+	pb.RegisterAdminRPCServer(gs, adminRPC)
 	pb.RegisterAuthRPCServer(gs, authRPC)
 	pb.RegisterBpmnRPCServer(gs, bpmnRPC)
 	pb.RegisterSystemRPCServer(gs, systemRPC)
@@ -307,6 +321,9 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	gwmux := gwrt.NewServeMux(muxOpts...)
 
 	// registers grpc handler with grpc client
+	if err = pb.RegisterAdminRPCHandlerClient(ctx, gwmux, pb.NewAdminRPCClient(grpcConn)); err != nil {
+		return nil, fmt.Errorf("register auth handler: %w", err)
+	}
 	if err = pb.RegisterAuthRPCHandlerClient(ctx, gwmux, pb.NewAuthRPCClient(grpcConn)); err != nil {
 		return nil, fmt.Errorf("register auth handler: %w", err)
 	}

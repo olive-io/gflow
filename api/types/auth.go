@@ -18,6 +18,8 @@ package types
 
 import (
 	"context"
+	"crypto/sha512"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -26,8 +28,11 @@ import (
 )
 
 const (
-	DefaultAdministratorRule = "administrator"
+	DefaultAdministratorRole = "administrator"
+	DefaultSystemRole        = "system"
+	DefaultOperatorRole      = "operator"
 	DefaultAdministratorUser = "admin"
+	DefaultPassword          = "p@ssw0rd"
 )
 
 var (
@@ -40,27 +45,40 @@ var (
 	userInfoKey = "User-Info"
 )
 
-type systemRole map[uint64]*Role
+type systemRole map[int64]*Role
 
 var SystemRoles = systemRole{
 	1: &Role{
 		Id:       1,
-		Type:     Role_Root,
-		Name:     DefaultAdministratorUser,
+		Type:     Role_Admin,
+		Name:     DefaultAdministratorRole,
 		Metadata: map[string]string{},
 	},
 	2: &Role{
 		Id:       2,
 		Type:     Role_System,
-		Name:     "system",
+		Name:     DefaultSystemRole,
 		Metadata: map[string]string{},
 	},
 	3: &Role{
 		Id:       3,
 		Type:     Role_Operator,
-		Name:     "operator",
+		Name:     DefaultOperatorRole,
 		Metadata: map[string]string{},
 	},
+}
+
+var RootUser *User
+
+func init() {
+	RootUser = &User{
+		Id:       1,
+		Uid:      DefaultAdministratorUser,
+		Username: DefaultAdministratorUser,
+		Metadata: map[string]string{},
+		RoleId:   SystemRoles[1].Id,
+	}
+	RootUser.SetPassword(DefaultPassword)
 }
 
 type Claims struct {
@@ -89,6 +107,7 @@ func GenerateToken(userId, roleId int64) (*Token, error) {
 
 	token := &Token{
 		Text:     tok,
+		CreateAt: time.Now().Unix(),
 		ExpireAt: expireTime.Unix(),
 		Enable:   1,
 		UserId:   userId,
@@ -133,22 +152,17 @@ func IsGflowAgent(ctx context.Context) bool {
 	return values[0] == defaultAgentValue
 }
 
-func ParsePolicy(rules []string) *Policy {
-	p := &Policy{}
-	if len(rules) > 0 {
-		p.Subject = rules[0]
-	}
-	if len(rules) > 1 {
-		p.Object = rules[1]
-	}
-	if len(rules) > 2 {
-		p.Action = rules[2]
-	}
-	return p
+func (u *User) SetPassword(password string) {
+	sha := sha512.New()
+	sha.Write([]byte(password))
+	u.HashedPassword = hex.EncodeToString(sha.Sum(nil))
 }
 
-func (p *Policy) Rules() []string {
-	return []string{p.Subject, p.Object, p.Action}
+func (u *User) VerifyPassword(password string) bool {
+	sha := sha512.New()
+	sha.Write([]byte(password))
+	hash := hex.EncodeToString(sha.Sum(nil))
+	return hash == u.HashedPassword
 }
 
 type UserInfo struct {
@@ -163,7 +177,7 @@ func (u *UserInfo) IsAdmin() bool {
 	if role == nil {
 		return false
 	}
-	return role.Type == Role_Root
+	return role.Type == Role_Admin
 }
 
 func (u *UserInfo) IsManager() bool {
@@ -172,7 +186,7 @@ func (u *UserInfo) IsManager() bool {
 		return false
 	}
 
-	return role.Type == Role_Root || role.Type == Role_System
+	return role.Type == Role_Admin || role.Type == Role_System
 }
 
 func (u *UserInfo) IsUser() bool {
@@ -181,7 +195,7 @@ func (u *UserInfo) IsUser() bool {
 		return false
 	}
 
-	return role.Type == Role_Root || role.Type == Role_System || role.Type == Role_Operator
+	return role.Type == Role_Admin || role.Type == Role_System || role.Type == Role_Operator
 }
 
 func GetUserInfo(ctx context.Context) (*UserInfo, bool) {

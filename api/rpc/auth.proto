@@ -62,7 +62,7 @@ service AuthRPC {
 
   rpc GetSelf(GetSelfRequest) returns (GetSelfResponse) {
     option (google.api.http) = {
-      get: "/v1/current"
+      get: "/v1/users/self"
     };
     option (openapi.v3.operation) = {
       security: [
@@ -80,7 +80,7 @@ service AuthRPC {
 
   rpc UpdateSelf(UpdateSelfRequest) returns (UpdateSelfResponse) {
     option (google.api.http) = {
-      patch: "/v1/users/{id}"
+      patch: "/v1/users/self"
       body: "*"
     };
     option (openapi.v3.operation) = {
@@ -107,16 +107,20 @@ message LoginResponse {
   types.Token token = 1;
 }
 
-message GetSelfRequest {
-  int64 id = 1;
-}
+message GetSelfRequest {}
 
 message GetSelfResponse {
   types.User user = 1;
+  types.Role role = 2;
+  repeated types.Policy policies = 3;
 }
 
 message UpdateSelfRequest {
-  int64 id = 1;
+  string oldPassword = 1;
+  string password = 2;
+  string email = 3;
+  string description = 4;
+  map<string, string> metadata = 5;
 }
 
 message UpdateSelfResponse {

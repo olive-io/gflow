@@ -33,7 +33,7 @@ option (gogoproto.goproto_getters_all) = false;
 message Role {
   enum Type {
     Unknown = 0;
-    Root = 1;
+    Admin = 1;
     System = 2;
     Operator = 3;
   }
@@ -67,13 +67,15 @@ message User {
 
   map<string, string> metadata = 8 [(tagger.tags) = "gorm:\"serializer:json\""];
 
-  string password = 9;
+  string password = 9 [(tagger.tags) = "gorm:\"-\""];
 
   string hashed_password = 10;
 
-  int64 last_logon = 11;
+  int64 first_logon = 11;
 
-  int64 role_id = 12;
+  int64 last_logon = 12;
+
+  int64 role_id = 13;
 }
 
 message Token {

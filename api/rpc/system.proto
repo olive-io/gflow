@@ -32,23 +32,6 @@ option java_multiple_files = true;
 option java_package = "io.olive.gflow.api.rpc";
 option java_outer_classname = "GFlowRPC";
 
-option (openapi.v3.document) = {
-  components: {
-    security_schemes: {
-      additional_properties: {
-        name: "bearerAuth"
-        value: {
-          security_scheme: {
-            type: "http",
-            scheme: "bearer",
-            bearer_format: "JWT"
-          }
-        }
-      }
-    }
-  }
-};
-
 service SystemRPC {
   rpc Ping(PingRequest) returns (PingResponse) {
     option (google.api.http) = {

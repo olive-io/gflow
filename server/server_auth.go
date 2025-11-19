@@ -18,12 +18,10 @@ package server
 
 import (
 	"context"
-	"regexp"
-	"sort"
 	"strings"
+	"time"
 
 	"github.com/casbin/casbin/v2"
-	"github.com/getkin/kin-openapi/openapi3"
 	gwrt "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"google.golang.org/grpc"
@@ -47,58 +45,76 @@ type authGRPCServer struct {
 	ctx context.Context
 	lg  *otelzap.Logger
 
-	gflowAPI   *openapi3.T
 	interfaces []*types.Interface
 	enforcer   *casbin.Enforcer
 
-	roleDao  *dao.RoleDao
-	userDao  *dao.UserDao
-	tokenDao *dao.TokenDao
-	routeDao *dao.RouteDao
+	roleDao *dao.RoleDao
+	userDao *dao.UserDao
 }
 
-func newAuthServer(ctx context.Context, lg *otelzap.Logger, gflowAPI *openapi3.T, enforcer *casbin.Enforcer, roleDao *dao.RoleDao, userDao *dao.UserDao, tokenDao *dao.TokenDao, routeDao *dao.RouteDao) (*authGRPCServer, grpc.UnaryServerInterceptor) {
+func newAuthServer(ctx context.Context, lg *otelzap.Logger, enforcer *casbin.Enforcer, roleDao *dao.RoleDao, userDao *dao.UserDao) (*authGRPCServer, grpc.UnaryServerInterceptor, error) {
 
-	interfaces := convertToInterfaces(gflowAPI)
 	server := &authGRPCServer{
-		ctx:        ctx,
-		lg:         lg,
-		gflowAPI:   gflowAPI,
-		interfaces: interfaces,
-		enforcer:   enforcer,
-		roleDao:    roleDao,
-		userDao:    userDao,
-		tokenDao:   tokenDao,
-		routeDao:   routeDao,
+		ctx:      ctx,
+		lg:       lg,
+		enforcer: enforcer,
+		roleDao:  roleDao,
+		userDao:  userDao,
 	}
 
-	return server, server.unaryInterceptor
+	return server, server.unaryInterceptor, nil
 }
 
-func (s *authGRPCServer) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginResponse, error) {
-	resp := &pb.LoginResponse{}
+func (s *authGRPCServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
+
+	user, err := s.userDao.GetByName(ctx, req.Username)
+	if err != nil {
+		return nil, toGRPCErr(err)
+	}
+
+	matched := user.VerifyPassword(req.Password)
+	if !matched {
+		return nil, status.Error(codes.InvalidArgument, "invalid password")
+	}
+
+	now := time.Now().Unix()
+
+	if user.FirstLogon == 0 {
+		user.FirstLogon = now
+	}
+	user.LastLogon = now
+	if err = s.userDao.Update(ctx, user.Id, user); err != nil {
+		return nil, toGRPCErr(err)
+	}
+
+	token, err := types.GenerateToken(user.Id, user.RoleId)
+	if err != nil {
+		return nil, toGRPCErr(err)
+	}
+
+	resp := &pb.LoginResponse{
+		Token: token,
+	}
 	return resp, nil
 }
 
-func (s *authGRPCServer) ListInterfaces(ctx context.Context, in *pb.ListInterfacesRequest) (*pb.ListInterfacesResponse, error) {
-	resp := &pb.ListInterfacesResponse{Interfaces: s.interfaces}
-	return resp, nil
-}
-
-func (s *authGRPCServer) ListPolicies(ctx context.Context, in *pb.ListPoliciesRequest) (*pb.ListPoliciesResponse, error) {
-	var values [][]string
-	var err error
-	if in.Subject == "" {
-		values, err = s.enforcer.GetNamedPolicy("p")
-	} else {
-		values, err = s.enforcer.GetFilteredNamedPolicy("p", 0, in.Subject)
+func (s *authGRPCServer) GetSelf(ctx context.Context, req *pb.GetSelfRequest) (*pb.GetSelfResponse, error) {
+	userInfo, found := types.GetUserInfo(ctx)
+	if !found {
+		return nil, status.Error(codes.Unauthenticated, "unknown user")
 	}
+
+	userPolicies, err := s.enforcer.GetFilteredNamedPolicy("p", 0, userInfo.User.Username)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	rolePolicies, err := s.enforcer.GetFilteredNamedPolicy("p", 0, userInfo.Role.Name)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	policies := make([]*types.Policy, 0)
-	for _, value := range values {
+	for _, value := range append(userPolicies, rolePolicies...) {
 		p := types.ParsePolicy(value)
 		actions := matchAction(p.Action)
 		for _, action := range actions {
@@ -111,54 +127,45 @@ func (s *authGRPCServer) ListPolicies(ctx context.Context, in *pb.ListPoliciesRe
 		}
 	}
 
-	resp := &pb.ListPoliciesResponse{Policies: policies}
+	resp := &pb.GetSelfResponse{
+		User:     userInfo.User,
+		Role:     userInfo.Role,
+		Policies: policies,
+	}
+
 	return resp, nil
 }
 
-func (s *authGRPCServer) AddPolicy(ctx context.Context, in *pb.AddPolicyRequest) (*pb.AddPolicyResponse, error) {
-	userInfo, ok := types.GetUserInfo(ctx)
-	if !ok || userInfo.IsAdmin() {
-		return nil, status.Error(codes.PermissionDenied, "you are not admin")
+func (s *authGRPCServer) UpdateSelf(ctx context.Context, req *pb.UpdateSelfRequest) (*pb.UpdateSelfResponse, error) {
+	userInfo, found := types.GetUserInfo(ctx)
+	if !found {
+		return nil, status.Error(codes.Unauthenticated, "unknown user")
 	}
 
-	rules := make([][]string, 0)
-
-	for _, p := range in.Policies {
-		if p.Subject == "*" {
-			values := []string{types.DefaultAdministratorRule, p.Object, p.Action}
-			rules = append(rules, values)
-			continue
+	current := userInfo.User
+	if req.OldPassword != "" && req.Password != "" {
+		if matched := current.VerifyPassword(req.OldPassword); !matched {
+			return nil, status.Error(codes.InvalidArgument, "old password not matched")
 		}
-		rules = append(rules, p.Rules())
-	}
-	for _, rule := range rules {
-		_, err := s.enforcer.AddNamedPolicy("p", rule)
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
+		current.SetPassword(req.Password)
 	}
 
-	return &pb.AddPolicyResponse{}, nil
-}
-
-func (s *authGRPCServer) DeletePolicy(ctx context.Context, in *pb.DeletePolicyRequest) (*pb.DeletePolicyResponse, error) {
-	rules := make([][]string, 0)
-	for _, p := range in.Policies {
-		if p.Subject == "*" {
-			values := []string{types.DefaultAdministratorRule, p.Object, p.Action}
-			rules = append(rules, values)
-			continue
-		}
-		rules = append(rules, p.Rules())
+	if req.Email != "" {
+		current.Email = req.Email
 	}
-	for _, rule := range rules {
-		_, err := s.enforcer.RemoveNamedPolicy("p", rule)
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
+	if req.Description != "" {
+		current.Description = req.Description
+	}
+	if len(req.Metadata) != 0 {
+		current.Metadata = req.Metadata
 	}
 
-	return &pb.DeletePolicyResponse{}, nil
+	if err := s.userDao.Update(ctx, current.Id, current); err != nil {
+		return nil, toGRPCErr(err)
+	}
+
+	resp := &pb.UpdateSelfResponse{User: current}
+	return resp, nil
 }
 
 func (s *authGRPCServer) unaryInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
@@ -179,16 +186,16 @@ func (s *authGRPCServer) unaryInterceptor(ctx context.Context, req any, info *gr
 
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return nil, status.Errorf(codes.InvalidArgument, "missing Authorization header")
+		return nil, status.Errorf(codes.InvalidArgument, "empty authorization")
 	}
 
 	authorization := md.Get("Authorization")
 	if len(authorization) < 1 {
-		return nil, status.Errorf(codes.InvalidArgument, "missing Authorization header")
+		return nil, status.Errorf(codes.InvalidArgument, "empty authorization")
 	}
 	token := strings.TrimPrefix(authorization[0], "Bearer ")
 	if token == "" {
-		return nil, status.Errorf(codes.Unauthenticated, "missing token")
+		return nil, status.Errorf(codes.Unauthenticated, "token is required")
 	}
 
 	claims, err := types.ParseToken(token)
@@ -217,7 +224,7 @@ func (s *authGRPCServer) unaryInterceptor(ctx context.Context, req any, info *gr
 	ctx = types.SetUserInfo(ctx, userInfo)
 
 	httpPath := strings.Join(md.Get(httpPathKey), "")
-	httpMethod := strings.ToLower(strings.Join(md.Get(httpMethodKey), ""))
+	httpMethod := strings.ToUpper(strings.Join(md.Get(httpMethodKey), ""))
 	if httpPath == "" || httpMethod == "" {
 		return handler(ctx, req)
 	}
@@ -226,12 +233,12 @@ func (s *authGRPCServer) unaryInterceptor(ctx context.Context, req any, info *gr
 		return handler(ctx, req)
 	}
 
-	matched, err := s.enforcer.Enforce(ctx, userInfo.Role.Name, httpPath, httpMethod)
+	matched, err := s.enforcer.Enforce(userInfo.Role.Name, httpPath, httpMethod)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "casbin enforce failed: %v", err)
 	}
 	if !matched {
-		matched, err = s.enforcer.Enforce(ctx, userInfo.User.Username, httpMethod, httpPath)
+		matched, err = s.enforcer.Enforce(userInfo.User.Username, httpMethod, httpPath)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "casbin enforce failed: %v", err)
 		}
@@ -243,76 +250,4 @@ func (s *authGRPCServer) unaryInterceptor(ctx context.Context, req any, info *gr
 
 	resp, err := handler(ctx, req)
 	return resp, err
-}
-
-func convertToInterfaces(document *openapi3.T) []*types.Interface {
-	interfaces := make([]*types.Interface, 0)
-	for url, path := range document.Paths.Map() {
-		var method string
-		var operation *openapi3.Operation
-		if path.Get != nil {
-			method = "get"
-			operation = path.Get
-		} else if path.Post != nil {
-			method = "post"
-			operation = path.Post
-		} else if path.Put != nil {
-			method = "put"
-			operation = path.Put
-		} else if path.Patch != nil {
-			method = "patch"
-			operation = path.Patch
-		} else if path.Delete != nil {
-			method = "delete"
-			operation = path.Delete
-		}
-
-		if operation == nil {
-			continue
-		}
-
-		security := map[string]string{}
-		if operation.Security != nil {
-			for _, item := range *operation.Security {
-				for k, v := range item {
-					security[k] = strings.Join(v, ";")
-				}
-			}
-		}
-
-		operationID := operation.OperationID
-		fullMethod := strings.ReplaceAll(operationID, "_", "/")
-		fullMethod = "/rpc." + fullMethod
-
-		item := &types.Interface{
-			OperationId: operationID,
-			FullMethod:  fullMethod,
-			Summary:     operation.Summary,
-			Description: operation.Description,
-			Method:      method,
-			Url:         url,
-			Tags:        operation.Tags,
-			Security:    security,
-			Metadata:    map[string]string{},
-			Deprecated:  operation.Deprecated,
-		}
-		interfaces = append(interfaces, item)
-	}
-
-	sort.Slice(interfaces, func(i, j int) bool { return interfaces[i].OperationId < interfaces[j].OperationId })
-	return interfaces
-}
-
-func matchAction(text string) []string {
-	re := regexp.MustCompile(`\(([^(|^)]+)\)`)
-	matches := re.FindAllStringSubmatch(text, -1)
-
-	var results []string
-	for _, match := range matches {
-		results = append(results, match[1])
-	}
-	if len(results) == 0 {
-		results = append(results, text)
-	}
-	return results
 }

@@ -17,6 +17,7 @@ limitations under the License.
 package dao
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/olive-io/gflow/api/types"
@@ -37,4 +38,16 @@ func NewUserDao(db *dbutil.DB) (*UserDao, error) {
 	}
 
 	return dao, nil
+}
+
+func (dao *UserDao) GetByName(ctx context.Context, username string) (*types.User, error) {
+	tx := dao.db.NewSession(ctx).Model(&types.User{})
+
+	user := &types.User{}
+	err := tx.Where("username = ?", username).First(user).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }

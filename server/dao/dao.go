@@ -89,7 +89,7 @@ func (r *InnerDao[T]) PageList(ctx context.Context, page, size int, cond any) ([
 	if err = session.Count(&total).Error; err != nil {
 		return nil, total, err
 	}
-	if page != 0 && size != 0 {
+	if page > 0 && size > 0 {
 		session.Offset((page - 1) * size).Limit(size)
 	}
 

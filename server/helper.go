@@ -190,83 +190,91 @@ func parseSwaggerDoc(doc, ct string) (*types.Runner, []*types.Endpoint, error) {
 	for url, pathItem := range document.Paths {
 		var operation *openapi2.Operation
 		var method string
+		paths := map[string]*openapi2.Operation{}
 		if pathItem.Get != nil {
 			operation = pathItem.Get
 			method = "GET"
-		} else if pathItem.Post != nil {
+			paths[method] = operation
+		}
+		if pathItem.Post != nil {
 			operation = pathItem.Post
 			method = "POST"
-		} else if pathItem.Put != nil {
+			paths[method] = operation
+		}
+		if pathItem.Put != nil {
 			operation = pathItem.Put
 			method = "PUT"
-		} else if pathItem.Patch != nil {
+			paths[method] = operation
+		}
+		if pathItem.Patch != nil {
 			operation = pathItem.Patch
 			method = "PATCH"
-		} else if pathItem.Delete != nil {
+			paths[method] = operation
+		}
+		if pathItem.Delete != nil {
 			operation = pathItem.Delete
 			method = "DELETE"
+			paths[method] = operation
 		}
 
-		if operation == nil {
-			continue
-		}
+		for method, operation = range paths {
 
-		pathURL := host + url
-		endpoint := &types.Endpoint{
-			TaskType:    types.FlowNodeType_ServiceTask,
-			Type:        "http",
-			Name:        operation.OperationID,
-			Description: operation.Description,
-			Mode:        types.TransitionMode_Simple,
-			HttpUrl:     pathURL,
-			Metadata: map[string]string{
-				"name":    operation.OperationID,
-				"method":  method,
-				"url":     pathURL,
-				"swagger": document.Swagger,
-			},
-			Targets:     []string{runner.Uid},
-			Headers:     map[string]string{},
-			Properties:  map[string]*types.Value{},
-			DataObjects: map[string]*types.Value{},
-			Results:     map[string]*types.Value{},
-		}
-
-		for _, parameter := range operation.Parameters {
-			var tv *types.Value
-			switch parameter.In {
-			case "path":
-				tv = openapi2ParameterToValue(parameter)
-			case "query":
-			case "body":
-				schemaRef := parameter.Schema
-				if schemaRef.Ref != "" {
-					ref := strings.TrimPrefix(schemaRef.Ref, "#/definitions/")
-					schemaRef = document.Definitions[ref]
-				}
-				tv = openapi2SchemaToValue(schemaRef.Value)
+			pathURL := host + url
+			endpoint := &types.Endpoint{
+				TaskType:    types.FlowNodeType_ServiceTask,
+				Type:        "http",
+				Name:        operation.OperationID,
+				Description: operation.Description,
+				Mode:        types.TransitionMode_Simple,
+				HttpUrl:     pathURL,
+				Metadata: map[string]string{
+					"name":    operation.OperationID,
+					"method":  method,
+					"url":     pathURL,
+					"swagger": document.Swagger,
+				},
+				Targets:     []string{runner.Uid},
+				Headers:     map[string]string{},
+				Properties:  map[string]*types.Value{},
+				DataObjects: map[string]*types.Value{},
+				Results:     map[string]*types.Value{},
 			}
-			if tv != nil {
-				endpoint.Properties[parameter.Name] = tv
-			}
-		}
 
-		if responseRef := operation.Responses["200"]; responseRef != nil {
-			if rv := responseRef.Schema; rv != nil {
-				schemaRef := rv
-				if ref := schemaRef.Ref; ref != "" {
-					ref = strings.TrimPrefix(ref, "#/definitions/")
-					schemaRef = document.Definitions[ref]
+			for _, parameter := range operation.Parameters {
+				var tv *types.Value
+				switch parameter.In {
+				case "path":
+					tv = openapi2ParameterToValue(parameter)
+				case "query":
+				case "body":
+					schemaRef := parameter.Schema
+					if schemaRef.Ref != "" {
+						ref := strings.TrimPrefix(schemaRef.Ref, "#/definitions/")
+						schemaRef = document.Definitions[ref]
+					}
+					tv = openapi2SchemaToValue(schemaRef.Value)
 				}
-
-				properties := openapi2SchemaRefToProperties(schemaRef, &document)
-				for name, value := range properties {
-					endpoint.Results[name] = value
+				if tv != nil {
+					endpoint.Properties[parameter.Name] = tv
 				}
 			}
-		}
 
-		endpoints = append(endpoints, endpoint)
+			if responseRef := operation.Responses["200"]; responseRef != nil {
+				if rv := responseRef.Schema; rv != nil {
+					schemaRef := rv
+					if ref := schemaRef.Ref; ref != "" {
+						ref = strings.TrimPrefix(ref, "#/definitions/")
+						schemaRef = document.Definitions[ref]
+					}
+
+					properties := openapi2SchemaRefToProperties(schemaRef, &document)
+					for name, value := range properties {
+						endpoint.Results[name] = value
+					}
+				}
+			}
+			endpoints = append(endpoints, endpoint)
+		}
 	}
 
 	return runner, endpoints, nil
@@ -312,64 +320,87 @@ func parseOpenAPIDoc(doc, ct string) (*types.Runner, []*types.Endpoint, error) {
 	for url, pathItem := range document.Paths.Map() {
 		var operation *openapi3.Operation
 		var method string
+		paths := map[string]*openapi3.Operation{}
 		if pathItem.Get != nil {
 			operation = pathItem.Get
 			method = "GET"
-		} else if pathItem.Post != nil {
+			paths[method] = operation
+		}
+		if pathItem.Post != nil {
 			operation = pathItem.Post
 			method = "POST"
-		} else if pathItem.Put != nil {
+			paths[method] = operation
+		}
+		if pathItem.Put != nil {
 			operation = pathItem.Put
 			method = "PUT"
-		} else if pathItem.Patch != nil {
+			paths[method] = operation
+		}
+		if pathItem.Patch != nil {
 			operation = pathItem.Patch
 			method = "PATCH"
-		} else if pathItem.Delete != nil {
+			paths[method] = operation
+		}
+		if pathItem.Delete != nil {
 			operation = pathItem.Delete
 			method = "DELETE"
+			paths[method] = operation
 		}
 
-		if operation == nil {
-			continue
-		}
-
-		pathURL := path.Join(runner.ListenUrl, url)
-		endpoint := &types.Endpoint{
-			TaskType:    types.FlowNodeType_ServiceTask,
-			Type:        "http",
-			Name:        operation.OperationID,
-			Description: operation.Description,
-			Mode:        types.TransitionMode_Simple,
-			HttpUrl:     pathURL,
-			Metadata: map[string]string{
-				"name":    operation.OperationID,
-				"method":  method,
-				"url":     pathURL,
-				"openapi": document.OpenAPI,
-			},
-			Targets:     []string{runner.Uid},
-			Headers:     map[string]string{},
-			Properties:  map[string]*types.Value{},
-			DataObjects: map[string]*types.Value{},
-			Results:     map[string]*types.Value{},
-		}
-
-		for _, parameter := range operation.Parameters {
-			pv := parameter.Value
-			if pv == nil {
-				continue
+		for method, operation = range paths {
+			pathURL := path.Join(runner.ListenUrl, url)
+			endpoint := &types.Endpoint{
+				TaskType:    types.FlowNodeType_ServiceTask,
+				Type:        "http",
+				Name:        operation.OperationID,
+				Description: operation.Description,
+				Mode:        types.TransitionMode_Simple,
+				HttpUrl:     pathURL,
+				Metadata: map[string]string{
+					"name":    operation.OperationID,
+					"method":  method,
+					"url":     pathURL,
+					"openapi": document.OpenAPI,
+				},
+				Targets:     []string{runner.Uid},
+				Headers:     map[string]string{},
+				Properties:  map[string]*types.Value{},
+				DataObjects: map[string]*types.Value{},
+				Results:     map[string]*types.Value{},
 			}
 
-			schemaRef := pv.Schema
-			tv := openapi3SchemaToValue(schemaRef.Value)
-			endpoint.Properties[pv.Name] = tv
-		}
+			for _, parameter := range operation.Parameters {
+				pv := parameter.Value
+				if pv == nil {
+					continue
+				}
 
-		if rb := operation.RequestBody; rb != nil {
-			if rv := rb.Value; rv != nil {
-				mt := rv.Content.Get("application/json")
-				if mt != nil {
-					schemaRef := mt.Schema
+				schemaRef := pv.Schema
+				tv := openapi3SchemaToValue(schemaRef.Value)
+				endpoint.Properties[pv.Name] = tv
+			}
+
+			if rb := operation.RequestBody; rb != nil {
+				if rv := rb.Value; rv != nil {
+					mt := rv.Content.Get("application/json")
+					if mt != nil {
+						schemaRef := mt.Schema
+						if ref := schemaRef.Ref; ref != "" {
+							ref = strings.TrimPrefix(ref, "#/components/schemas/")
+							schemaRef = document.Components.Schemas[ref]
+						}
+
+						properties := openapi3SchemaRefToProperties(schemaRef, &document)
+						for name, value := range properties {
+							endpoint.Properties[name] = value
+						}
+					}
+				}
+			}
+
+			if responseRef := operation.Responses.Value("200"); responseRef != nil {
+				if rv := responseRef.Value; rv != nil {
+					schemaRef := rv.Content.Get("application/json").Schema
 					if ref := schemaRef.Ref; ref != "" {
 						ref = strings.TrimPrefix(ref, "#/components/schemas/")
 						schemaRef = document.Components.Schemas[ref]
@@ -377,28 +408,13 @@ func parseOpenAPIDoc(doc, ct string) (*types.Runner, []*types.Endpoint, error) {
 
 					properties := openapi3SchemaRefToProperties(schemaRef, &document)
 					for name, value := range properties {
-						endpoint.Properties[name] = value
+						endpoint.Results[name] = value
 					}
 				}
 			}
+
+			endpoints = append(endpoints, endpoint)
 		}
-
-		if responseRef := operation.Responses.Value("200"); responseRef != nil {
-			if rv := responseRef.Value; rv != nil {
-				schemaRef := rv.Content.Get("application/json").Schema
-				if ref := schemaRef.Ref; ref != "" {
-					ref = strings.TrimPrefix(ref, "#/components/schemas/")
-					schemaRef = document.Components.Schemas[ref]
-				}
-
-				properties := openapi3SchemaRefToProperties(schemaRef, &document)
-				for name, value := range properties {
-					endpoint.Results[name] = value
-				}
-			}
-		}
-
-		endpoints = append(endpoints, endpoint)
 	}
 
 	return runner, endpoints, nil
@@ -567,4 +583,23 @@ func isOpenAPIDoc(doc, ct string) (bool, error) {
 
 	_, ok := metadata["openapi"]
 	return ok, nil
+}
+
+func getPageSize(in any) (int, int) {
+	impl, ok := in.(interface {
+		GetPage() int32
+		GetSize() int32
+	})
+	if !ok {
+		return 1, 10
+	}
+
+	page, size := int(impl.GetPage()), int(impl.GetSize())
+	if page == 0 {
+		page = 1
+	}
+	if size == 0 {
+		size = 10
+	}
+	return page, size
 }

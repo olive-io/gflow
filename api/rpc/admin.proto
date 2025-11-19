@@ -31,27 +31,10 @@ option java_multiple_files = true;
 option java_package = "io.olive.gflow.api.rpc";
 option java_outer_classname = "GFlowRPC";
 
-option (openapi.v3.document) = {
-  components: {
-    security_schemes: {
-      additional_properties: {
-        name: "bearerAuth"
-        value: {
-          security_scheme: {
-            type: "http",
-            scheme: "bearer",
-            bearer_format: "JWT"
-          }
-        }
-      }
-    }
-  }
-};
-
 service AdminRPC {
   rpc ListRoles(ListRolesRequest) returns (ListRolesResponse) {
     option (google.api.http) = {
-      get: "/v1/roles"
+      get: "/v1/admin/roles"
     };
     option (openapi.v3.operation) = {
       security: [
@@ -69,7 +52,7 @@ service AdminRPC {
 
   rpc GetRole(GetRoleRequest) returns (GetRoleResponse) {
     option (google.api.http) = {
-      get: "/v1/roles/{id}"
+      get: "/v1/admin/roles/{id}"
     };
     option (openapi.v3.operation) = {
       security: [
@@ -87,7 +70,7 @@ service AdminRPC {
 
   rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
     option (google.api.http) = {
-      get: "/v1/users"
+      get: "/v1/admin/users"
     };
     option (openapi.v3.operation) = {
       security: [
@@ -105,7 +88,7 @@ service AdminRPC {
 
   rpc GetUser(GetUserRequest) returns (GetUserResponse) {
     option (google.api.http) = {
-      get: "/v1/users/{id}"
+      get: "/v1/admin/users/{id}"
     };
     option (openapi.v3.operation) = {
       security: [
@@ -123,7 +106,7 @@ service AdminRPC {
 
   rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse) {
     option (google.api.http) = {
-      patch: "/v1/users/{id}"
+      patch: "/v1/admin/users/{id}"
       body: "*"
     };
     option (openapi.v3.operation) = {
@@ -142,7 +125,7 @@ service AdminRPC {
 
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {
     option (google.api.http) = {
-      delete: "/v1/users/{id}"
+      delete: "/v1/admin/users/{id}"
     };
     option (openapi.v3.operation) = {
       security: [
@@ -160,7 +143,7 @@ service AdminRPC {
 
   rpc ListTokens(ListTokensRequest) returns (ListTokensResponse) {
     option (google.api.http) = {
-      get: "/v1/tokens"
+      get: "/v1/admin/tokens"
     };
     option (openapi.v3.operation) = {
       security: [
@@ -178,7 +161,7 @@ service AdminRPC {
 
   rpc GetToken(GetTokenRequest) returns (GetTokenResponse) {
     option (google.api.http) = {
-      get: "/v1/tokens/{id}"
+      get: "/v1/admin/tokens/{id}"
     };
     option (openapi.v3.operation) = {
       security: [
@@ -196,7 +179,7 @@ service AdminRPC {
 
   rpc DeleteToken(DeleteTokenRequest) returns (DeleteTokenResponse) {
     option (google.api.http) = {
-      delete: "/v1/tokens/{id}"
+      delete: "/v1/admin/tokens/{id}"
     };
     option (openapi.v3.operation) = {
       security: [
@@ -214,7 +197,7 @@ service AdminRPC {
 
   rpc ListInterfaces(ListInterfacesRequest) returns (ListInterfacesResponse) {
     option (google.api.http) = {
-      get: "/v1/interfaces"
+      get: "/v1/admin/interfaces"
     };
     option (openapi.v3.operation) = {
       security: [
@@ -230,13 +213,13 @@ service AdminRPC {
 
   rpc ListPolicies(ListPoliciesRequest) returns (ListPoliciesResponse) {
     option (google.api.http) = {
-      get: "/v1/policies"
+      get: "/v1/admin/policies"
     };
   }
 
   rpc AddPolicy(AddPolicyRequest) returns (AddPolicyResponse) {
     option (google.api.http) = {
-      post: "/v1/policies"
+      post: "/v1/admin/policies"
       body: "*"
     };
     option (openapi.v3.operation) = {
@@ -255,7 +238,7 @@ service AdminRPC {
 
   rpc DeletePolicy(DeletePolicyRequest) returns (DeletePolicyResponse) {
     option (google.api.http) = {
-      delete: "/v1/policy"
+      delete: "/v1/admin/policy"
     };
     option (openapi.v3.operation) = {
       security: [
@@ -273,7 +256,7 @@ service AdminRPC {
 
   rpc ListRoutes(ListRoutesRequest) returns (ListRoutesResponse) {
     option (google.api.http) = {
-      get: "/v1/routes"
+      get: "/v1/admin/routes"
     };
     option (openapi.v3.operation) = {
       security: [
@@ -291,7 +274,7 @@ service AdminRPC {
 
   rpc GetRoute(GetRouteRequest) returns (GetRouteResponse) {
     option (google.api.http) = {
-      get: "/v1/routes/{id}"
+      get: "/v1/admin/routes/{id}"
     };
     option (openapi.v3.operation) = {
       security: [
@@ -309,7 +292,7 @@ service AdminRPC {
 
   rpc CreateRoute(CreateRouteRequest) returns (CreateRouteResponse) {
     option (google.api.http) = {
-      post: "/v1/routes"
+      post: "/v1/admin/routes"
       body: "*"
     };
     option (openapi.v3.operation) = {
@@ -328,7 +311,7 @@ service AdminRPC {
 
   rpc DeleteRoute(DeleteRouteRequest) returns (DeleteRouteResponse) {
     option (google.api.http) = {
-      post: "/v1/routes/{id}"
+      post: "/v1/admin/routes/{id}"
       body: "*"
     };
     option (openapi.v3.operation) = {
@@ -348,7 +331,7 @@ service AdminRPC {
 
 message ListRolesRequest {
   int32 page = 1;
-  int32 size = 2 [(validate.rules).int32.gt = 0];
+  int32 size = 2;
 }
 
 message ListRolesResponse {
@@ -357,7 +340,7 @@ message ListRolesResponse {
 }
 
 message GetRoleRequest {
-  int64 id = 1;
+  int64 id = 1 [(validate.rules).int64.gt = 0];
 }
 
 message GetRoleResponse {
@@ -366,7 +349,7 @@ message GetRoleResponse {
 
 message ListUsersRequest {
   int32 page = 1;
-  int32 size = 2 [(validate.rules).int32.gt = 0];
+  int32 size = 2;
 }
 
 message ListUsersResponse {
@@ -375,7 +358,7 @@ message ListUsersResponse {
 }
 
 message GetUserRequest {
-  int64 id = 1;
+  int64 id = 1 [(validate.rules).int64.gt = 0];
 }
 
 message GetUserResponse {
@@ -383,16 +366,15 @@ message GetUserResponse {
 }
 
 message UpdateUserRequest {
-  int64 id = 1;
+  int64 id = 1 [(validate.rules).int64.gt = 0];
 }
 
 message UpdateUserResponse {
   types.User user = 1;
 }
 
-
 message DeleteUserRequest {
-  int64 id = 1;
+  int64 id = 1 [(validate.rules).int64.gt = 0];
 }
 
 message DeleteUserResponse {
@@ -401,7 +383,7 @@ message DeleteUserResponse {
 
 message ListTokensRequest {
   int32 page = 1;
-  int32 size = 2 [(validate.rules).int32.gt = 0];
+  int32 size = 2;
 }
 
 message ListTokensResponse {
@@ -410,7 +392,7 @@ message ListTokensResponse {
 }
 
 message GetTokenRequest {
-  int64 id = 1;
+  int64 id = 1 [(validate.rules).int64.gt = 0];
 }
 
 message GetTokenResponse {

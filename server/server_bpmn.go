@@ -47,7 +47,7 @@ type bpmnGRPCServer struct {
 	processDao     *dao.ProcessDao
 }
 
-func newBpmnServer(ctx context.Context, lg *otelzap.Logger, sch *scheduler.Scheduler, definitionsDao *dao.DefinitionsDao, processDao *dao.ProcessDao) *bpmnGRPCServer {
+func newBpmnServer(ctx context.Context, lg *otelzap.Logger, sch *scheduler.Scheduler, definitionsDao *dao.DefinitionsDao, processDao *dao.ProcessDao) (*bpmnGRPCServer, error) {
 	wch := sch.Watch(ctx, "bpmn-grpc-rpc")
 	server := &bpmnGRPCServer{
 		ctx:            ctx,
@@ -57,7 +57,7 @@ func newBpmnServer(ctx context.Context, lg *otelzap.Logger, sch *scheduler.Sched
 		processDao:     processDao,
 	}
 	go server.process(wch)
-	return server
+	return server, nil
 }
 
 func (s *bpmnGRPCServer) DeployDefinition(ctx context.Context, req *pb.DeployDefinitionsRequest) (*pb.DeployDefinitionsResponse, error) {
@@ -136,8 +136,8 @@ func (s *bpmnGRPCServer) DeployDefinition(ctx context.Context, req *pb.DeployDef
 	return rsp, nil
 }
 
-func (s *bpmnGRPCServer) ListDefinitions(ctx context.Context, req *pb.ListDefinitionsRequest) (*pb.ListDefinitionsResponse, error) {
-	page, size := int(req.Page), int(req.Size)
+func (s *bpmnGRPCServer) ListDefinitions(ctx context.Context, in *pb.ListDefinitionsRequest) (*pb.ListDefinitionsResponse, error) {
+	page, size := getPageSize(in)
 	list, total, err := s.definitionsDao.PageList(ctx, page, size, nil)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -215,7 +215,7 @@ func (s *bpmnGRPCServer) ExecuteProcess(ctx context.Context, req *pb.ExecuteProc
 }
 
 func (s *bpmnGRPCServer) ListProcess(ctx context.Context, req *pb.ListProcessRequest) (*pb.ListProcessResponse, error) {
-	page, size := req.Page, req.Size
+	page, size := getPageSize(req)
 	options := dao.NewListProcessOptions(req.DefinitionsUid, req.DefinitionsVersion)
 	options.ProcessStatus = types.Process_ProcessStatus(req.ProcessStatus)
 	options.ProcessStage = types.Process_ProcessStage(req.ProcessStage)
