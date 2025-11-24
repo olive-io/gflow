@@ -54,21 +54,21 @@ func newDao[T any](db *dbutil.DB, target T) (*InnerDao[T], error) {
 	return dao, nil
 }
 
-func (r *InnerDao[T]) NewSession(ctx context.Context) *gorm.DB {
-	return r.db.Session(&gorm.Session{
+func (dao *InnerDao[T]) NewSession(ctx context.Context) *gorm.DB {
+	return dao.db.Session(&gorm.Session{
 		NewDB:       true,
 		Initialized: true,
 		Context:     ctx,
 	})
 }
 
-func (r *InnerDao[T]) Find(ctx context.Context, cond any) ([]*T, error) {
+func (dao *InnerDao[T]) Find(ctx context.Context, cond any) ([]*T, error) {
 
 	var err error
 
-	session := r.NewSession(ctx).Model(r.target)
+	session := dao.NewSession(ctx).Model(dao.target)
 	if cond != nil {
-		session = r.applyCond(session, cond)
+		session = dao.applyCond(session, cond)
 	}
 
 	results := make([]*T, 0)
@@ -79,11 +79,11 @@ func (r *InnerDao[T]) Find(ctx context.Context, cond any) ([]*T, error) {
 	return results, nil
 }
 
-func (r *InnerDao[T]) PageList(ctx context.Context, page, size int, cond any) ([]*T, int64, error) {
+func (dao *InnerDao[T]) PageList(ctx context.Context, page, size int, cond any) ([]*T, int64, error) {
 	var err error
 
-	session := r.NewSession(ctx).Model(r.target)
-	session = r.applyCond(session, cond)
+	session := dao.NewSession(ctx).Model(dao.target)
+	session = dao.applyCond(session, cond)
 
 	var total int64
 	if err = session.Count(&total).Error; err != nil {
@@ -101,20 +101,20 @@ func (r *InnerDao[T]) PageList(ctx context.Context, page, size int, cond any) ([
 	return list, total, nil
 }
 
-func (r *InnerDao[T]) Count(ctx context.Context, cond any) (int64, error) {
+func (dao *InnerDao[T]) Count(ctx context.Context, cond any) (int64, error) {
 
 	var total int64
 	var err error
-	session := r.NewSession(ctx).Model(r.target)
-	session = r.applyCond(session, cond)
+	session := dao.NewSession(ctx).Model(dao.target)
+	session = dao.applyCond(session, cond)
 	if err = session.Count(&total).Error; err != nil {
 		return 0, err
 	}
 	return total, nil
 }
 
-func (r *InnerDao[T]) Get(ctx context.Context, id int64) (*T, error) {
-	session := r.NewSession(ctx).Model(r.target)
+func (dao *InnerDao[T]) Get(ctx context.Context, id int64) (*T, error) {
+	session := dao.NewSession(ctx).Model(dao.target)
 
 	target := new(T)
 	err := session.Where("id = ?", id).First(&target).Error
@@ -124,11 +124,11 @@ func (r *InnerDao[T]) Get(ctx context.Context, id int64) (*T, error) {
 	return target, nil
 }
 
-func (r *InnerDao[T]) First(ctx context.Context, cond any) (*T, error) {
-	session := r.NewSession(ctx).Model(r.target)
+func (dao *InnerDao[T]) First(ctx context.Context, cond any) (*T, error) {
+	session := dao.NewSession(ctx).Model(dao.target)
 
 	if cond != nil {
-		session = r.applyCond(session, cond)
+		session = dao.applyCond(session, cond)
 	}
 
 	target := new(T)
@@ -139,8 +139,8 @@ func (r *InnerDao[T]) First(ctx context.Context, cond any) (*T, error) {
 	return target, nil
 }
 
-func (r *InnerDao[T]) Create(ctx context.Context, value *T) (int64, error) {
-	session := r.NewSession(ctx).Model(r.target)
+func (dao *InnerDao[T]) Create(ctx context.Context, value *T) (int64, error) {
+	session := dao.NewSession(ctx).Model(dao.target)
 	err := session.Create(value).Error
 	if err != nil {
 		return 0, err
@@ -148,8 +148,8 @@ func (r *InnerDao[T]) Create(ctx context.Context, value *T) (int64, error) {
 	return session.RowsAffected, nil
 }
 
-func (r *InnerDao[T]) Update(ctx context.Context, id int64, value any) error {
-	session := r.NewSession(ctx).Model(r.target)
+func (dao *InnerDao[T]) Update(ctx context.Context, id int64, value any) error {
+	session := dao.NewSession(ctx).Model(dao.target)
 
 	err := session.Where("id = ?", id).UpdateColumns(value).Error
 	if err != nil {
@@ -162,10 +162,10 @@ func (r *InnerDao[T]) Update(ctx context.Context, id int64, value any) error {
 	return nil
 }
 
-func (r *InnerDao[T]) Delete(ctx context.Context, id int64) error {
-	session := r.NewSession(ctx).Model(r.target)
+func (dao *InnerDao[T]) Delete(ctx context.Context, id int64) error {
+	session := dao.NewSession(ctx).Model(dao.target)
 
-	err := session.Delete(r.target, "id = ?", id).Error
+	err := session.Delete(dao.target, "id = ?", id).Error
 	if err != nil {
 		return err
 	}
@@ -176,7 +176,7 @@ func (r *InnerDao[T]) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *InnerDao[T]) applyCond(session *gorm.DB, cond any) *gorm.DB {
+func (dao *InnerDao[T]) applyCond(session *gorm.DB, cond any) *gorm.DB {
 	if cond != nil {
 		switch tv := cond.(type) {
 		case map[string]any:
@@ -205,7 +205,7 @@ func (r *InnerDao[T]) applyCond(session *gorm.DB, cond any) *gorm.DB {
 			}
 		case []*CondItem:
 			for _, item := range tv {
-				session = r.applyCond(session, item)
+				session = dao.applyCond(session, item)
 			}
 		default:
 			session = session.Where(cond)

@@ -33,6 +33,9 @@ const (
 	DefaultOperatorRole      = "operator"
 	DefaultAdministratorUser = "admin"
 	DefaultPassword          = "p@ssw0rd"
+
+	DefaultMaxFailedLoginRetry = 5
+	DefaultUserLockedDuration  = time.Minute
 )
 
 var (
@@ -50,19 +53,19 @@ type systemRole map[int64]*Role
 var SystemRoles = systemRole{
 	1: &Role{
 		Id:       1,
-		Type:     Role_Admin,
+		Type:     RoleType_Admin,
 		Name:     DefaultAdministratorRole,
 		Metadata: map[string]string{},
 	},
 	2: &Role{
 		Id:       2,
-		Type:     Role_System,
+		Type:     RoleType_System,
 		Name:     DefaultSystemRole,
 		Metadata: map[string]string{},
 	},
 	3: &Role{
 		Id:       3,
-		Type:     Role_Operator,
+		Type:     RoleType_Operator,
 		Name:     DefaultOperatorRole,
 		Metadata: map[string]string{},
 	},
@@ -152,6 +155,15 @@ func IsGflowAgent(ctx context.Context) bool {
 	return values[0] == defaultAgentValue
 }
 
+func (u *User) IsLocked() bool {
+	if u.Login == nil {
+		return false
+	}
+
+	after := time.Unix(u.Login.LockTimestamp, 0).Add(DefaultUserLockedDuration)
+	return u.Login.IsLocked != 0 && time.Now().Before(after)
+}
+
 func (u *User) SetPassword(password string) {
 	sha := sha512.New()
 	sha.Write([]byte(password))
@@ -177,7 +189,7 @@ func (u *UserInfo) IsAdmin() bool {
 	if role == nil {
 		return false
 	}
-	return role.Type == Role_Admin
+	return role.Type == RoleType_Admin
 }
 
 func (u *UserInfo) IsManager() bool {
@@ -186,7 +198,7 @@ func (u *UserInfo) IsManager() bool {
 		return false
 	}
 
-	return role.Type == Role_Admin || role.Type == Role_System
+	return role.Type == RoleType_Admin || role.Type == RoleType_System
 }
 
 func (u *UserInfo) IsUser() bool {
@@ -195,7 +207,7 @@ func (u *UserInfo) IsUser() bool {
 		return false
 	}
 
-	return role.Type == Role_Admin || role.Type == Role_System || role.Type == Role_Operator
+	return role.Type == RoleType_Admin || role.Type == RoleType_System || role.Type == RoleType_Operator
 }
 
 func GetUserInfo(ctx context.Context) (*UserInfo, bool) {

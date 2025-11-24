@@ -50,6 +50,25 @@ service AdminRPC {
     };
   }
 
+  rpc CreateRole(CreateRoleRequest) returns (CreateRoleResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/roles"
+      body: "*"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Role:post"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
   rpc GetRole(GetRoleRequest) returns (GetRoleResponse) {
     option (google.api.http) = {
       get: "/v1/admin/roles/{id}"
@@ -68,6 +87,43 @@ service AdminRPC {
     };
   }
 
+  rpc UpdateRole(UpdateRoleRequest) returns (UpdateRoleResponse) {
+    option (google.api.http) = {
+      patch: "/v1/admin/roles/{id}"
+      body: "*"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Role:patch"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
+  rpc DeleteRole(DeleteRoleRequest) returns (DeleteRoleResponse) {
+    option (google.api.http) = {
+      delete: "/v1/admin/roles/{id}"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["Role:delete"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
   rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
     option (google.api.http) = {
       get: "/v1/admin/users"
@@ -79,6 +135,25 @@ service AdminRPC {
             name: "bearerAuth",
             value: {
               value: ["User:get"],
+            }
+          }
+        }
+      ]
+    };
+  }
+
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/users"
+      body: "*"
+    };
+    option (openapi.v3.operation) = {
+      security: [
+        {
+          additional_properties: {
+            name: "bearerAuth",
+            value: {
+              value: ["User:post"],
             }
           }
         }
@@ -339,11 +414,43 @@ message ListRolesResponse {
   int64 total = 2;
 }
 
+message CreateRoleRequest {
+  types.RoleType type = 1;
+  string name = 2;
+  string display_name = 3;
+  string description = 4;
+  map<string, string> metadata = 5;
+}
+
+message CreateRoleResponse {
+  types.Role role = 1;
+}
+
 message GetRoleRequest {
   int64 id = 1 [(validate.rules).int64.gt = 0];
 }
 
 message GetRoleResponse {
+  types.Role role = 1;
+}
+
+message UpdateRoleRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  string name = 2;
+  string display_name = 3;
+  string description = 4;
+  map<string, string> metadata = 5;
+}
+
+message UpdateRoleResponse {
+  types.Role role = 1;
+}
+
+message DeleteRoleRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+message DeleteRoleResponse {
   types.Role role = 1;
 }
 
@@ -357,6 +464,19 @@ message ListUsersResponse {
   int64 total = 2;
 }
 
+message CreateUserRequest {
+  string username = 1;
+  string email = 2;
+  string description = 3;
+  map<string, string> metadata = 4;
+  string password = 5;
+  int64 role_id = 6;
+}
+
+message CreateUserResponse {
+  types.User user = 1;
+}
+
 message GetUserRequest {
   int64 id = 1 [(validate.rules).int64.gt = 0];
 }
@@ -367,6 +487,11 @@ message GetUserResponse {
 
 message UpdateUserRequest {
   int64 id = 1 [(validate.rules).int64.gt = 0];
+  string email = 2;
+  string description = 3;
+  map<string, string> metadata = 4;
+  string password = 5;
+  int32 init = 6;
 }
 
 message UpdateUserResponse {

@@ -28,6 +28,7 @@ import (
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	pb "github.com/olive-io/gflow/api/rpc"
@@ -112,6 +113,28 @@ func (s *adminGRPCServer) ListRoles(ctx context.Context, in *pb.ListRolesRequest
 	return resp, nil
 }
 
+func (s *adminGRPCServer) CreateRole(ctx context.Context, in *pb.CreateRoleRequest) (*pb.CreateRoleResponse, error) {
+	value, _ := s.roleDao.GetByName(ctx, in.Name)
+	if value != nil {
+		return nil, status.Errorf(codes.AlreadyExists, "role '%s' already exists", in.Name)
+	}
+
+	role := &types.Role{
+		Type:        in.Type,
+		Name:        in.Name,
+		DisplayName: in.DisplayName,
+		Description: in.Description,
+		Metadata:    in.Metadata,
+	}
+
+	if _, err := s.roleDao.Create(ctx, role); err != nil {
+		return nil, toGRPCErr(err)
+	}
+
+	resp := &pb.CreateRoleResponse{Role: role}
+	return resp, nil
+}
+
 func (s *adminGRPCServer) GetRole(ctx context.Context, in *pb.GetRoleRequest) (*pb.GetRoleResponse, error) {
 	role, err := s.roleDao.Get(ctx, in.Id)
 	if err != nil {
@@ -120,6 +143,64 @@ func (s *adminGRPCServer) GetRole(ctx context.Context, in *pb.GetRoleRequest) (*
 
 	resp := &pb.GetRoleResponse{Role: role}
 	return resp, nil
+}
+
+func (s *adminGRPCServer) UpdateRole(ctx context.Context, in *pb.UpdateRoleRequest) (*pb.UpdateRoleResponse, error) {
+	role, err := s.roleDao.Get(ctx, in.Id)
+	if err != nil {
+		return nil, toGRPCErr(err)
+	}
+
+	if in.Name != "" && in.Name != role.Name {
+		value, _ := s.roleDao.GetByName(ctx, in.Name)
+		if value != nil {
+			return nil, status.Errorf(codes.AlreadyExists, "role '%s' already exists", in.Name)
+		}
+
+		role.Name = in.Name
+	}
+	if in.DisplayName != "" {
+		role.DisplayName = in.DisplayName
+	}
+	if in.Description != "" {
+		role.Description = in.Description
+	}
+	if len(in.Metadata) != 0 {
+		role.Metadata = in.Metadata
+	}
+
+	if err = s.roleDao.Update(ctx, role.Id, role); err != nil {
+		return nil, toGRPCErr(err)
+	}
+
+	resp := &pb.UpdateRoleResponse{Role: role}
+	return resp, nil
+}
+
+func (s *adminGRPCServer) DeleteRole(ctx context.Context, in *pb.DeleteRoleRequest) (*pb.DeleteRoleResponse, error) {
+	if _, found := types.SystemRoles[in.Id]; found {
+		return nil, status.Error(codes.FailedPrecondition, "role not allowed to delete")
+	}
+
+	role, err := s.roleDao.Get(ctx, in.Id)
+	if err != nil {
+		return nil, toGRPCErr(err)
+	}
+
+	count, err := s.roleDao.RelationalUserCount(ctx, in.Id, nil)
+	if err != nil {
+		return nil, toGRPCErr(err)
+	}
+
+	if count != 0 {
+		return nil, status.Error(codes.FailedPrecondition, "other users related to this role")
+	}
+
+	if err = s.roleDao.Delete(ctx, in.Id); err != nil {
+		return nil, toGRPCErr(err)
+	}
+
+	return &pb.DeleteRoleResponse{Role: role}, nil
 }
 
 func (s *adminGRPCServer) ListUsers(ctx context.Context, in *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
@@ -137,12 +218,94 @@ func (s *adminGRPCServer) ListUsers(ctx context.Context, in *pb.ListUsersRequest
 	return resp, nil
 }
 
+func (s *adminGRPCServer) CreateUser(ctx context.Context, in *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
+	role, err := s.roleDao.Get(ctx, in.RoleId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "role not found")
+	}
+
+	value, _ := s.userDao.GetByName(ctx, in.Username)
+	if value != nil {
+		return nil, status.Errorf(codes.AlreadyExists, "user '%s' already exists", in.Username)
+	}
+
+	user := &types.User{
+		Username:    in.Username,
+		Email:       in.Email,
+		Description: in.Description,
+		Metadata:    in.Metadata,
+		RoleId:      role.Id,
+		Login:       &types.UserLoginSpec{},
+	}
+	user.SetPassword(in.Password)
+	if _, err = s.userDao.Create(ctx, user); err != nil {
+		return nil, toGRPCErr(err)
+	}
+
+	resp := &pb.CreateUserResponse{User: user}
+	return resp, nil
+}
+
 func (s *adminGRPCServer) GetUser(ctx context.Context, in *pb.GetUserRequest) (*pb.GetUserResponse, error) {
 	user, err := s.userDao.Get(ctx, in.Id)
 	if err != nil {
 		return nil, toGRPCErr(err)
 	}
 	resp := &pb.GetUserResponse{User: user}
+	return resp, nil
+}
+
+func (s *adminGRPCServer) UpdateUser(ctx context.Context, in *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
+	user, err := s.userDao.Get(ctx, in.Id)
+	if err != nil {
+		return nil, toGRPCErr(err)
+	}
+
+	if in.Email != "" {
+		user.Email = in.Email
+	}
+	if in.Description != "" {
+		user.Description = in.Description
+	}
+	if len(in.Metadata) != 0 {
+		user.Metadata = in.Metadata
+	}
+	if in.Password != "" {
+		user.SetPassword(in.Password)
+	}
+	if in.Init != 0 {
+		loginSpec := user.Login
+		if loginSpec == nil {
+			loginSpec = &types.UserLoginSpec{}
+		}
+		loginSpec.IsLocked = 0
+		loginSpec.LockTimestamp = 0
+		loginSpec.FailedRetry = 0
+	}
+
+	if err = s.userDao.Update(ctx, user.Id, user); err != nil {
+		return nil, toGRPCErr(err)
+	}
+
+	resp := &pb.UpdateUserResponse{User: user}
+	return resp, nil
+}
+
+func (s *adminGRPCServer) DeleteUser(ctx context.Context, in *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
+	user, err := s.userDao.Get(ctx, in.Id)
+	if err != nil {
+		return nil, toGRPCErr(err)
+	}
+
+	if user.Username == types.DefaultAdministratorUser {
+		return nil, status.Error(codes.FailedPrecondition, "administrator user not allowed to delete")
+	}
+
+	if err = s.userDao.Delete(ctx, in.Id); err != nil {
+		return nil, toGRPCErr(err)
+	}
+
+	resp := &pb.DeleteUserResponse{User: user}
 	return resp, nil
 }
 
@@ -207,11 +370,6 @@ func (s *adminGRPCServer) ListPolicies(ctx context.Context, req *pb.ListPolicies
 }
 
 func (s *adminGRPCServer) AddPolicy(ctx context.Context, req *pb.AddPolicyRequest) (*pb.AddPolicyResponse, error) {
-	userInfo, ok := types.GetUserInfo(ctx)
-	if !ok || userInfo.IsAdmin() {
-		return nil, status.Error(codes.PermissionDenied, "you are not admin")
-	}
-
 	rules := make([][]string, 0)
 
 	for _, p := range req.Policies {
@@ -253,6 +411,23 @@ func (s *adminGRPCServer) DeletePolicy(ctx context.Context, req *pb.DeletePolicy
 }
 
 func (s *adminGRPCServer) unaryInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Errorf(codes.InvalidArgument, "empty authorization")
+	}
+
+	httpPath := strings.Join(md.Get(httpPathKey), "")
+	if strings.HasPrefix(httpPath, "/v1/admin") {
+		userInfo, found := types.GetUserInfo(ctx)
+		if !found {
+			return nil, status.Errorf(codes.PermissionDenied, "unknown user")
+		}
+
+		if !userInfo.IsAdmin() {
+			return nil, status.Errorf(codes.PermissionDenied, "only admin can unary")
+		}
+	}
+
 	return handler(ctx, req)
 }
 

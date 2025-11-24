@@ -24,6 +24,7 @@ import (
 	"github.com/casbin/casbin/v2"
 	gwrt "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -66,23 +67,45 @@ func newAuthServer(ctx context.Context, lg *otelzap.Logger, enforcer *casbin.Enf
 }
 
 func (s *authGRPCServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
-
 	user, err := s.userDao.GetByName(ctx, req.Username)
 	if err != nil {
 		return nil, toGRPCErr(err)
 	}
 
+	if user.IsLocked() {
+		return nil, status.Error(codes.FailedPrecondition, "user is locked")
+	}
+
+	loginSpec := user.Login
+	if loginSpec == nil {
+		loginSpec = &types.UserLoginSpec{}
+	}
+
 	matched := user.VerifyPassword(req.Password)
 	if !matched {
+		loginSpec.FailedRetry += 1
+		if loginSpec.FailedRetry > types.DefaultMaxFailedLoginRetry {
+			loginSpec.FailedRetry = 0
+			loginSpec.IsLocked = 1
+			loginSpec.LockTimestamp = time.Now().Unix()
+		}
+		user.Login = loginSpec
+		if err = s.userDao.Update(ctx, user.Id, user); err != nil {
+			s.lg.Error("failed to update user", zap.Error(err))
+		}
 		return nil, status.Error(codes.InvalidArgument, "invalid password")
 	}
 
 	now := time.Now().Unix()
-
-	if user.FirstLogon == 0 {
-		user.FirstLogon = now
+	if loginSpec.FirstLogon == 0 {
+		loginSpec.FirstLogon = now
 	}
-	user.LastLogon = now
+	loginSpec.LastLogon = now
+	loginSpec.FailedRetry = 0
+	loginSpec.IsLocked = 0
+	loginSpec.LockTimestamp = 0
+	user.Login = loginSpec
+
 	if err = s.userDao.Update(ctx, user.Id, user); err != nil {
 		return nil, toGRPCErr(err)
 	}

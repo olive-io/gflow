@@ -17,6 +17,7 @@ limitations under the License.
 package dao
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/olive-io/gflow/api/types"
@@ -37,4 +38,52 @@ func NewRoleDao(db *dbutil.DB) (*RoleDao, error) {
 	}
 
 	return dao, nil
+}
+
+func (dao *RoleDao) GetByName(ctx context.Context, name string) (*types.Role, error) {
+	tx := dao.db.NewSession(ctx).Model(&types.Role{})
+
+	role := &types.Role{}
+	err := tx.Where("name = ?", name).First(role).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return role, nil
+}
+
+func (dao *RoleDao) RelationalUserCount(ctx context.Context, id int64, cond any) (int64, error) {
+	var err error
+
+	session := dao.NewSession(ctx).Model(dao.target)
+	session = dao.applyCond(session, cond).Where("role_id = ?", id)
+
+	var total int64
+	if err = session.Count(&total).Error; err != nil {
+		return total, err
+	}
+
+	return total, nil
+}
+
+func (dao *RoleDao) ListRelationUsers(ctx context.Context, id int64, page, size int, cond any) ([]*types.User, int64, error) {
+	var err error
+
+	session := dao.NewSession(ctx).Model(dao.target)
+	session = dao.applyCond(session, cond).Where("role_id = ?", id)
+
+	var total int64
+	if err = session.Count(&total).Error; err != nil {
+		return nil, total, err
+	}
+	if page > 0 && size > 0 {
+		session.Offset((page - 1) * size).Limit(size)
+	}
+
+	list := make([]*types.User, 0)
+	if err = session.Order("id desc").Find(&list).Error; err != nil {
+		return nil, total, err
+	}
+
+	return list, total, nil
 }

@@ -30,19 +30,19 @@ option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_sizecache_all) = false;
 option (gogoproto.goproto_getters_all) = false;
 
-message Role {
-  enum Type {
-    Unknown = 0;
-    Admin = 1;
-    System = 2;
-    Operator = 3;
-  }
+enum RoleType {
+  Unknown = 0;
+  Admin = 1;
+  System = 2;
+  Operator = 3;
+}
 
+message Role {
   int64 id = 1 [(tagger.tags) = "gorm:\"primary\""];
   int64 create_at = 2 [(tagger.tags) = "gorm:\"autoCreateTime\""];
   int64 update_at = 3 [(tagger.tags) = "gorm:\"autoUpdateTime\""];
 
-  Type type = 4;
+  RoleType type = 4;
 
   string name = 5;
 
@@ -71,11 +71,17 @@ message User {
 
   string hashed_password = 10;
 
-  int64 first_logon = 11;
+  int64 role_id = 11;
 
-  int64 last_logon = 12;
+  UserLoginSpec login = 12 [(tagger.tags) = "gorm:\"serializer:json\""];
+}
 
-  int64 role_id = 13;
+message UserLoginSpec {
+  int64 first_logon = 1;
+  int64 last_logon = 2;
+  int32 is_locked = 3;
+  int64 lock_timestamp = 4;
+  int32 failed_retry = 5;
 }
 
 message Token {
