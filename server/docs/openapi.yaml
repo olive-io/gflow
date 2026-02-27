@@ -5,7 +5,7 @@ openapi: 3.0.3
 info:
     title: Gflow
     description: Gflow OpenAPI3.0 Document
-    version: affe74951a7c5a44d8feeddbaa067aecd8ef0871
+    version: b3a5ecb8832380aef29337312a579f60665bcf0a
 paths:
     /v1/admin/interfaces:
         get:

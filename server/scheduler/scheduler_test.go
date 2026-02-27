@@ -33,6 +33,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/olive-io/gflow/api/types"
+	traceutil "github.com/olive-io/gflow/pkg/trace"
 )
 
 //go:embed testdata
@@ -55,7 +56,8 @@ func LoadTestFile(filename string, definitions any) {
 
 func TestScheduler(t *testing.T) {
 	lg := otelzap.New(zap.NewExample())
-	options := NewOptions(lg)
+	provider := traceutil.DefaultProvider()
+	options := NewOptions(lg, provider.Tracer("test"))
 	ctx := context.Background()
 	sche, err := NewScheduler(ctx, options)
 	if !assert.NoError(t, err) {
