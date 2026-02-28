@@ -32,17 +32,17 @@ var (
 )
 
 type Config struct {
-	Level                 string        `json:"level" toml:"level"`
-	Driver                string        `json:"driver" toml:"driver"`
-	DataRoot              string        `json:"data_root" toml:"data_root"`
-	Host                  string        `json:"host" toml:"host"`
-	Username              string        `json:"username" toml:"username"`
-	Password              string        `json:"password" toml:"password"`
-	Port                  int32         `json:"port" toml:"port"`
-	DBName                string        `json:"dbname" toml:"dbname"`
-	MaxIdleConnection     int           `json:"max_idle_connection" toml:"max_idle_connections"`
-	MaxOpenConnection     int           `json:"max_open_connection" toml:"max_open_connection"`
-	ConnectionMaxLifetime time.Duration `json:"connection_max_lifetime" toml:"connection_max_lifetime"`
+	Level                 string        `mapstructure:"level" json:"level" toml:"level"`
+	Driver                string        `mapstructure:"driver" json:"driver" toml:"driver"`
+	DataRoot              string        `mapstructure:"data_root" json:"data_root" toml:"data_root"`
+	Host                  string        `mapstructure:"host" json:"host" toml:"host"`
+	Username              string        `mapstructure:"username" json:"username" toml:"username"`
+	Password              string        `mapstructure:"password" json:"password" toml:"password"`
+	Port                  int32         `mapstructure:"port" json:"port" toml:"port"`
+	DBName                string        `mapstructure:"dbname" json:"dbname" toml:"dbname"`
+	MaxIdleConnection     int           `mapstructure:"max_idle_connections" json:"max_idle_connection" toml:"max_idle_connections"`
+	MaxOpenConnection     int           `mapstructure:"max_open_connection" json:"max_open_connection" toml:"max_open_connection"`
+	ConnectionMaxLifetime time.Duration `mapstructure:"connection_max_lifetime" json:"connection_max_lifetime" toml:"connection_max_lifetime"`
 }
 
 func NewConfig() *Config {

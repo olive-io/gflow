@@ -69,7 +69,7 @@ type Scheduler struct {
 	engine *bpmn.Engine
 
 	wmu      sync.RWMutex
-	watchers map[string]*WatchChan
+	watchers map[string]WatchChan
 }
 
 func NewScheduler(pctx context.Context, options *Options) (*Scheduler, error) {
@@ -113,7 +113,7 @@ func NewScheduler(pctx context.Context, options *Options) (*Scheduler, error) {
 		queue:       queue,
 		executePool: executePool,
 		engine:      engine,
-		watchers:    make(map[string]*WatchChan),
+		watchers:    make(map[string]WatchChan),
 	}
 
 	go scheduler.process(ctx)
@@ -133,7 +133,7 @@ func (sch *Scheduler) Execute(stat *ProcessStat) error {
 	return nil
 }
 
-func (sch *Scheduler) Watch(ctx context.Context, id string) *WatchChan {
+func (sch *Scheduler) Watch(ctx context.Context, id string) WatchChan {
 	sch.lg.Sugar().Infof("add new watcher [%s]", id)
 
 	wch := newWatchChan(ctx, id, sch.lg, sch.ctx.Done())
@@ -654,7 +654,7 @@ func (sch *Scheduler) sendWatchMsg(msg *WatchMessage) {
 			deleted = append(deleted, name)
 			continue
 		}
-		w.send(msg)
+		w.Send(msg)
 	}
 	sch.wmu.RUnlock()
 

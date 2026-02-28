@@ -249,7 +249,7 @@ func (s *bpmnGRPCServer) GetProcess(ctx context.Context, req *pb.GetProcessReque
 	return rsp, nil
 }
 
-func (s *bpmnGRPCServer) process(wch *scheduler.WatchChan) {
+func (s *bpmnGRPCServer) process(wch scheduler.WatchChan) {
 	lg := s.lg
 	ctx := s.ctx
 	for {
@@ -260,7 +260,7 @@ func (s *bpmnGRPCServer) process(wch *scheduler.WatchChan) {
 		default:
 		}
 
-		rsp := wch.Next()
+		rsp := wch.Recv()
 		if rsp.Err != nil {
 			continue
 		}

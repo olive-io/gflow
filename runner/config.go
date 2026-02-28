@@ -27,6 +27,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	json "github.com/bytedance/sonic"
+	"github.com/spf13/viper"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"sigs.k8s.io/yaml"
 
@@ -43,21 +44,21 @@ var (
 type Config struct {
 	once sync.Once
 
-	ID      string `json:"id" toml:"id"`
-	Targets string `json:"targets" toml:"targets"`
+	ID      string `mapstructure:"id" json:"id" toml:"id"`
+	Targets string `mapstructure:"targets" json:"targets" toml:"targets"`
 
-	CertFile   string `json:"cert_file" toml:"cert_file"`
-	KeyFile    string `json:"key_file" toml:"key_file"`
-	CaFile     string `json:"ca_file" toml:"ca_file"`
-	ServerName string `json:"server_name" toml:"server_name"`
+	CertFile   string `mapstructure:"cert_file" json:"cert_file" toml:"cert_file"`
+	KeyFile    string `mapstructure:"key_file" json:"key_file" toml:"key_file"`
+	CaFile     string `mapstructure:"ca_file" json:"ca_file" toml:"ca_file"`
+	ServerName string `mapstructure:"server_name" json:"server_name" toml:"server_name"`
 
-	HeartBeatInterval time.Duration `json:"heartbeat_interval" toml:"heartbeat_interval"`
+	HeartBeatInterval time.Duration `mapstructure:"heartbeat_interval" json:"heartbeat_interval" toml:"heartbeat_interval"`
 
-	Metadata map[string]string `json:"metadata" toml:"metadata"`
+	Metadata map[string]string `mapstructure:"metadata" json:"metadata" toml:"metadata"`
 
-	Log *logutil.LogConfig `json:"log" toml:"log"`
+	Log *logutil.LogConfig `mapstructure:"log" json:"log" toml:"log"`
 
-	Trace *traceutil.Config `json:"trace" toml:"trace"`
+	Trace *traceutil.Config `mapstructure:"trace" json:"trace" toml:"trace"`
 }
 
 func NewConfig() *Config {
@@ -106,20 +107,18 @@ func (cfg *Config) init() error {
 
 func FromConfigPath(filename string) (*Config, error) {
 	var cfg Config
-	var err error
-	ext := filepath.Ext(filename)
-	switch ext {
-	case ".toml":
-		_, err = toml.DecodeFile(filename, &cfg)
-	case ".yaml", ".yml":
-		err = yaml.Unmarshal([]byte(filename), &cfg)
-	case ".json":
-		err = json.Unmarshal([]byte(filename), &cfg)
-	default:
-		return nil, fmt.Errorf("invalid config format: %s", ext)
+
+	v := viper.New()
+	v.SetDefault("id", DefaultID)
+	v.SetDefault("targets", DefaultTargets)
+	v.SetDefault("heartbeat_interval", DefaultHeartBeatInterval)
+	v.SetConfigFile(filename)
+
+	if err := v.ReadInConfig(); err != nil {
+		return nil, fmt.Errorf("read config %q: %w", filename, err)
 	}
-	if err != nil {
-		return nil, err
+	if err := v.Unmarshal(&cfg); err != nil {
+		return nil, fmt.Errorf("decode config %q: %w", filename, err)
 	}
 
 	return &cfg, nil

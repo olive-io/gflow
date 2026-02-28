@@ -315,10 +315,33 @@ func extractTask(task Task, options *plugins.RegisterOptions) (*types.Endpoint, 
 func extractFunc(fn any, options *plugins.RegisterOptions) (*types.Endpoint, *fnProxy, error) {
 	rv := reflect.ValueOf(fn)
 	rt := rv.Type()
-	if rt.Kind() != reflect.Func {
-		return nil, nil, fmt.Errorf("must be a function")
+	if err := validateFunction(rt); err != nil {
+		return nil, nil, err
 	}
 
+	endpoint, taskFn := createEndpointAndProxy(rv, options)
+
+	if err := processRequestOptions(options, rt, endpoint, taskFn); err != nil {
+		return nil, nil, err
+	}
+
+	if err := processResponseOptions(options, rt, endpoint); err != nil {
+		return nil, nil, err
+	}
+
+	return endpoint, taskFn, nil
+}
+
+// validateFunction validates that the provided type is a function
+func validateFunction(rt reflect.Type) error {
+	if rt.Kind() != reflect.Func {
+		return fmt.Errorf("must be a function")
+	}
+	return nil
+}
+
+// createEndpointAndProxy creates a new endpoint and fnProxy for the function
+func createEndpointAndProxy(rv reflect.Value, options *plugins.RegisterOptions) (*types.Endpoint, *fnProxy) {
 	endpoint := &types.Endpoint{
 		TaskType:    options.FlowType,
 		Type:        options.Type,
@@ -344,170 +367,231 @@ func extractFunc(fn any, options *plugins.RegisterOptions) (*types.Endpoint, *fn
 		name = options.Name
 	}
 	endpoint.Name = name
-
 	taskFn.name = name
 
+	return endpoint, taskFn
+}
+
+// processRequestOptions processes request-related options and function inputs
+func processRequestOptions(options *plugins.RegisterOptions, rt reflect.Type, endpoint *types.Endpoint, taskFn *fnProxy) error {
 	if options.Request != nil {
-		headers, properties, dataObjects, matched := plugins.ExtractInOrOut(options.Request)
-		if !matched {
-			return nil, nil, fmt.Errorf("bad request")
+		return processExplicitRequest(options, endpoint, taskFn)
+	}
+	return processFunctionInputs(rt, endpoint, taskFn)
+}
+
+// processExplicitRequest processes explicit request options
+func processExplicitRequest(options *plugins.RegisterOptions, endpoint *types.Endpoint, taskFn *fnProxy) error {
+	headers, properties, dataObjects, matched := plugins.ExtractInOrOut(options.Request)
+	if !matched {
+		return fmt.Errorf("bad request")
+	}
+	endpoint.Headers = headers
+	endpoint.Properties = properties
+	endpoint.DataObjects = dataObjects
+
+	taskFn.args = append(taskFn.args, reflect.TypeOf(options.Request))
+	return nil
+}
+
+// processFunctionInputs processes function input parameters
+func processFunctionInputs(rt reflect.Type, endpoint *types.Endpoint, taskFn *fnProxy) error {
+	switch rt.NumIn() {
+	case 0:
+		return nil
+	case 1:
+		return processSingleInput(rt.In(0), endpoint, taskFn)
+	case 2:
+		return processTwoInputs(rt, endpoint, taskFn)
+	default:
+		return processMultipleInputs(rt, endpoint, taskFn)
+	}
+}
+
+// processSingleInput processes a function with a single input parameter
+func processSingleInput(in reflect.Type, endpoint *types.Endpoint, taskFn *fnProxy) error {
+	if !isContext(in) {
+		if isStruct(in) {
+			inImpl := reflect.New(in.Elem()).Interface()
+			headers, properties, dataObjects, matched := plugins.ExtractInOrOut(inImpl)
+			if matched {
+				taskFn.containsReq = true
+				endpoint.Headers = headers
+				endpoint.Properties = properties
+				endpoint.DataObjects = dataObjects
+			}
+		} else {
+			tv, ok := plugins.ExtractReflectType(in)
+			if ok {
+				endpoint.Properties["p0"] = tv
+			}
 		}
-		endpoint.Headers = headers
-		endpoint.Properties = properties
-		endpoint.DataObjects = dataObjects
-
-		taskFn.args = append(taskFn.args, reflect.TypeOf(options.Request))
+		taskFn.args = append(taskFn.args, in)
 	} else {
-		switch rt.NumIn() {
-		case 0:
-		case 1:
-			in := rt.In(0)
-			if !isContext(in) {
-				if isStruct(in) {
-					inImpl := reflect.New(in.Elem()).Interface()
-					headers, properties, dataObjects, matched := plugins.ExtractInOrOut(inImpl)
-					if matched {
-						taskFn.containsReq = true
-						endpoint.Headers = headers
-						endpoint.Properties = properties
-						endpoint.DataObjects = dataObjects
-					}
-				} else {
-					tv, ok := plugins.ExtractReflectType(in)
-					if ok {
-						endpoint.Properties["p0"] = tv
-					}
-				}
-				taskFn.args = append(taskFn.args, in)
-			} else {
-				taskFn.ctxIsFirst = true
-			}
-		case 2:
-			if isContext(rt.In(0)) {
-				taskFn.ctxIsFirst = true
-				in := rt.In(1)
-				taskFn.args = append(taskFn.args, in)
-				if isStruct(in) {
-					inImpl := reflect.New(in.Elem()).Interface()
-					headers, properties, dataObjects, matched := plugins.ExtractInOrOut(inImpl)
-					if matched {
-						taskFn.containsReq = true
-						endpoint.Headers = headers
-						endpoint.Properties = properties
-						endpoint.DataObjects = dataObjects
-					}
-				} else {
-					tv, ok := plugins.ExtractReflectType(in)
-					if ok {
-						endpoint.Properties["p0"] = tv
-					}
-				}
-			} else {
-				p := 0
-				for i := 0; i < rt.NumIn(); i++ {
-					in := rt.In(i)
-					taskFn.args = append(taskFn.args, in)
+		taskFn.ctxIsFirst = true
+	}
+	return nil
+}
 
-					tv, ok := plugins.ExtractReflectType(in)
-					if ok {
-						endpoint.Properties[fmt.Sprintf("p%d", p)] = tv
-						p += 1
-					}
-				}
+// processTwoInputs processes a function with two input parameters
+func processTwoInputs(rt reflect.Type, endpoint *types.Endpoint, taskFn *fnProxy) error {
+	if isContext(rt.In(0)) {
+		taskFn.ctxIsFirst = true
+		in := rt.In(1)
+		taskFn.args = append(taskFn.args, in)
+		if isStruct(in) {
+			inImpl := reflect.New(in.Elem()).Interface()
+			headers, properties, dataObjects, matched := plugins.ExtractInOrOut(inImpl)
+			if matched {
+				taskFn.containsReq = true
+				endpoint.Headers = headers
+				endpoint.Properties = properties
+				endpoint.DataObjects = dataObjects
 			}
-		default:
-			p := 0
-			for i := 0; i < rt.NumIn(); i++ {
-				in := rt.In(i)
-				if isContext(in) {
-					continue
-				}
+		} else {
+			tv, ok := plugins.ExtractReflectType(in)
+			if ok {
+				endpoint.Properties["p0"] = tv
+			}
+		}
+	} else {
+		p := 0
+		for i := 0; i < rt.NumIn(); i++ {
+			in := rt.In(i)
+			taskFn.args = append(taskFn.args, in)
 
-				taskFn.args = append(taskFn.args, in)
-				tv, ok := plugins.ExtractReflectType(in)
-				if ok {
-					endpoint.Properties[fmt.Sprintf("p%d", p)] = tv
-					p += 1
-				}
+			tv, ok := plugins.ExtractReflectType(in)
+			if ok {
+				endpoint.Properties[fmt.Sprintf("p%d", p)] = tv
+				p += 1
 			}
 		}
 	}
+	return nil
+}
 
+// processMultipleInputs processes a function with multiple input parameters
+func processMultipleInputs(rt reflect.Type, endpoint *types.Endpoint, taskFn *fnProxy) error {
+	p := 0
+	for i := 0; i < rt.NumIn(); i++ {
+		in := rt.In(i)
+		if isContext(in) {
+			continue
+		}
+
+		taskFn.args = append(taskFn.args, in)
+		tv, ok := plugins.ExtractReflectType(in)
+		if ok {
+			endpoint.Properties[fmt.Sprintf("p%d", p)] = tv
+			p += 1
+		}
+	}
+	return nil
+}
+
+// processResponseOptions processes response-related options and function outputs
+func processResponseOptions(options *plugins.RegisterOptions, rt reflect.Type, endpoint *types.Endpoint) error {
 	if options.Response != nil {
-		_, properties, _, matched := plugins.ExtractInOrOut(options.Response)
-		if !matched {
-			return nil, nil, fmt.Errorf("bad response")
-		}
-		endpoint.Results = properties
-	} else {
-		switch rt.NumOut() {
-		case 0:
-		case 1:
-			if !isErr(rt.Out(0)) {
-				out := rt.Out(0)
-				if isStruct(out) {
-					outImpl := reflect.New(out).Interface()
-					_, properties, _, matched := plugins.ExtractInOrOut(outImpl)
-					if matched {
-						endpoint.Results = properties
-					}
-				} else {
-					tv, ok := plugins.ExtractReflectType(out)
-					if ok {
-						endpoint.Results["r0"] = tv
-					}
-				}
-			}
-		case 2:
-			if isErr(rt.Out(1)) {
-				out := rt.Out(0)
-				if isStruct(out) {
-					outImpl := reflect.New(out).Interface()
-					_, properties, _, matched := plugins.ExtractInOrOut(outImpl)
-					if matched {
-						endpoint.Results = properties
-					}
-				} else {
-					tv, ok := plugins.ExtractReflectType(out)
-					if ok {
-						endpoint.Results["r0"] = tv
-					}
-				}
-			} else {
-				p := 0
-				for i := 0; i < rt.NumOut(); i++ {
-					out := rt.Out(i)
-					if isErr(out) {
-						continue
-					}
+		return processExplicitResponse(options, endpoint)
+	}
+	return processFunctionOutputs(rt, endpoint)
+}
 
-					tv, ok := plugins.ExtractReflectType(out)
-					if ok {
-						key := fmt.Sprintf("r%d", p)
-						endpoint.Results[key] = tv
-						p += 1
-					}
-				}
-			}
-		default:
-			p := 0
-			for i := 0; i < rt.NumOut(); i++ {
-				out := rt.Out(i)
-				if isErr(out) {
-					continue
-				}
+// processExplicitResponse processes explicit response options
+func processExplicitResponse(options *plugins.RegisterOptions, endpoint *types.Endpoint) error {
+	_, properties, _, matched := plugins.ExtractInOrOut(options.Response)
+	if !matched {
+		return fmt.Errorf("bad response")
+	}
+	endpoint.Results = properties
+	return nil
+}
 
-				tv, ok := plugins.ExtractReflectType(out)
-				if ok {
-					key := fmt.Sprintf("r%d", p)
-					endpoint.Results[key] = tv
-					p += 1
-				}
+// processFunctionOutputs processes function return values
+func processFunctionOutputs(rt reflect.Type, endpoint *types.Endpoint) error {
+	switch rt.NumOut() {
+	case 0:
+		return nil
+	case 1:
+		return processSingleOutput(rt.Out(0), endpoint)
+	case 2:
+		return processTwoOutputs(rt, endpoint)
+	default:
+		return processMultipleOutputs(rt, endpoint)
+	}
+}
+
+// processSingleOutput processes a function with a single return value
+func processSingleOutput(out reflect.Type, endpoint *types.Endpoint) error {
+	if !isErr(out) {
+		if isStruct(out) {
+			outImpl := reflect.New(out).Interface()
+			_, properties, _, matched := plugins.ExtractInOrOut(outImpl)
+			if matched {
+				endpoint.Results = properties
+			}
+		} else {
+			tv, ok := plugins.ExtractReflectType(out)
+			if ok {
+				endpoint.Results["r0"] = tv
 			}
 		}
 	}
+	return nil
+}
 
-	return endpoint, taskFn, nil
+// processTwoOutputs processes a function with two return values
+func processTwoOutputs(rt reflect.Type, endpoint *types.Endpoint) error {
+	if isErr(rt.Out(1)) {
+		out := rt.Out(0)
+		if isStruct(out) {
+			outImpl := reflect.New(out).Interface()
+			_, properties, _, matched := plugins.ExtractInOrOut(outImpl)
+			if matched {
+				endpoint.Results = properties
+			}
+		} else {
+			tv, ok := plugins.ExtractReflectType(out)
+			if ok {
+				endpoint.Results["r0"] = tv
+			}
+		}
+	} else {
+		p := 0
+		for i := 0; i < rt.NumOut(); i++ {
+			out := rt.Out(i)
+			if isErr(out) {
+				continue
+			}
+
+			tv, ok := plugins.ExtractReflectType(out)
+			if ok {
+				key := fmt.Sprintf("r%d", p)
+				endpoint.Results[key] = tv
+				p += 1
+			}
+		}
+	}
+	return nil
+}
+
+// processMultipleOutputs processes a function with multiple return values
+func processMultipleOutputs(rt reflect.Type, endpoint *types.Endpoint) error {
+	p := 0
+	for i := 0; i < rt.NumOut(); i++ {
+		out := rt.Out(i)
+		if isErr(out) {
+			continue
+		}
+
+		tv, ok := plugins.ExtractReflectType(out)
+		if ok {
+			key := fmt.Sprintf("r%d", p)
+			endpoint.Results[key] = tv
+			p += 1
+		}
+	}
+	return nil
 }
 
 func isContext(rt reflect.Type) bool {

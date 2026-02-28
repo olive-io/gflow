@@ -27,6 +27,7 @@ import (
 	"sync"
 
 	"github.com/BurntSushi/toml"
+	"github.com/spf13/viper"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"sigs.k8s.io/yaml"
 
@@ -57,85 +58,88 @@ m = g(r.sub, p.sub) && keyMatch4(r.obj, p.obj) && regexMatch(r.act, p.act) || r.
 )
 
 type TLS struct {
-	CaFile   string `json:"ca_file" toml:"ca_file"`
-	CertFile string `json:"cert_file" toml:"cert_file"`
-	KeyFile  string `json:"key_file" toml:"key_file"`
+	CaFile   string `mapstructure:"ca_file" json:"ca_file" toml:"ca_file"`
+	CertFile string `mapstructure:"cert_file" json:"cert_file" toml:"cert_file"`
+	KeyFile  string `mapstructure:"key_file" json:"key_file" toml:"key_file"`
 }
 
 type ServerConfig struct {
-	ID     string `json:"id" toml:"id"`
-	Listen string `json:"listen" toml:"listen"`
-	TLS    *TLS   `json:"tls" toml:"tls"`
+	ID     string `mapstructure:"id" json:"id" toml:"id"`
+	Listen string `mapstructure:"listen" json:"listen" toml:"listen"`
+	TLS    *TLS   `mapstructure:"tls" json:"tls" toml:"tls"`
 
-	AuthorityModel string `toml:"authority_model" json:"authority_model"`
+	AuthorityModel string `mapstructure:"authority_model" toml:"authority_model" json:"authority_model"`
 }
 
 type GatewayConfig struct {
-	CertFile   string `json:"cert_file" toml:"cert_file"`
-	KeyFile    string `json:"key_file" toml:"key_file"`
-	CaFile     string `json:"ca_file" toml:"ca_file"`
-	ServerName string `json:"server_name" toml:"server_name"`
+	CertFile   string `mapstructure:"cert_file" json:"cert_file" toml:"cert_file"`
+	KeyFile    string `mapstructure:"key_file" json:"key_file" toml:"key_file"`
+	CaFile     string `mapstructure:"ca_file" json:"ca_file" toml:"ca_file"`
+	ServerName string `mapstructure:"server_name" json:"server_name" toml:"server_name"`
 }
 
 type MessageQueueConfig struct {
-	Name     string          `json:"name" toml:"name"`
-	RabbitMQ *RabbitMQConfig `json:"rabbitmq" toml:"rabbitmq"`
+	Name     string          `mapstructure:"name" json:"name" toml:"name"`
+	RabbitMQ *RabbitMQConfig `mapstructure:"rabbitmq" json:"rabbitmq" toml:"rabbitmq"`
 }
 
 type RabbitMQConfig struct {
-	Username string `json:"username" toml:"username"`
-	Password string `json:"password" toml:"password"`
+	Username string `mapstructure:"username" json:"username" toml:"username"`
+	Password string `mapstructure:"password" json:"password" toml:"password"`
 	// rabbit host and port (localhost:5672)
-	Host string `json:"host" toml:"host"`
+	Host string `mapstructure:"host" json:"host" toml:"host"`
 }
 
 type EmailConfig struct {
-	Name string `json:"name" toml:"name"`
+	Name string `mapstructure:"name" json:"name" toml:"name"`
 	// email server and port
-	Host     string `json:"host" toml:"host"`
-	Username string `json:"username" toml:"username"`
-	Secret   string `json:"secret" toml:"secret"`
+	Host     string `mapstructure:"host" json:"host" toml:"host"`
+	Username string `mapstructure:"username" json:"username" toml:"username"`
+	Secret   string `mapstructure:"secret" json:"secret" toml:"secret"`
 }
 
 type PluginConfig struct {
-	SendTask    *SendTaskPluginConfig    `json:"sendTask" toml:"sendTask"`
-	ReceiveTask *ReceiveTaskPluginConfig `json:"receiveTask" toml:"receiveTask"`
-	ScriptTask  *ScriptTaskPluginConfig  `json:"scriptTask" toml:"scriptTask"`
+	SendTask    *SendTaskPluginConfig    `mapstructure:"sendTask" json:"sendTask" toml:"sendTask"`
+	ReceiveTask *ReceiveTaskPluginConfig `mapstructure:"receiveTask" json:"receiveTask" toml:"receiveTask"`
+	ScriptTask  *ScriptTaskPluginConfig  `mapstructure:"scriptTask" json:"scriptTask" toml:"scriptTask"`
 }
 
 type RabbitMQConfigWithRef struct {
-	*RabbitMQConfig `json:",inline" toml:",inline"`
+	*RabbitMQConfig `mapstructure:",squash" json:",inline" toml:",inline"`
 
-	Ref string `json:"ref" toml:"ref"`
+	Ref string `mapstructure:"ref" json:"ref" toml:"ref"`
 }
 
 type SendTaskPluginConfig struct {
-	RabbitMQ *RabbitMQConfigWithRef `json:"rabbitmq" toml:"rabbitmq"`
+	RabbitMQ *RabbitMQConfigWithRef `mapstructure:"rabbitmq" json:"rabbitmq" toml:"rabbitmq"`
 }
 
 type ReceiveTaskPluginConfig struct {
-	RabbitMQ *RabbitMQConfigWithRef `json:"rabbitmq" toml:"rabbitmq"`
+	RabbitMQ *RabbitMQConfigWithRef `mapstructure:"rabbitmq" json:"rabbitmq" toml:"rabbitmq"`
 }
 
 type ScriptTaskPluginConfig struct {
+	Timeout int      `mapstructure:"timeout" json:"timeout" toml:"timeout"`
+	Shell   string   `mapstructure:"shell" json:"shell" toml:"shell"`
+	Args    []string `mapstructure:"args" json:"args" toml:"args"`
 }
 
 type Config struct {
 	once sync.Once
 
-	Server   ServerConfig   `json:"server" toml:"server"`
-	Gateway  *GatewayConfig `json:"gateway" toml:"gateway"`
-	Database *dbutil.Config `json:"database" toml:"database"`
+	Server   ServerConfig   `mapstructure:"server" json:"server" toml:"server"`
+	Gateway  *GatewayConfig `mapstructure:"gateway" json:"gateway" toml:"gateway"`
+	Database *dbutil.Config `mapstructure:"database" json:"database" toml:"database"`
 
-	Log *logutil.LogConfig `json:"log" toml:"log"`
+	Log *logutil.LogConfig `mapstructure:"log" json:"log" toml:"log"`
 
-	Trace *traceutil.Config `json:"trace" toml:"trace"`
+	Trace *traceutil.Config `mapstructure:"trace" json:"trace" toml:"trace"`
 
-	Plugin *PluginConfig `json:"plugin" toml:"plugin"`
+	Plugin *PluginConfig `mapstructure:"plugin" json:"plugin" toml:"plugin"`
 
-	MQ []MessageQueueConfig `json:"mq" toml:"mq"`
+	MQ []MessageQueueConfig `mapstructure:"mq" json:"mq" toml:"mq"`
 
-	Email []EmailConfig `json:"email" toml:"email"`
+	Email []EmailConfig `mapstructure:"email" json:"email" toml:"email"`
 }
 
 func NewConfig() *Config {
@@ -210,20 +214,16 @@ func (cfg *Config) init() error {
 
 func FromPath(filename string) (*Config, error) {
 	var cfg Config
-	var err error
-	ext := filepath.Ext(filename)
-	switch ext {
-	case ".toml":
-		_, err = toml.DecodeFile(filename, &cfg)
-	case ".yaml", ".yml":
-		err = yaml.Unmarshal([]byte(filename), &cfg)
-	case ".json":
-		err = json.Unmarshal([]byte(filename), &cfg)
-	default:
-		return nil, fmt.Errorf("invalid config format: %s", ext)
+
+	v := viper.New()
+	v.SetConfigFile(filename)
+	v.SetDefault("server.listen", DefaultListenAddr)
+
+	if err := v.ReadInConfig(); err != nil {
+		return nil, fmt.Errorf("read config %q: %w", filename, err)
 	}
-	if err != nil {
-		return nil, err
+	if err := v.Unmarshal(&cfg); err != nil {
+		return nil, fmt.Errorf("decode config %q: %w", filename, err)
 	}
 
 	return &cfg, nil
@@ -255,8 +255,8 @@ func (cfg *Config) Save(filename string) error {
 }
 
 func (cfg *Config) FormatPluginConfig() (*PluginConfig, error) {
-	if cfg.Plugin == nil || cfg.Plugin.SendTask == nil {
-		return nil, fmt.Errorf("send task plugin config is required")
+	if cfg.Plugin == nil {
+		return nil, fmt.Errorf("plugin config is required")
 	}
 
 	if sc := cfg.Plugin.SendTask; sc != nil {

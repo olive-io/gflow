@@ -36,7 +36,14 @@ type WatchMessage struct {
 	FlowNode *types.FlowNode
 }
 
-type WatchChan struct {
+type WatchChan interface {
+	Send(*WatchMessage)
+	Recv() *WatchMessage
+	IsClosed() bool
+	Close()
+}
+
+type watchChan struct {
 	ctx context.Context
 
 	name string
@@ -48,8 +55,8 @@ type WatchChan struct {
 	closed <-chan struct{}
 }
 
-func newWatchChan(ctx context.Context, name string, lg *otelzap.Logger, closed <-chan struct{}) *WatchChan {
-	w := &WatchChan{
+func newWatchChan(ctx context.Context, name string, lg *otelzap.Logger, closed <-chan struct{}) *watchChan {
+	w := &watchChan{
 		ctx:    ctx,
 		name:   name,
 		lg:     lg,
@@ -60,7 +67,7 @@ func newWatchChan(ctx context.Context, name string, lg *otelzap.Logger, closed <
 	return w
 }
 
-func (w *WatchChan) send(msg *WatchMessage) {
+func (w *watchChan) Send(msg *WatchMessage) {
 	select {
 	case <-w.ctx.Done():
 	case <-w.done:
@@ -69,7 +76,7 @@ func (w *WatchChan) send(msg *WatchMessage) {
 	}
 }
 
-func (w *WatchChan) Next() *WatchMessage {
+func (w *watchChan) Recv() *WatchMessage {
 	select {
 	case <-w.ctx.Done():
 		return &WatchMessage{Err: w.ctx.Err()}
@@ -85,7 +92,7 @@ func (w *WatchChan) Next() *WatchMessage {
 	}
 }
 
-func (w *WatchChan) IsClosed() bool {
+func (w *watchChan) IsClosed() bool {
 	select {
 	case <-w.ctx.Done():
 		return true
@@ -96,7 +103,7 @@ func (w *WatchChan) IsClosed() bool {
 	}
 }
 
-func (w *WatchChan) Close() {
+func (w *watchChan) Close() {
 	select {
 	case <-w.done:
 		return

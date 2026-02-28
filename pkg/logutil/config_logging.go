@@ -42,20 +42,20 @@ var (
 
 type LogConfig struct {
 	// Level configures log level. Only supports debug, info, warn, error, panic, or fatal. Default 'info'.
-	Level string `json:"level" toml:"level"`
+	Level string `mapstructure:"level" json:"level" toml:"level"`
 	// Format configures log format. Only supports json, console
-	Format string `json:"format" toml:"format"`
+	Format string `mapstructure:"format" json:"format" toml:"format"`
 	// LogOutputs is either:
 	//  - "default" as os.Stderr,
 	//  - "stderr" as os.Stderr,
 	//  - "stdout" as os.Stdout,
 	//  - file path to append server logs to.
 	// It can be multiple when "Logger" is zap.
-	Outputs []string `json:"outputs" toml:"outputs"`
+	Outputs []string `mapstructure:"outputs" json:"outputs" toml:"outputs"`
 	// Rotation is a passthrough allowing a log rotation JSON config to be passed directly.
-	Rotation *LogRotationConfig `json:"rotation" toml:"rotation"`
+	Rotation *LogRotationConfig `mapstructure:"rotation" json:"rotation" toml:"rotation"`
 	// ZapLoggerBuilder is used to build the zap logger.
-	ZapLoggerBuilder func(*LogConfig) error `json:"-" toml:"-"`
+	ZapLoggerBuilder func(*LogConfig) error `mapstructure:"-" json:"-" toml:"-"`
 
 	// logger logs server-side operations. The default is nil,
 	// and "setupLogging" must be called before starting server.
@@ -71,11 +71,11 @@ type LogConfig struct {
 // LocalTime: false // use computers local time, UTC by default
 // Compress: false // compress the rotated log in gzip format
 type LogRotationConfig struct {
-	MaxSize    int  `json:"max-size" toml:"max-size"`
-	MaxAge     int  `json:"max-age" toml:"max-age"`
-	MaxBackups int  `json:"max-backups" toml:"max-backups"`
-	LocalTime  bool `json:"localtime" toml:"localtime"`
-	Compress   bool `json:"compress" toml:"compress"`
+	MaxSize    int  `mapstructure:"max-size" json:"max-size" toml:"max-size"`
+	MaxAge     int  `mapstructure:"max-age" json:"max-age" toml:"max-age"`
+	MaxBackups int  `mapstructure:"max-backups" json:"max-backups" toml:"max-backups"`
+	LocalTime  bool `mapstructure:"localtime" json:"localtime" toml:"localtime"`
+	Compress   bool `mapstructure:"compress" json:"compress" toml:"compress"`
 }
 
 func NewLogConfig() LogConfig {

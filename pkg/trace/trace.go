@@ -30,9 +30,9 @@ var (
 )
 
 type Config struct {
-	Endpoint string        `json:"endpoint" yaml:"endpoint"`
-	Timeout  time.Duration `json:"timeout" yaml:"timeout"`
-	Insecure bool          `json:"insecure" yaml:"insecure"`
+	Endpoint string        `mapstructure:"endpoint" json:"endpoint" yaml:"endpoint"`
+	Timeout  time.Duration `mapstructure:"timeout" json:"timeout" yaml:"timeout"`
+	Insecure bool          `mapstructure:"insecure" json:"insecure" yaml:"insecure"`
 }
 
 func NewJaegerTraceProvider(ctx context.Context, cfg *Config) (*sdktrace.TracerProvider, error) {
