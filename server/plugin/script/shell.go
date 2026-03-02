@@ -23,33 +23,31 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/olive-io/gflow/api/types"
 	"github.com/olive-io/gflow/plugins"
+	"github.com/olive-io/gflow/server/config"
 )
 
 const (
-	ShellPlugin = "sh"
-	BashPlugin  = "bash"
+	ShellPlugin  = "shell"
+	PythonPlugin = "python"
 )
 
 var _ plugins.Plugin = (*shellPlugin)(nil)
 
 type shellPlugin struct {
-	shell    string
-	timeout  time.Duration
+	cfg *config.ScriptTaskPluginConfig
 }
 
-func NewShellPlugin(shell string, timeout time.Duration) plugins.Plugin {
+func NewShellPlugin(cfg *config.ScriptTaskPluginConfig) plugins.Plugin {
 	return &shellPlugin{
-		shell:    shell,
-		timeout:  timeout,
+		cfg: cfg,
 	}
 }
 
-func (sp *shellPlugin) Name() string { return sp.shell }
+func (sp *shellPlugin) Name() string { return ShellPlugin }
 
 func (sp *shellPlugin) Do(ctx context.Context, req *plugins.Request, opts ...plugins.DoOption) (*plugins.Response, error) {
 	var options plugins.DoOptions
@@ -70,7 +68,7 @@ func (sp *shellPlugin) Do(ctx context.Context, req *plugins.Request, opts ...plu
 		return nil, fmt.Errorf("script is required")
 	}
 
-	timeout := sp.timeout
+	timeout := time.Duration(options.Timeout) * time.Second
 	if options.Timeout > 0 {
 		timeout = time.Duration(options.Timeout) * time.Millisecond
 	}
@@ -81,7 +79,8 @@ func (sp *shellPlugin) Do(ctx context.Context, req *plugins.Request, opts ...plu
 	execCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(execCtx, sp.shell, "-c", request.Script)
+	shell := sp.cfg.Shell.Shell
+	cmd := exec.CommandContext(execCtx, shell, "-c", request.Script)
 
 	if request.Dir != "" {
 		cmd.Dir = request.Dir
@@ -97,12 +96,11 @@ func (sp *shellPlugin) Do(ctx context.Context, req *plugins.Request, opts ...plu
 	cmd.Stderr = &stderr
 
 	err := cmd.Run()
-
 	response := &ShellResponse{
 		Stdout:   stdout.String(),
 		Stderr:   stderr.String(),
 		Success:  err == nil,
-		ExitCode: 0,
+		ExitCode: cmd.ProcessState.ExitCode(),
 	}
 
 	if err != nil {
@@ -122,12 +120,12 @@ func (sp *shellPlugin) Do(ctx context.Context, req *plugins.Request, opts ...plu
 }
 
 type pythonPlugin struct {
-	timeout  time.Duration
+	cfg *config.ScriptTaskPluginConfig
 }
 
-func NewPythonPlugin(timeout time.Duration) plugins.Plugin {
+func NewPythonPlugin(cfg *config.ScriptTaskPluginConfig) plugins.Plugin {
 	return &pythonPlugin{
-		timeout:  timeout,
+		cfg: cfg,
 	}
 }
 
@@ -152,7 +150,7 @@ func (pp *pythonPlugin) Do(ctx context.Context, req *plugins.Request, opts ...pl
 		return nil, fmt.Errorf("script is required")
 	}
 
-	timeout := pp.timeout
+	timeout := time.Duration(pp.cfg.Timeout) * time.Second
 	if options.Timeout > 0 {
 		timeout = time.Duration(options.Timeout) * time.Millisecond
 	}
@@ -184,7 +182,7 @@ func (pp *pythonPlugin) Do(ctx context.Context, req *plugins.Request, opts ...pl
 		Stdout:   stdout.String(),
 		Stderr:   stderr.String(),
 		Success:  err == nil,
-		ExitCode: 0,
+		ExitCode: cmd.ProcessState.ExitCode(),
 	}
 
 	if err != nil {
@@ -198,30 +196,4 @@ func (pp *pythonPlugin) Do(ctx context.Context, req *plugins.Request, opts ...pl
 	}
 
 	return plugins.ExtractResponse(reflect.ValueOf(response)), nil
-}
-
-func parseScriptFormat(script string, format string) (string, []string, error) {
-	lines := strings.Split(script, "\n")
-	if len(lines) == 0 {
-		return "", nil, fmt.Errorf("empty script")
-	}
-
-	firstLine := strings.TrimSpace(lines[0])
-	if strings.HasPrefix(firstLine, "#!") {
-		shebang := strings.TrimPrefix(firstLine, "#!")
-		shebang = strings.TrimSpace(shebang)
-		parts := strings.Fields(shebang)
-		if len(parts) > 0 {
-			return parts[0], parts[1:], nil
-		}
-	}
-
-	switch format {
-	case "sh", "bash":
-		return "/bin/sh", nil, nil
-	case "python", "python3":
-		return "python3", nil, nil
-	default:
-		return "", nil, fmt.Errorf("unsupported script format: %s", format)
-	}
 }

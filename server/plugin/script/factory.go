@@ -18,7 +18,6 @@ package script
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"go.uber.org/zap"
@@ -57,26 +56,14 @@ func (f *scriptFactory) Create(opts ...plugins.Option) (plugins.Plugin, error) {
 		zap.String("taskType", f.taskType.String()),
 		zap.String("type", options.Type))
 
-	timeout := 30 * time.Second
-	defaultShell := ShellPlugin
-
-	if f.cfg != nil {
-		if f.cfg.Timeout > 0 {
-			timeout = time.Duration(f.cfg.Timeout) * time.Millisecond
-		}
-		if f.cfg.Shell != "" {
-			defaultShell = f.cfg.Shell
-		}
-	}
-
 	var rp plugins.Plugin
 	switch options.Type {
-	case ShellPlugin, BashPlugin:
-		rp = NewShellPlugin(options.Type, timeout)
-	case "python", "python3":
-		rp = NewPythonPlugin(timeout)
+	case ShellPlugin:
+		rp = NewShellPlugin(f.cfg)
+	case PythonPlugin:
+		rp = NewPythonPlugin(f.cfg)
 	case "":
-		rp = NewShellPlugin(defaultShell, timeout)
+		rp = NewShellPlugin(f.cfg)
 	default:
 		return nil, fmt.Errorf("invalid script plugin type: %s", options.Type)
 	}

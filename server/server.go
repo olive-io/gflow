@@ -217,7 +217,7 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	if sc := pluginConfig.SendTask; sc != nil {
 		sendFactory, err := send.NewFactory(lg, sc)
 		if err != nil {
-			return nil, fmt.Errorf("creates rabbitmq factory %s: %w", s.name, err)
+			return nil, fmt.Errorf("creates send task factory %s: %w", s.name, err)
 		}
 		if err = plugins.Setup(sendFactory); err != nil {
 			return nil, fmt.Errorf("registry plugin factory %s: %w", sendFactory.Name(), err)
@@ -226,7 +226,7 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	if rc := pluginConfig.ReceiveTask; rc != nil {
 		receiveFactory, err := receive.NewFactory(lg, rc)
 		if err != nil {
-			return nil, fmt.Errorf("creates rabbitmq factory %s: %w", s.name, err)
+			return nil, fmt.Errorf("creates receive task factory %s: %w", s.name, err)
 		}
 		if err = plugins.Setup(receiveFactory); err != nil {
 			return nil, fmt.Errorf("registry plugin factory %s: %w", receiveFactory.Name(), err)
