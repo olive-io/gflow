@@ -394,8 +394,10 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 					fid = *id
 				}
 				node, exists := nodeMapping[fid]
-				if exists && node.EndTime == 0 {
-					node.EndTime = time.Now().UnixMilli()
+				if exists {
+					if node.EndTime == 0 {
+						node.EndTime = time.Now().UnixMilli()
+					}
 					node.Stage = types.FlowNode_Finish
 					sch.setFlowNode(node)
 				}
@@ -408,8 +410,10 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 					fid = *id
 				}
 				node, exists := nodeMapping[fid]
-				if exists && node.EndTime == 0 {
-					node.EndTime = time.Now().UnixMilli()
+				if exists {
+					if node.EndTime == 0 {
+						node.EndTime = time.Now().UnixMilli()
+					}
 					node.Stage = types.FlowNode_Finish
 					sch.setFlowNode(node)
 				}

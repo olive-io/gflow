@@ -8,6 +8,18 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: false },
   },
   {
+    path: '/designer',
+    name: 'Designer',
+    component: () => import('@/views/Designer.vue'),
+    meta: { requiresAuth: true, title: '流程设计器' },
+  },
+  {
+    path: '/designer/:id',
+    name: 'DesignerEdit',
+    component: () => import('@/views/Designer.vue'),
+    meta: { requiresAuth: true, title: '编辑流程' },
+  },
+  {
     path: '/',
     component: () => import('@/layouts/MainLayout.vue'),
     meta: { requiresAuth: true },
@@ -24,38 +36,38 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'definitions',
-        name: 'DefinitionList',
-        component: () => import('@/views/DefinitionList.vue'),
+        name: 'Definitions',
+        component: () => import('@/views/Definitions.vue'),
         meta: { title: '流程定义' },
       },
       {
-        path: 'instances',
-        name: 'ProcessList',
-        component: () => import('@/views/ProcessList.vue'),
+        path: 'processes',
+        name: 'Process',
+        component: () => import('@/views/Process.vue'),
         meta: { title: '流程实例' },
       },
       {
-        path: 'designer',
-        name: 'Designer',
-        component: () => import('@/views/Designer.vue'),
-        meta: { title: '流程设计器' },
+        path: 'processes/:id',
+        name: 'ProcessDetail',
+        component: () => import('@/views/ProcessDetail.vue'),
+        meta: { title: '流程实例详情' },
       },
       {
-        path: 'designer/:id',
-        name: 'DesignerEdit',
-        component: () => import('@/views/Designer.vue'),
-        meta: { title: '编辑流程' },
+        path: 'processes/:id',
+        name: 'ProcessDetail',
+        component: () => import('@/views/ProcessDetail.vue'),
+        meta: { title: '流程实例详情' },
       },
       {
         path: 'runners',
-        name: 'RunnerList',
-        component: () => import('@/views/RunnerList.vue'),
+        name: 'Runners',
+        component: () => import('@/views/Runners.vue'),
         meta: { title: 'Runner 管理' },
       },
       {
         path: 'users',
-        name: 'UserList',
-        component: () => import('@/views/UserList.vue'),
+        name: 'Users',
+        component: () => import('@/views/Users.vue'),
         meta: { title: '用户管理' },
       },
       {
@@ -73,7 +85,6 @@ const router = createRouter({
   routes,
 })
 
-// Navigation guard
 router.beforeEach((to, _from, next) => {
   const token = localStorage.getItem('token')
   

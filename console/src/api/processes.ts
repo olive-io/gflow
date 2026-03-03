@@ -10,16 +10,26 @@ export interface ListProcessParams {
   process_stage?: number
 }
 
+export interface ListProcessResponse {
+  processes: Process[]
+  total: number
+}
+
+export interface GetProcessResponse {
+  process: Process
+  activities: unknown[]
+}
+
 export const processesApi = {
-  list: async (params?: ListProcessParams): Promise<ListResponse<Process>> => {
-    return http.get<ListResponse<Process>>('/v1/processes', params)
+  list: async (params?: ListProcessParams): Promise<ListProcessResponse> => {
+    return http.get<ListProcessResponse>('/v1/processes', params)
   },
 
-  get: async (id: number): Promise<Process> => {
-    return http.get<Process>(`/v1/processes/${id}`)
+  get: async (id: number): Promise<GetProcessResponse> => {
+    return http.get<GetProcessResponse>(`/v1/processes/${id}`)
   },
 
-  execute: async (data: ExecuteProcessRequest): Promise<Process> => {
-    return http.post<Process>('/v1/processes/execute', data)
+  execute: async (data: ExecuteProcessRequest): Promise<{ process: Process }> => {
+    return http.post<{ process: Process }>('/v1/processes/execute', data)
   },
 }

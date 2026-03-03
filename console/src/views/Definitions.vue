@@ -18,18 +18,27 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Plus, Search, MoreVertical, Pencil, Trash2, Copy, FileText, Loader2 } from 'lucide-vue-next'
+import {
+  Plus,
+  Search,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Copy,
+  FileText,
+  Loader2,
+} from 'lucide-vue-next'
 import { definitionsApi } from '@/api'
 import type { Definitions } from '@/types/api'
+import Pagination from '@/components/Pagination.vue'
 
 const router = useRouter()
 
 const definitions = ref<Definitions[]>([])
 const loading = ref(false)
 const total = ref(0)
-const page = ref(1)
-const size = ref(20)
-
+const currentPage = ref(1)
+const pageSize = ref(10)
 const searchQuery = ref('')
 const statusFilter = ref('all')
 
@@ -48,9 +57,9 @@ const filteredDefinitions = computed(() => {
 async function fetchDefinitions() {
   loading.value = true
   try {
-    const response = await definitionsApi.list({ page: page.value, size: size.value })
-    definitions.value = response.items || []
-    total.value = response.total || 0
+    const response = await definitionsApi.list({ page: currentPage.value, size: pageSize.value })
+    definitions.value = response.definitionsList || []
+    total.value = Number(response.total) || 0
   } catch (error) {
     console.error('Failed to fetch definitions:', error)
   } finally {
@@ -59,16 +68,36 @@ async function fetchDefinitions() {
 }
 
 function handleSearch() {
-  page.value = 1
+  currentPage.value = 1
+  fetchDefinitions()
+}
+
+function handlePageChange(page: number) {
+  currentPage.value = page
+  fetchDefinitions()
+}
+
+function handlePageSizeChange(size: number) {
+  pageSize.value = size
   fetchDefinitions()
 }
 
 function createDefinition() {
-  router.push('/designer')
+  router.push('/designer/new')
 }
 
 function editDefinition(uid: string) {
   router.push(`/designer/${uid}`)
+}
+
+function duplicateDefinition(def: Definitions) {
+  router.push({ 
+    path: '/designer/new', 
+    query: { 
+      copyFrom: def.uid,
+      name: `${def.name || '未命名'} (副本)`,
+    } 
+  })
 }
 
 async function deleteDefinition(uid: string) {
@@ -83,9 +112,11 @@ async function deleteDefinition(uid: string) {
   }
 }
 
-function formatDate(timestamp: number): string {
+function formatDate(timestamp: number | string): string {
   if (!timestamp) return '-'
-  return new Date(timestamp * 1000).toLocaleDateString('zh-CN')
+  const ts = typeof timestamp === 'string' ? Number(timestamp) : timestamp
+  if (ts === 0) return '-'
+  return new Date(ts * 1000).toLocaleDateString('zh-CN')
 }
 
 onMounted(() => {
@@ -127,8 +158,7 @@ onMounted(() => {
             <SelectContent>
               <SelectItem value="all">全部状态</SelectItem>
               <SelectItem value="active">已部署</SelectItem>
-              <SelectItem value="inactive">已停用</SelectItem>
-              <SelectItem value="draft">草稿</SelectItem>
+              <SelectItem value="inactive">未部署</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -152,7 +182,12 @@ onMounted(() => {
 
     <!-- Definition cards -->
     <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <Card v-for="def in filteredDefinitions" :key="def.uid" class="hover:shadow-md transition-shadow">
+      <Card 
+        v-for="def in filteredDefinitions" 
+        :key="def.uid" 
+        class="hover:shadow-md transition-shadow cursor-pointer" 
+        @click="editDefinition(def.uid)"
+      >
         <CardHeader class="pb-3">
           <div class="flex items-start justify-between">
             <div class="flex items-center gap-3">
@@ -160,26 +195,26 @@ onMounted(() => {
                 <FileText class="w-5 h-5 text-gflow-primary" />
               </div>
               <div>
-                <CardTitle class="text-base">{{ def.name || '未命名流程' }}</CardTitle>
+                <CardTitle class="text-base">{{ def.name || def.uid || '未命名流程' }}</CardTitle>
                 <CardDescription class="text-xs mt-0.5">{{ def.uid }}</CardDescription>
               </div>
             </div>
             <DropdownMenu>
-              <DropdownMenuTrigger as-child>
+              <DropdownMenuTrigger as-child @click.stop>
                 <Button variant="ghost" size="icon" class="h-8 w-8">
                   <MoreVertical class="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem @click="editDefinition(def.uid)">
+                <DropdownMenuItem @click.stop="editDefinition(def.uid)">
                   <Pencil class="w-4 h-4 mr-2" />
                   编辑
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem @click.stop="duplicateDefinition(def)">
                   <Copy class="w-4 h-4 mr-2" />
                   复制
                 </DropdownMenuItem>
-                <DropdownMenuItem @click="deleteDefinition(def.uid)" class="text-destructive">
+                <DropdownMenuItem @click.stop="deleteDefinition(def.uid)" class="text-destructive">
                   <Trash2 class="w-4 h-4 mr-2" />
                   删除
                 </DropdownMenuItem>
@@ -191,15 +226,24 @@ onMounted(() => {
           <p class="text-sm text-muted-foreground mb-4 line-clamp-2">{{ def.description || '暂无描述' }}</p>
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <Badge variant="success">
-                已部署
+              <Badge :variant="def.isExecute ? 'success' : 'secondary'">
+                {{ def.isExecute ? '已部署' : '未部署' }}
               </Badge>
               <span class="text-xs text-muted-foreground">v{{ def.version }}</span>
             </div>
-            <span class="text-xs text-muted-foreground">{{ formatDate(def.create_at) }}</span>
+            <span class="text-xs text-muted-foreground">{{ formatDate(def.createAt) }}</span>
           </div>
         </CardContent>
       </Card>
     </div>
+
+    <!-- Pagination -->
+    <Pagination
+      :page="currentPage"
+      :page-size="pageSize"
+      :total="total"
+      @update:page="handlePageChange"
+      @update:page-size="handlePageSizeChange"
+    />
   </div>
 </template>

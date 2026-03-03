@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Textarea } from '@/components/ui/textarea'
 import {
+  Loader2,
   Save,
   Play,
   Undo,
@@ -12,25 +15,31 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize,
-  Hand,
-  MousePointer,
-  Square,
-  Diamond,
-  Circle,
-  ArrowRight,
+  ArrowLeft,
 } from 'lucide-vue-next'
 import BpmnModeler from 'bpmn-js/lib/Modeler'
 import 'bpmn-js/dist/assets/diagram-js.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-codes.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css'
+import { definitionsApi } from '@/api'
+import type { Definitions } from '@/types/api'
 
-const canvasRef = ref<HTMLElement>()
+const route = useRoute()
+const router = useRouter()
+
+const isModelerReady = ref(false)
+const canvasRef = ref<HTMLElement | null>(null)
 let bpmnModeler: InstanceType<typeof BpmnModeler> | null = null
 
-const processName = ref('新建流程')
-const processKey = ref('new-process')
-const selectedElement = ref<{ id: string; businessObject?: { name?: string } } | null>(null)
+const editingDefinition = ref<Definitions | null>(null)
+const processName = ref('')
+const processKey = ref('')
+const processDescription = ref('')
+const selectedElement = ref<{ id: string; businessObject?: { name?: string; $attrs?: Record<string, string> } } | null>(null)
+const saving = ref(false)
+const deploying = ref(false)
+const zoom = ref(1)
 
 const defaultDiagram = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
@@ -82,51 +91,103 @@ const defaultDiagram = `<?xml version="1.0" encoding="UTF-8"?>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>`
 
-const tools = [
-  { id: 'select', icon: MousePointer, label: '选择' },
-  { id: 'hand', icon: Hand, label: '移动' },
-  { id: 'task', icon: Square, label: '任务' },
-  { id: 'gateway', icon: Diamond, label: '网关' },
-  { id: 'event', icon: Circle, label: '事件' },
-  { id: 'connection', icon: ArrowRight, label: '连线' },
-]
+async function loadDefinition() {
+  const uid = route.params.id as string
+  if (uid && uid !== 'new') {
+    try {
+      const response = await definitionsApi.get(uid)
+      editingDefinition.value = response.definitions
+      processName.value = response.definitions.name || ''
+      processKey.value = response.definitions.uid || ''
+      processDescription.value = response.definitions.description || ''
+      return response.definitions.content
+    } catch (error) {
+      console.error('Failed to load definition:', error)
+    }
+  }
+  return null
+}
 
-const activeTool = ref('select')
-const zoom = ref(1)
-
-function initModeler() {
+function initModeler(initialContent?: string | null) {
   if (!canvasRef.value) return
 
   bpmnModeler = new BpmnModeler({
     container: canvasRef.value,
-    keyboard: {
-      bindTo: document,
-    },
   })
 
-  bpmnModeler.importXML(defaultDiagram).then(() => {
-    const canvas = bpmnModeler?.get('canvas') as { zoom: (level: string | number) => void } | undefined
+  const diagram = initialContent || editingDefinition.value?.content || defaultDiagram
+  
+  bpmnModeler.importXML(diagram).then(() => {
+    const canvas = bpmnModeler?.get('canvas') as { zoom: (level: string) => void } | undefined
     canvas?.zoom('fit-viewport')
+    isModelerReady.value = true
+  }).catch((error: Error) => {
+    console.error('Failed to import XML:', error)
   })
 
-  bpmnModeler.on('selection.changed', (e: { newSelection: Array<{ id: string; businessObject?: { name?: string } }> }) => {
+  bpmnModeler.on('selection.changed', (e: { newSelection: Array<{ id: string; businessObject?: { name?: string; $attrs?: Record<string, string> } }> }) => {
     selectedElement.value = e.newSelection[0] || null
   })
+  
+  bpmnModeler.on('element.changed', () => {
+    // 元素变化时可以更新属性面板
+  })
+}
+
+function destroyModeler() {
+  if (bpmnModeler) {
+    bpmnModeler.destroy()
+    bpmnModeler = null
+    isModelerReady.value = false
+  }
+}
+
+function goBack() {
+  destroyModeler()
+  router.push('/definitions')
 }
 
 async function handleSave() {
   if (!bpmnModeler) return
   
+  saving.value = true
   try {
     const { xml } = await bpmnModeler.saveXML({ format: true })
-    console.log('Saved XML:', xml)
+    if (xml) {
+      await definitionsApi.deploy({
+        content: xml,
+        description: processDescription.value,
+      })
+      alert('保存成功')
+    }
   } catch (error) {
     console.error('Save failed:', error)
+    alert('保存失败')
+  } finally {
+    saving.value = false
   }
 }
 
-function handleDeploy() {
-  console.log('Deploy process')
+async function handleDeploy() {
+  if (!bpmnModeler) return
+  
+  deploying.value = true
+  try {
+    const { xml } = await bpmnModeler.saveXML({ format: true })
+    if (xml) {
+      await definitionsApi.deploy({
+        content: xml,
+        description: processDescription.value,
+      })
+      alert('部署成功')
+      goBack()
+    }
+  } catch (error) {
+    console.error('Deploy failed:', error)
+    alert('部署失败')
+  } finally {
+    deploying.value = false
+  }
 }
 
 function handleUndo() {
@@ -161,105 +222,137 @@ function handleFitViewport() {
   zoom.value = 1
 }
 
-onMounted(() => {
-  initModeler()
+onMounted(async () => {
+  await nextTick()
+  setTimeout(async () => {
+    const content = await loadDefinition()
+    initModeler(content)
+  }, 100)
 })
 
 onUnmounted(() => {
-  bpmnModeler?.destroy()
+  destroyModeler()
+})
+
+watch(() => route.params.id, async (newId) => {
+  if (newId) {
+    destroyModeler()
+    isModelerReady.value = false
+    await nextTick()
+    setTimeout(async () => {
+      const content = await loadDefinition()
+      initModeler(content)
+    }, 100)
+  }
 })
 </script>
 
 <template>
-  <div class="h-[calc(100vh-120px)] flex flex-col">
+  <div class="fixed inset-0 z-50 bg-background flex flex-col">
     <!-- Toolbar -->
-    <div class="bg-card border-b px-4 py-2 flex items-center justify-between">
+    <div class="bg-card border-b px-4 h-14 flex items-center justify-between shrink-0">
       <div class="flex items-center gap-2">
-        <Button variant="outline" size="sm" @click="handleSave">
-          <Save class="w-4 h-4 mr-1" />
+        <Button variant="ghost" size="sm" @click="goBack">
+          <ArrowLeft class="w-4 h-4 mr-1" />
+          返回
+        </Button>
+        <div class="w-px h-6 bg-border mx-2"></div>
+        <Button variant="outline" size="sm" @click="handleSave" :disabled="saving || !isModelerReady">
+          <Loader2 v-if="saving" class="w-4 h-4 mr-1 animate-spin" />
+          <Save v-else class="w-4 h-4 mr-1" />
           保存
         </Button>
-        <Button size="sm" @click="handleDeploy">
-          <Play class="w-4 h-4 mr-1" />
+        <Button size="sm" @click="handleDeploy" :disabled="deploying || !isModelerReady">
+          <Loader2 v-if="deploying" class="w-4 h-4 mr-1 animate-spin" />
+          <Play v-else class="w-4 h-4 mr-1" />
           部署
         </Button>
-        <div class="w-px h-6 bg-border mx-2" />
-        <Button variant="ghost" size="icon" @click="handleUndo">
-          <Undo class="w-4 h-4" />
+        <div class="w-px h-6 bg-border mx-2"></div>
+        <Button variant="ghost" size="sm" @click="handleUndo" :disabled="!isModelerReady">
+          <Undo class="w-4 h-4 mr-1" />
+          撤销
         </Button>
-        <Button variant="ghost" size="icon" @click="handleRedo">
-          <Redo class="w-4 h-4" />
+        <Button variant="ghost" size="sm" @click="handleRedo" :disabled="!isModelerReady">
+          <Redo class="w-4 h-4 mr-1" />
+          重做
         </Button>
-        <div class="w-px h-6 bg-border mx-2" />
-        <Button variant="ghost" size="icon" @click="handleZoomIn">
-          <ZoomIn class="w-4 h-4" />
+        <div class="w-px h-6 bg-border mx-2"></div>
+        <Button variant="ghost" size="sm" @click="handleZoomIn" :disabled="!isModelerReady">
+          <ZoomIn class="w-4 h-4 mr-1" />
+          放大
         </Button>
-        <Button variant="ghost" size="icon" @click="handleZoomOut">
-          <ZoomOut class="w-4 h-4" />
+        <Button variant="ghost" size="sm" @click="handleZoomOut" :disabled="!isModelerReady">
+          <ZoomOut class="w-4 h-4 mr-1" />
+          缩小
         </Button>
-        <Button variant="ghost" size="icon" @click="handleFitViewport">
-          <Maximize class="w-4 h-4" />
+        <Button variant="ghost" size="sm" @click="handleFitViewport" :disabled="!isModelerReady">
+          <Maximize class="w-4 h-4 mr-1" />
+          适应
         </Button>
       </div>
-      <div class="text-sm text-muted-foreground">
-        {{ Math.round(zoom * 100) }}%
+      <div class="flex items-center gap-4">
+        <span class="text-sm text-muted-foreground">
+          {{ Math.round(zoom * 100) }}%
+        </span>
+        <span class="text-sm font-medium">
+          {{ processName || '未命名流程' }}
+        </span>
       </div>
     </div>
 
-    <div class="flex-1 flex overflow-hidden">
-      <!-- Left palette -->
-      <div class="w-14 bg-card border-r flex flex-col items-center py-2 gap-1">
-        <Button
-          v-for="tool in tools"
-          :key="tool.id"
-          :variant="activeTool === tool.id ? 'secondary' : 'ghost'"
-          size="icon"
-          class="w-10 h-10"
-          :title="tool.label"
-          @click="activeTool = tool.id"
-        >
-          <component :is="tool.icon" class="w-4 h-4" />
-        </Button>
+    <div class="flex-1 flex overflow-hidden min-h-0">
+      <!-- Canvas with built-in palette -->
+      <div ref="canvasRef" class="flex-1 relative min-h-0">
+        <div v-if="!isModelerReady" class="absolute inset-0 flex items-center justify-center bg-muted/30 z-10">
+          <div class="flex flex-col items-center gap-2">
+            <Loader2 class="w-8 h-8 animate-spin text-muted-foreground" />
+            <span class="text-sm text-muted-foreground">加载中...</span>
+          </div>
+        </div>
       </div>
 
-      <!-- Canvas -->
-      <div ref="canvasRef" class="flex-1 bg-muted/30"></div>
-
       <!-- Right properties panel -->
-      <div class="w-72 bg-card border-l overflow-y-auto">
+      <div class="w-80 bg-card border-l overflow-y-auto shrink-0">
         <Card class="border-0 rounded-none shadow-none">
           <CardHeader class="border-b">
-            <CardTitle class="text-base">属性</CardTitle>
+            <CardTitle class="text-base">属性面板</CardTitle>
           </CardHeader>
           <CardContent class="p-4 space-y-4">
-            <div class="space-y-2">
-              <Label>流程名称</Label>
-              <Input v-model="processName" />
-            </div>
-            <div class="space-y-2">
-              <Label>流程 Key</Label>
-              <Input v-model="processKey" />
-            </div>
-            
-            <template v-if="selectedElement">
-              <div class="pt-4 border-t">
-                <h4 class="font-medium mb-3">选中元素</h4>
-                <div class="space-y-2">
-                  <div class="space-y-2">
-                    <Label>ID</Label>
-                    <Input :value="selectedElement.id" disabled />
-                  </div>
-                  <div class="space-y-2">
-                    <Label>名称</Label>
-                    <Input :value="selectedElement.businessObject?.name || ''" />
-                  </div>
-                </div>
+            <!-- Process Properties -->
+            <div class="space-y-4">
+              <h4 class="text-sm font-medium text-muted-foreground">流程属性</h4>
+              <div class="space-y-2">
+                <Label>流程名称</Label>
+                <Input v-model="processName" placeholder="请输入流程名称" />
               </div>
-            </template>
+              <div class="space-y-2">
+                <Label>流程 Key</Label>
+                <Input v-model="processKey" placeholder="请输入流程 Key" disabled />
+              </div>
+              <div class="space-y-2">
+                <Label>描述</Label>
+                <Textarea v-model="processDescription" placeholder="请输入描述" :rows="3" />
+              </div>
+            </div>
             
-            <div v-else class="pt-4 border-t">
-              <p class="text-sm text-muted-foreground text-center py-4">
-                选择一个元素查看属性
+            <div class="h-px w-full bg-border my-4"></div>
+            
+            <!-- Selected Element Properties -->
+            <div v-if="selectedElement" class="space-y-4">
+              <h4 class="text-sm font-medium text-muted-foreground">元素属性</h4>
+              <div class="space-y-2">
+                <Label>元素 ID</Label>
+                <Input :value="selectedElement.id" disabled class="font-mono text-xs" />
+              </div>
+              <div class="space-y-2">
+                <Label>元素名称</Label>
+                <Input :value="selectedElement.businessObject?.name || ''" placeholder="请输入名称" />
+              </div>
+            </div>
+            
+            <div v-else class="py-8 text-center">
+              <p class="text-sm text-muted-foreground">
+                点击画布中的元素<br>查看和编辑属性
               </p>
             </div>
           </CardContent>
@@ -270,16 +363,60 @@ onUnmounted(() => {
 </template>
 
 <style>
-.bpmn-container {
-  height: 100%;
-  width: 100%;
+.bpmn-js-palette {
+  background: var(--card) !important;
+  border-right: 1px solid var(--border) !important;
 }
 
-.djs-palette {
-  display: none;
+.bpmn-js-palette .entry {
+  border-radius: 4px !important;
+}
+
+.bpmn-js-palette .entry:hover {
+  background: var(--accent) !important;
+}
+
+.bpmn-js-palette .separator {
+  border-top: 1px solid var(--border) !important;
+  margin: 4px 8px !important;
 }
 
 .djs-container {
-  background: transparent !important;
+  background: hsl(var(--muted) / 0.3) !important;
+}
+
+.djs-palette {
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.djs-palette .entry {
+  border-radius: 4px !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.djs-palette .entry:hover {
+  background-color: var(--accent) !important;
+}
+
+.djs-palette-separator {
+  border-top: 1px solid var(--border) !important;
+  margin: 4px 8px !important;
+}
+
+.djs-context-pad {
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 4px !important;
+}
+
+.djs-context-pad .entry {
+  border-radius: 4px !important;
+}
+
+.djs-context-pad .entry:hover {
+  background-color: var(--accent) !important;
 }
 </style>

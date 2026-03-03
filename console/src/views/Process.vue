@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -18,16 +19,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Search, MoreVertical, Eye, StopCircle, RefreshCw, ChevronLeft, ChevronRight, Loader2 } from 'lucide-vue-next'
+import { Search, MoreVertical, Eye, StopCircle, RefreshCw, Loader2 } from 'lucide-vue-next'
 import { processesApi } from '@/api'
 import type { Process } from '@/types/api'
-import { ProcessStatus } from '@/types/api'
+import Pagination from '@/components/Pagination.vue'
+
+const router = useRouter()
 
 const processes = ref<Process[]>([])
 const loading = ref(false)
 const total = ref(0)
 const currentPage = ref(1)
-const pageSize = ref(20)
+const pageSize = ref(10)
 const searchQuery = ref('')
 const statusFilter = ref('all')
 
@@ -37,32 +40,40 @@ const filteredProcesses = computed(() => {
     const query = searchQuery.value.toLowerCase()
     result = result.filter(p => 
       p.name?.toLowerCase().includes(query) || 
-      p.definitions_uid?.toLowerCase().includes(query)
+      p.definitionsUid?.toLowerCase().includes(query)
     )
   }
   if (statusFilter.value !== 'all') {
-    const statusMap: Record<string, number> = {
-      running: ProcessStatus.Executing,
-      completed: ProcessStatus.Commit,
-      failed: ProcessStatus.Failed,
-      ready: ProcessStatus.Ready,
-      cancelled: ProcessStatus.Destroy,
-    }
-    result = result.filter(p => p.status === statusMap[statusFilter.value])
+    result = result.filter(p => p.status?.toLowerCase() === statusFilter.value)
   }
   return result
 })
 
-const getStatusBadge = (status: ProcessStatus) => {
-  const statusMap: Record<number, { variant: 'success' | 'warning' | 'error' | 'info' | 'secondary', label: string }> = {
-    [ProcessStatus.Ready]: { variant: 'warning', label: '准备中' },
-    [ProcessStatus.Executing]: { variant: 'info', label: '运行中' },
-    [ProcessStatus.Commit]: { variant: 'success', label: '已完成' },
-    [ProcessStatus.Failed]: { variant: 'error', label: '失败' },
-    [ProcessStatus.Destroy]: { variant: 'secondary', label: '已取消' },
-    [ProcessStatus.Rollback]: { variant: 'secondary', label: '已回滚' },
+const getStatusBadge = (status: string) => {
+  const statusMap: Record<string, { variant: 'success' | 'warning' | 'error' | 'info' | 'secondary', label: string }> = {
+    'unknownstatus': { variant: 'secondary', label: '未知' },
+    'waiting': { variant: 'warning', label: '等待中' },
+    'running': { variant: 'info', label: '运行中' },
+    'success': { variant: 'success', label: '成功' },
+    'warn': { variant: 'warning', label: '警告' },
+    'failed': { variant: 'error', label: '失败' },
   }
-  return statusMap[status] || { variant: 'secondary', label: '未知' }
+  const key = (status || '').toLowerCase()
+  return statusMap[key] || { variant: 'secondary', label: status || '未知' }
+}
+
+const getStageBadge = (stage: string) => {
+  const stageMap: Record<string, { variant: 'success' | 'warning' | 'error' | 'info' | 'secondary', label: string }> = {
+    'unknownstage': { variant: 'secondary', label: '未知' },
+    'prepare': { variant: 'warning', label: '准备中' },
+    'ready': { variant: 'info', label: '就绪' },
+    'commit': { variant: 'success', label: '提交' },
+    'rollback': { variant: 'error', label: '回滚' },
+    'destroy': { variant: 'secondary', label: '销毁' },
+    'finish': { variant: 'success', label: '完成' },
+  }
+  const key = (stage || '').toLowerCase()
+  return stageMap[key] || { variant: 'secondary', label: stage || '未知' }
 }
 
 async function fetchProcesses() {
@@ -72,8 +83,8 @@ async function fetchProcesses() {
       page: currentPage.value,
       size: pageSize.value,
     })
-    processes.value = response.items || []
-    total.value = response.total || 0
+    processes.value = response.processes || []
+    total.value = Number(response.total) || 0
   } catch (error) {
     console.error('Failed to fetch processes:', error)
   } finally {
@@ -86,8 +97,18 @@ function handleSearch() {
   fetchProcesses()
 }
 
+function handlePageChange(page: number) {
+  currentPage.value = page
+  fetchProcesses()
+}
+
+function handlePageSizeChange(size: number) {
+  pageSize.value = size
+  fetchProcesses()
+}
+
 function viewInstance(id: number) {
-  console.log('View:', id)
+  router.push(`/processes/${id}`)
 }
 
 function stopInstance(id: number) {
@@ -98,32 +119,24 @@ function retryInstance(id: number) {
   console.log('Retry:', id)
 }
 
-function prevPage() {
-  if (currentPage.value > 1) {
-    currentPage.value--
-    fetchProcesses()
-  }
-}
-
-function nextPage() {
-  if (currentPage.value < Math.ceil(total.value / pageSize.value)) {
-    currentPage.value++
-    fetchProcesses()
-  }
-}
-
-function formatDateTime(timestamp: number): string {
+function formatDateTime(timestamp: number | string): string {
   if (!timestamp) return '-'
-  return new Date(timestamp * 1000).toLocaleString('zh-CN')
+  const ts = typeof timestamp === 'string' ? Number(timestamp) : timestamp
+  if (ts === 0) return '-'
+  const ms = ts > 10000000000 ? ts : ts * 1000
+  return new Date(ms).toLocaleString('zh-CN')
 }
 
-function formatDuration(startTime: number, endTime: number): string {
-  if (!startTime) return '-'
-  const end = endTime || Date.now() / 1000
-  const duration = end - startTime
-  if (duration < 60) return `${Math.floor(duration)}s`
-  if (duration < 3600) return `${Math.floor(duration / 60)}m ${Math.floor(duration % 60)}s`
-  return `${Math.floor(duration / 3600)}h ${Math.floor((duration % 3600) / 60)}m`
+function formatDuration(startTime: number | string, endTime: number | string): string {
+  const start = typeof startTime === 'string' ? Number(startTime) : startTime
+  if (!start || start === 0) return '-'
+  const end = endTime ? (typeof endTime === 'string' ? Number(endTime) : endTime) : Date.now()
+  const duration = end - start
+  if (duration < 0) return '-'
+  const durationSec = duration > 100000 ? Math.floor(duration / 1000) : duration
+  if (durationSec < 60) return `${Math.floor(durationSec)}s`
+  if (durationSec < 3600) return `${Math.floor(durationSec / 60)}m ${Math.floor(durationSec % 60)}s`
+  return `${Math.floor(durationSec / 3600)}h ${Math.floor((durationSec % 3600) / 60)}m`
 }
 
 onMounted(() => {
@@ -158,10 +171,11 @@ onMounted(() => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">全部状态</SelectItem>
+              <SelectItem value="waiting">等待中</SelectItem>
               <SelectItem value="running">运行中</SelectItem>
-              <SelectItem value="completed">已完成</SelectItem>
+              <SelectItem value="success">成功</SelectItem>
+              <SelectItem value="warn">警告</SelectItem>
               <SelectItem value="failed">失败</SelectItem>
-              <SelectItem value="ready">准备中</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -182,6 +196,7 @@ onMounted(() => {
               <TableHead>实例名称</TableHead>
               <TableHead>流程定义</TableHead>
               <TableHead>状态</TableHead>
+              <TableHead>阶段</TableHead>
               <TableHead>开始时间</TableHead>
               <TableHead>执行时长</TableHead>
               <TableHead class="w-[80px]">操作</TableHead>
@@ -189,22 +204,27 @@ onMounted(() => {
           </TableHeader>
           <TableBody>
             <TableRow v-if="filteredProcesses.length === 0">
-              <TableCell colspan="6" class="text-center text-muted-foreground py-8">
+              <TableCell colspan="7" class="text-center text-muted-foreground py-8">
                 暂无流程实例
               </TableCell>
             </TableRow>
             <TableRow v-for="process in filteredProcesses" :key="process.id">
               <TableCell class="font-medium">{{ process.name || `Process #${process.id}` }}</TableCell>
               <TableCell>
-                <code class="text-xs bg-muted px-2 py-1 rounded">{{ process.definitions_uid }}</code>
+                <code class="text-xs bg-muted px-2 py-1 rounded">{{ process.definitionsUid || '-' }}</code>
               </TableCell>
               <TableCell>
                 <Badge :variant="getStatusBadge(process.status).variant">
                   {{ getStatusBadge(process.status).label }}
                 </Badge>
               </TableCell>
-              <TableCell>{{ formatDateTime(process.start_time) }}</TableCell>
-              <TableCell>{{ formatDuration(process.start_time, process.end_time) }}</TableCell>
+              <TableCell>
+                <Badge :variant="getStageBadge(process.stage).variant">
+                  {{ getStageBadge(process.stage).label }}
+                </Badge>
+              </TableCell>
+              <TableCell>{{ formatDateTime(process.startAt) }}</TableCell>
+              <TableCell>{{ formatDuration(process.startAt, process.endAt) }}</TableCell>
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger as-child>
@@ -217,11 +237,11 @@ onMounted(() => {
                       <Eye class="w-4 h-4 mr-2" />
                       查看详情
                     </DropdownMenuItem>
-                    <DropdownMenuItem v-if="process.status === ProcessStatus.Running" @click="stopInstance(process.id)">
+                    <DropdownMenuItem v-if="process.status?.toLowerCase() === 'running'" @click="stopInstance(process.id)">
                       <StopCircle class="w-4 h-4 mr-2" />
                       停止
                     </DropdownMenuItem>
-                    <DropdownMenuItem v-if="process.status === ProcessStatus.Failed" @click="retryInstance(process.id)">
+                    <DropdownMenuItem v-if="process.status?.toLowerCase() === 'failed'" @click="retryInstance(process.id)">
                       <RefreshCw class="w-4 h-4 mr-2" />
                       重试
                     </DropdownMenuItem>
@@ -235,20 +255,12 @@ onMounted(() => {
     </Card>
 
     <!-- Pagination -->
-    <div class="flex items-center justify-between">
-      <p class="text-sm text-muted-foreground">
-        显示 {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, total) }} 条，共 {{ total }} 条
-      </p>
-      <div class="flex items-center gap-2">
-        <Button variant="outline" size="sm" @click="prevPage" :disabled="currentPage === 1">
-          <ChevronLeft class="w-4 h-4" />
-          上一页
-        </Button>
-        <Button variant="outline" size="sm" @click="nextPage" :disabled="currentPage >= Math.ceil(total / pageSize)">
-          下一页
-          <ChevronRight class="w-4 h-4" />
-        </Button>
-      </div>
-    </div>
+    <Pagination
+      :page="currentPage"
+      :page-size="pageSize"
+      :total="total"
+      @update:page="handlePageChange"
+      @update:page-size="handlePageSizeChange"
+    />
   </div>
 </template>

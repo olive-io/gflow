@@ -37,8 +37,7 @@ const userStore = useUserStore()
 const menuItems = [
   { path: '/dashboard', name: '仪表盘', icon: LayoutDashboard },
   { path: '/definitions', name: '流程定义', icon: FileText },
-  { path: '/instances', name: '流程实例', icon: GitBranch },
-  { path: '/designer', name: '流程设计器', icon: Pencil },
+  { path: '/processes', name: '流程实例', icon: GitBranch },
   { path: '/runners', name: 'Runner 管理', icon: Server },
   { path: '/users', name: '用户管理', icon: Users },
   { path: '/audit-logs', name: '审计日志', icon: ScrollText },

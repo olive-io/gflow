@@ -1,11 +1,16 @@
 import { http } from '@/lib/http'
-import type { Definitions, ListResponse } from '@/types/api'
+import type { Definitions } from '@/types/api'
 
 export interface ListDefinitionsParams {
   page?: number
   size?: number
   uid?: string
   name?: string
+}
+
+export interface ListDefinitionsResponse {
+  definitionsList: Definitions[]
+  total: number
 }
 
 export interface DeployDefinitionsRequest {
@@ -15,21 +20,21 @@ export interface DeployDefinitionsRequest {
 }
 
 export const definitionsApi = {
-  list: async (params?: ListDefinitionsParams): Promise<ListResponse<Definitions>> => {
-    return http.get<ListResponse<Definitions>>('/v1/definitions', params)
+  list: async (params?: ListDefinitionsParams): Promise<ListDefinitionsResponse> => {
+    return http.get<ListDefinitionsResponse>('/v1/definitions', params)
   },
 
-  get: async (uid: string, version?: number): Promise<Definitions> => {
+  get: async (uid: string, version?: number): Promise<{ definitions: Definitions }> => {
     const params = version ? { version } : undefined
-    return http.get<Definitions>(`/v1/definitions/${uid}`, params)
+    return http.get<{ definitions: Definitions }>(`/v1/definitions/${uid}`, params)
   },
 
-  deploy: async (data: DeployDefinitionsRequest): Promise<Definitions> => {
-    return http.post<Definitions>('/v1/definitions', data)
+  deploy: async (data: DeployDefinitionsRequest): Promise<{ definitions: Definitions }> => {
+    return http.post<{ definitions: Definitions }>('/v1/definitions', data)
   },
 
-  remove: async (uid: string, version?: number): Promise<void> => {
+  remove: async (uid: string, version?: number): Promise<{ definitions: Definitions }> => {
     const params = version ? { version } : undefined
-    return http.delete(`/v1/definitions/${uid}`, params)
+    return http.delete<{ definitions: Definitions }>(`/v1/definitions/${uid}`, params)
   },
 }

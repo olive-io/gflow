@@ -69,11 +69,11 @@ export const useUserStore = defineStore('user', () => {
       token.value = {
         id: 0,
         text: storedToken,
-        expire_at: 0,
+        expireAt: 0,
         enable: 1,
-        user_id: 0,
-        role_id: 0,
-        create_at: 0,
+        userId: 0,
+        roleId: 0,
+        createAt: 0,
       }
     }
     if (storedUser) {
