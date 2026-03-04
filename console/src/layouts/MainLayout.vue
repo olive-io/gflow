@@ -27,8 +27,12 @@ import {
   Settings,
   Workflow,
   Globe,
+  Sun,
+  Moon,
+  Monitor,
 } from 'lucide-vue-next'
 import { cn } from '@/lib/utils'
+import type { Theme } from '@/stores/app'
 
 const router = useRouter()
 const route = useRoute()
@@ -61,6 +65,16 @@ function handleLogout() {
 function getInitials(name: string) {
   return name.slice(0, 2).toUpperCase()
 }
+
+const themeOptions: { value: Theme; label: string; icon: typeof Sun }[] = [
+  { value: 'light', label: '浅色', icon: Sun },
+  { value: 'dark', label: '深色', icon: Moon },
+  { value: 'system', label: '系统', icon: Monitor },
+]
+
+function handleThemeChange(theme: Theme) {
+  appStore.setTheme(theme)
+}
 </script>
 
 <template>
@@ -73,8 +87,8 @@ function getInitials(name: string) {
       )"
     >
       <!-- Logo -->
-      <div class="h-16 flex items-center justify-between px-4 border-b">
-        <div class="flex items-center gap-3 overflow-hidden">
+      <div class="h-16 flex items-center justify-between px-2 border-b">
+        <div class="flex items-center gap-3 overflow-hidden w-full" :class="appStore.sidebarCollapsed ? 'justify-center' : ''">
           <div class="w-10 h-10 bg-gflow-primary rounded-xl flex items-center justify-center text-white shrink-0">
             <Workflow class="w-6 h-6" />
           </div>
@@ -88,13 +102,14 @@ function getInitials(name: string) {
       </div>
 
       <!-- Navigation -->
-      <nav class="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+      <nav class="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
         <router-link
           v-for="item in menuItems"
           :key="item.path"
           :to="item.path"
           :class="cn(
-            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+            'flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+            appStore.sidebarCollapsed ? 'px-2 justify-center' : 'px-3',
             route.path === item.path || route.path.startsWith(item.path + '/')
               ? 'bg-gflow-primary/10 text-gflow-primary'
               : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -108,11 +123,11 @@ function getInitials(name: string) {
       </nav>
 
       <!-- Collapse button -->
-      <div class="absolute bottom-4 left-0 right-0 px-3">
+      <div class="absolute bottom-4 left-0 right-0 px-2">
         <Button
           variant="ghost"
           size="icon"
-          class="w-full h-10"
+          :class="cn('h-10', appStore.sidebarCollapsed ? 'w-full' : 'w-full')"
           @click="appStore.toggleSidebar"
         >
           <ChevronLeft v-if="!appStore.sidebarCollapsed" class="w-5 h-5" />
@@ -143,44 +158,68 @@ function getInitials(name: string) {
           </template>
         </nav>
 
-        <!-- User menu -->
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
-            <Button variant="ghost" class="flex items-center gap-2 px-2">
-              <Avatar class="w-8 h-8">
-                <AvatarImage :src="userStore.user?.avatar" />
-                <AvatarFallback class="bg-gflow-primary text-white text-xs">
-                  {{ getInitials(userStore.username || 'U') }}
-                </AvatarFallback>
-              </Avatar>
-              <span class="hidden md:inline">{{ userStore.username }}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" class="w-48">
-            <DropdownMenuLabel>
-              <div class="flex flex-col">
-                <span>{{ userStore.username }}</span>
-                <span class="text-xs text-muted-foreground font-normal">
-                  {{ userStore.user?.email }}
-                </span>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <User class="w-4 h-4 mr-2" />
-              个人信息
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings class="w-4 h-4 mr-2" />
-              系统设置
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem @click="handleLogout" class="text-destructive">
-              <LogOut class="w-4 h-4 mr-2" />
-              退出登录
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div class="flex items-center gap-2">
+          <!-- Theme toggle -->
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button variant="ghost" size="icon">
+                <Sun v-if="appStore.theme === 'light'" class="w-5 h-5" />
+                <Moon v-else-if="appStore.theme === 'dark'" class="w-5 h-5" />
+                <Monitor v-else class="w-5 h-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                v-for="option in themeOptions"
+                :key="option.value"
+                :class="appStore.theme === option.value ? 'bg-accent' : ''"
+                @click="handleThemeChange(option.value)"
+              >
+                <component :is="option.icon" class="w-4 h-4 mr-2" />
+                {{ option.label }}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <!-- User menu -->
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button variant="ghost" class="flex items-center gap-2 px-2">
+                <Avatar class="w-8 h-8">
+                  <AvatarImage :src="userStore.user?.avatar" />
+                  <AvatarFallback class="bg-gflow-primary text-white text-xs">
+                    {{ getInitials(userStore.username || 'U') }}
+                  </AvatarFallback>
+                </Avatar>
+                <span class="hidden md:inline">{{ userStore.username }}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" class="w-48">
+              <DropdownMenuLabel>
+                <div class="flex flex-col">
+                  <span>{{ userStore.username }}</span>
+                  <span class="text-xs text-muted-foreground font-normal">
+                    {{ userStore.user?.email }}
+                  </span>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <User class="w-4 h-4 mr-2" />
+                个人信息
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings class="w-4 h-4 mr-2" />
+                系统设置
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem @click="handleLogout" class="text-destructive">
+                <LogOut class="w-4 h-4 mr-2" />
+                退出登录
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
 
       <!-- Page content -->

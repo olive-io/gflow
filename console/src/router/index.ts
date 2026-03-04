@@ -41,6 +41,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '流程定义' },
       },
       {
+        path: 'definitions/:uid',
+        name: 'DefinitionDetail',
+        component: () => import('@/views/DefinitionDetail.vue'),
+        meta: { title: '流程定义详情' },
+      },
+      {
         path: 'processes',
         name: 'Process',
         component: () => import('@/views/Process.vue'),

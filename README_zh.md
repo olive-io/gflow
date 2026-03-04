@@ -1,31 +1,31 @@
 # GFlow
 
-## Introduction
+## 简介
 
-GFlow is a BPMN (Business Process Model and Notation) workflow engine built with Go. It provides a powerful and scalable solution for managing and executing business processes.
+GFlow 是一个使用 Go 语言构建的 BPMN（业务流程模型和符号）工作流引擎。它提供了一个强大且可扩展的业务流程管理和执行解决方案。
 
-## Features
+## 特性
 
-- **BPMN 2.0 Support**: Full support for BPMN 2.0 specification
-- **High Performance**: Built with Go for high concurrency and performance
-- **Distributed Architecture**: Support for distributed deployment and horizontal scaling
-- **Real-time Monitoring**: Real-time process monitoring and management
-- **REST API & gRPC**: Dual API support for flexible integration
-- **Web Console**: Modern web-based management console
-- **CLI Tool**: Command-line tool for easy management
+- **BPMN 2.0 支持**：完整支持 BPMN 2.0 规范
+- **高性能**：使用 Go 语言构建，支持高并发
+- **分布式架构**：支持分布式部署和水平扩展
+- **实时监控**：实时流程监控和管理
+- **REST API & gRPC**：双 API 支持，灵活集成
+- **Web 控制台**：现代化的 Web 管理控制台
+- **CLI 工具**：命令行工具，便于管理
 
-## Architecture
+## 架构
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                      Web Console                             │
+│                      Web 控制台                              │
 └─────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────┐
 │                    gflow-server                              │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │  REST API   │  │  gRPC API   │  │  Scheduler  │         │
+│  │  REST API   │  │  gRPC API   │  │   调度器    │         │
 │  └─────────────┘  └─────────────┘  └─────────────┘         │
 └─────────────────────────────────────────────────────┘
                               │
@@ -33,21 +33,21 @@ GFlow is a BPMN (Business Process Model and Notation) workflow engine built with
 ┌─────────────────────────────────────────────────────┐
 │                    gflow-runner                              │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │  Dispatcher │  │  Executor   │  │   Plugins   │         │
+│  │   分发器    │  │   执行器    │  │    插件     │         │
 │  └─────────────┘  └─────────────┘  └─────────────┘         │
 └─────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────┐
-│                     Database (MySQL/PostgreSQL)              │
+│                     数据库 (MySQL/PostgreSQL)                │
 └─────────────────────────────────────────────────────┘
 ```
 
-## Installation
+## 安装
 
-#### Download Binary
+#### 下载二进制文件
 
-Download the latest release from [GitHub Releases](https://github.com/olive-io/gflow/releases):
+从 [GitHub Releases](https://github.com/olive-io/gflow/releases) 下载最新版本：
 
 ```bash
 # Linux
@@ -59,10 +59,10 @@ wget https://github.com/olive-io/gflow/releases/download/v1.0.0/gflow-1.0.0-darw
 tar -xzf gflow-1.0.0-darwin-amd64.tar.gz
 
 # Windows
-# Download gflow-1.0.0-windows-amd64.zip and extract
+# 下载 gflow-1.0.0-windows-amd64.zip 并解压
 ```
 
-#### Install from Package
+#### 从包安装
 
 ```bash
 # Debian/Ubuntu
@@ -72,10 +72,10 @@ sudo dpkg -i gflow_1.0.0_amd64.deb
 sudo rpm -i gflow-1.0.0.x86_64.rpm
 
 # Alpine Linux
-sudo apk add gflow-1.0.0_x86_64.apk
+sudo apk add gflow_1.0.0_x86_64.apk
 ```
 
-#### Build from Source
+#### 从源码构建
 
 ```bash
 git clone https://github.com/olive-io/gflow.git
@@ -85,79 +85,79 @@ go build -o bin/gflow-runner ./cmd/gflow-runner
 go build -o bin/gfcli ./cmd/gflow-cli
 ```
 
-## Quick Start
+## 快速开始
 
-1. **Start Server**
+1. **启动服务器**
 
 ```bash
 ./gflow-server --config gflow.toml
 ```
 
-2. **Start Runner**
+2. **启动 Runner**
 
 ```bash
 ./gflow-runner --config runner.toml
 ```
 
-3. **Deploy BPMN Definition**
+3. **部署 BPMN 定义**
 
 ```bash
-gfcli bpmn definitions deploy process.bpmn -d "My Process"
+gfcli bpmn definitions deploy process.bpmn -d "我的流程"
 ```
 
-4. **Execute Process**
+4. **执行流程**
 
 ```bash
-gfcli bpmn process execute -u <definition-uid> -n "Process Instance"
+gfcli bpmn process execute -u <definition-uid> -n "流程实例"
 ```
 
-## CLI Commands
+## CLI 命令
 
 ```bash
-# Authentication
+# 认证
 gfcli auth login -u admin -p admin123
 
-# BPMN Definitions
-gfcli bpmn definitions deploy <file>      # Deploy BPMN definition
-gfcli bpmn definitions list               # List definitions
-gfcli bpmn definitions get <uid>          # Get definition
+# BPMN 定义管理
+gfcli bpmn definitions deploy <file>      # 部署 BPMN 定义
+gfcli bpmn definitions list               # 列出定义
+gfcli bpmn definitions get <uid>          # 获取定义
 
-# Process Management
-gfcli bpmn process execute                # Execute process
-gfcli bpmn process list                   # List processes
-gfcli bpmn process get <id>               # Get process details
+# 流程管理
+gfcli bpmn process execute                # 执行流程
+gfcli bpmn process list                   # 列出流程
+gfcli bpmn process get <id>               # 获取流程详情
 
-# System
-gfcli system ping                         # Health check
+# 系统
+gfcli system ping                         # 健康检查
 ```
 
-## Configuration
+## 配置
 
-Configuration file: `~/.gflow/gfcli.yaml`
+配置文件：`~/.gflow/gfcli.yaml`
 
 ```yaml
 endpoint: localhost:6550
 token: "your-auth-token"
 ```
 
-## Development
+## 开发
 
-#### Prerequisites
+#### 环境要求
 
 - Go 1.25+
-- Node.js 18+ (for web console)
-- MySQL 8.0+ or PostgreSQL 14+
+- Node.js 18+ (用于 Web 控制台)
+- MySQL 8.0+ 或 PostgreSQL 14+
 
-#### Run Development Server
+#### 运行开发服务器
 
 ```bash
-# Backend
+# 后端
 go run ./cmd/gflow-server --config gflow.toml
 
-# Frontend
+# 前端
 cd console && pnpm dev
 ```
 
-## License
+## 许可证
 
 Apache License 2.0

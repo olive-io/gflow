@@ -1,5 +1,13 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
+import { useAppStore } from '@/stores'
+
+const appStore = useAppStore()
+
+onMounted(() => {
+  appStore.initTheme()
+})
 </script>
 
 <template>

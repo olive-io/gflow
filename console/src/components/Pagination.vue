@@ -87,7 +87,7 @@ function getVisiblePages(): (number | string)[] {
         <span class="text-sm text-muted-foreground">每页</span>
         <Select :model-value="String(pageSize)" @update:model-value="handlePageSizeChange">
           <SelectTrigger class="w-[70px] h-8">
-            <SelectValue />
+            <SelectValue>{{ pageSize }}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem v-for="size in pageSizes" :key="size" :value="String(size)">

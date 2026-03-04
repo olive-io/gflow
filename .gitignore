@@ -25,6 +25,7 @@ vendor/
 
 # _output directories
 _output
+dist
 
 # Go workspace file
 #go.work

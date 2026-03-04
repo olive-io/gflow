@@ -1,0 +1,190 @@
+project_name: gflow
+
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - id: gflow-server
+    main: ./cmd/gflow-server
+    binary: gflow-server
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: gflow-runner
+    main: ./cmd/gflow-runner
+    binary: gflow-runner
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: gfcli
+    main: ./cmd/gflow-cli
+    binary: gfcli
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - id: default
+    name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+
+nfpms:
+  - id: gflow
+    package_name: gflow
+    vendor: olive-io
+    homepage: https://github.com/olive-io/gflow
+    maintainer: olive-io <support@olive-io.com>
+    description: GFlow - A BPMN workflow engine
+    license: Apache-2.0
+    formats:
+      - deb
+      - rpm
+      - apk
+    builds:
+      - gflow-server
+      - gflow-runner
+      - gfcli
+    bindir: /usr/bin
+    contents:
+      - src: README.md
+        dst: /usr/share/doc/gflow/README.md
+      - src: LICENSE
+        dst: /usr/share/doc/gflow/LICENSE
+    scripts:
+      postinstall: "build/scripts/postinstall.sh"
+      preremove: "build/scripts/preremove.sh"
+    rpm:
+      group: Development/Tools
+      compression: xz
+    deb:
+      lintian_overrides:
+        - statically-linked-binary
+        - changelog-file-missing-in-native-package
+
+checksum:
+  name_template: "{{ .ProjectName }}-{{ .Version }}-checksums.txt"
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
+      - "merge conflict"
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: Bug fixes
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: Improvements
+      regexp: "^.*(refactor|perf|style)[(\\w)]*:+.*$"
+      order: 2
+    - title: Others
+      order: 999
+
+release:
+  github:
+    owner: olive-io
+    name: gflow
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## Release {{ .Tag }}
+    
+    ### Downloads
+    
+    | Platform | Architecture | File |
+    |----------|--------------|------|
+    | Linux | amd64 | gflow-{{ .Version }}-linux-amd64.tar.gz |
+    | Linux | arm64 | gflow-{{ .Version }}-linux-arm64.tar.gz |
+    | macOS | amd64 | gflow-{{ .Version }}-darwin-amd64.tar.gz |
+    | macOS | arm64 | gflow-{{ .Version }}-darwin-arm64.tar.gz |
+    | Windows | amd64 | gflow-{{ .Version }}-windows-amd64.zip |
+    
+    ### Linux Packages
+    
+    | Format | Architecture | File |
+    |--------|--------------|------|
+    | DEB | amd64 | gflow_{{ .Version }}_amd64.deb |
+    | DEB | arm64 | gflow_{{ .Version }}_arm64.deb |
+    | RPM | amd64 | gflow-{{ .Version }}.x86_64.rpm |
+    | RPM | arm64 | gflow-{{ .Version }}.aarch64.rpm |
+    | APK | amd64 | gflow_{{ .Version }}_x86_64.apk |
+    | APK | arm64 | gflow_{{ .Version }}_aarch64.apk |
+    
+    ### Binaries
+    
+    - `gflow-server` - GFlow Server
+    - `gflow-runner` - GFlow Runner
+    - `gfcli` - GFlow CLI
+
+source:
+  enabled: true
+  name_template: "{{ .ProjectName }}-{{ .Version }}-source"
+
+snapshot:
+  name_template: "{{ .Version }}"
