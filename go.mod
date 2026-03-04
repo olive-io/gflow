@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/bytedance/sonic v1.15.0
-	github.com/casbin/casbin/v2 v2.135.0
+	github.com/casbin/casbin/v3 v3.10.0
 	github.com/casbin/gorm-adapter/v3 v3.41.0
 	github.com/coreos/go-systemd/v22 v22.7.0
 	github.com/envoyproxy/protoc-gen-validate v1.3.3
@@ -28,6 +28,7 @@ require (
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
+	github.com/spf13/viper v1.21.0
 	github.com/srikrsna/protoc-gen-gotag v1.0.2
 	github.com/stretchr/testify v1.11.1
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20220101234140-673ab2c3ae75
@@ -63,7 +64,6 @@ require (
 	github.com/bmatcuk/doublestar/v4 v4.10.0 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic/loader v0.5.0 // indirect
-	github.com/casbin/casbin/v3 v3.10.0 // indirect
 	github.com/casbin/govaluate v1.10.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -130,7 +130,6 @@ require (
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
-	github.com/spf13/viper v1.21.0 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.6.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect

@@ -346,6 +346,7 @@ func createEndpointAndProxy(rv reflect.Value, options *plugins.RegisterOptions) 
 		TaskType:    options.FlowType,
 		Type:        options.Type,
 		Description: options.Description,
+		Mode:        types.TransitionMode_Simple,
 		Metadata:    map[string]string{},
 		Headers:     map[string]string{},
 		Properties:  map[string]*types.Value{},

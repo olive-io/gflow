@@ -1,0 +1,183 @@
+<mxfile host="app.diagrams.net" modified="2024-03-04T12:00:00.000Z" agent="GFlow" version="22.1.0" type="device">
+  <diagram name="时序图" id="sequence-diagram">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Participants -->
+        <mxCell id="user-head" value="用户" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#42A5F5;strokeColor=#1565C0;fontColor=#FFFFFF;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="80" width="100" height="600" as="geometry" />
+        </mxCell>
+        <mxCell id="console-head" value="Web控制台" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#66BB6A;strokeColor=#2E7D32;fontColor=#FFFFFF;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="80" width="100" height="600" as="geometry" />
+        </mxCell>
+        <mxCell id="server-head" value="GFlow Server" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#5C6BC0;strokeColor=#303F9F;fontColor=#FFFFFF;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="360" y="80" width="100" height="600" as="geometry" />
+        </mxCell>
+        <mxCell id="db-head" value="数据库" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#FF7043;strokeColor=#E64A19;fontColor=#FFFFFF;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="500" y="80" width="100" height="600" as="geometry" />
+        </mxCell>
+        <mxCell id="runner-head" value="GFlow Runner" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#AB47BC;strokeColor=#7B1FA2;fontColor=#FFFFFF;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="640" y="80" width="100" height="600" as="geometry" />
+        </mxCell>
+        <mxCell id="external-head" value="外部服务" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#EC407A;strokeColor=#C2185B;fontColor=#FFFFFF;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="780" y="80" width="100" height="600" as="geometry" />
+        </mxCell>
+        
+        <!-- Login Flow Title -->
+        <mxCell id="login-title" value="登录认证流程" style="text;html=1;strokeColor=none;fillColor=#E3F2FD;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontStyle=1;fontSize=14;fontColor=#1565C0;" vertex="1" parent="1">
+          <mxGeometry x="360" y="120" width="120" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- Login Flow Messages -->
+        <mxCell id="login-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#1565C0;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="130" y="170" as="sourcePoint" />
+            <mxPoint x="270" y="170" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="login-1-label" value="登录" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#1565C0;fontStyle=1;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="175" y="155" width="50" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="login-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#2E7D32;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="270" y="200" as="sourcePoint" />
+            <mxPoint x="410" y="200" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="login-2-label" value="认证请求" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#2E7D32;fontStyle=1;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="310" y="185" width="70" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="login-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#303F9F;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="410" y="230" as="sourcePoint" />
+            <mxPoint x="550" y="230" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="login-3-label" value="验证用户" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#303F9F;fontStyle=1;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="450" y="215" width="60" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="login-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;strokeColor=#E64A19;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="550" y="260" as="sourcePoint" />
+            <mxPoint x="410" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="login-4-label" value="用户信息" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#E64A19;fontStyle=1;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="450" y="245" width="60" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="login-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;strokeColor=#5C6BC0;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="410" y="290" as="sourcePoint" />
+            <mxPoint x="270" y="290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="login-5-label" value="JWT Token" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#5C6BC0;fontStyle=1;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="310" y="275" width="70" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="login-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;strokeColor=#42A5F5;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="270" y="320" as="sourcePoint" />
+            <mxPoint x="130" y="320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="login-6-label" value="登录成功" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#42A5F5;fontStyle=1;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="170" y="305" width="60" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Process Flow Title -->
+        <mxCell id="process-title" value="启动流程实例流程" style="text;html=1;strokeColor=none;fillColor=#F3E5F5;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontStyle=1;fontSize=14;fontColor=#7B1FA2;" vertex="1" parent="1">
+          <mxGeometry x="360" y="360" width="140" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- Process Flow Messages -->
+        <mxCell id="process-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#1565C0;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="130" y="410" as="sourcePoint" />
+            <mxPoint x="270" y="410" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="process-1-label" value="启动流程" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#1565C0;fontStyle=1;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="170" y="395" width="60" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="process-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#2E7D32;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="270" y="440" as="sourcePoint" />
+            <mxPoint x="410" y="440" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="process-2-label" value="启动请求" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#2E7D32;fontStyle=1;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="310" y="425" width="60" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="process-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#303F9F;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="410" y="470" as="sourcePoint" />
+            <mxPoint x="550" y="470" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="process-3-label" value="创建实例" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#303F9F;fontStyle=1;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="450" y="455" width="60" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="process-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#7B1FA2;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="410" y="500" as="sourcePoint" />
+            <mxPoint x="690" y="500" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="process-4-label" value="分发任务" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#7B1FA2;fontStyle=1;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="510" y="485" width="60" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="process-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#AB47BC;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="690" y="530" as="sourcePoint" />
+            <mxPoint x="830" y="530" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="process-5-label" value="调用服务" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#AB47BC;fontStyle=1;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="730" y="515" width="60" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="process-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;strokeColor=#EC407A;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="830" y="560" as="sourcePoint" />
+            <mxPoint x="690" y="560" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="process-6-label" value="返回结果" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#EC407A;fontStyle=1;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="730" y="545" width="60" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="process-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;strokeColor=#AB47BC;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="690" y="590" as="sourcePoint" />
+            <mxPoint x="410" y="590" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="process-7-label" value="任务完成" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#AB47BC;fontStyle=1;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="510" y="575" width="60" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="process-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#5C6BC0;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="410" y="620" as="sourcePoint" />
+            <mxPoint x="550" y="620" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="process-8-label" value="更新状态" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#5C6BC0;fontStyle=1;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="450" y="605" width="60" height="20" as="geometry" />
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

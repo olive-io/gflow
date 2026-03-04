@@ -59,10 +59,22 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '流程实例详情' },
       },
       {
-        path: 'runners',
-        name: 'Runners',
-        component: () => import('@/views/Runners.vue'),
-        meta: { title: 'Runner 管理' },
+        path: 'system',
+        name: 'System',
+        component: () => import('@/views/System.vue'),
+        meta: { title: '组件管理' },
+      },
+      {
+        path: 'endpoints',
+        name: 'Endpoints',
+        component: () => import('@/views/Endpoints.vue'),
+        meta: { title: '接口管理' },
+      },
+      {
+        path: 'endpoints/:id',
+        name: 'EndpointDetail',
+        component: () => import('@/views/EndpointDetail.vue'),
+        meta: { title: '接口详情' },
       },
       {
         path: 'users',

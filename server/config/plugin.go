@@ -58,13 +58,13 @@ type PluginConfig struct {
 }
 
 type RabbitMQConfigWithRef struct {
-	*RabbitMQConfig `mapstructure:",squash" json:",inline" toml:",inline"`
+	*RabbitMQConfig `json:",inline" toml:",inline"`
 
 	Ref string `mapstructure:"ref" json:"ref" toml:"ref"`
 }
 
 type ShellScriptConfigWithRef struct {
-	*ShellConfig `mapstructure:",squash" json:",inline" toml:",inline"`
+	*ShellConfig `json:",inline" toml:",inline"`
 
 	Ref string `mapstructure:"ref" json:"ref" toml:"ref"`
 }

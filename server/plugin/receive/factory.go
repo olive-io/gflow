@@ -77,7 +77,11 @@ func (f *sendFactory) Create(opts ...plugins.Option) (plugins.Plugin, error) {
 			return nil, fmt.Errorf("missing rabbitmq config")
 		}
 
-		rp = NewRabbitMQ(mqConfig.RabbitMQConfig)
+		rp = NewRabbitMQ(&config.RabbitMQConfig{
+			Username: mqConfig.Username,
+			Password: mqConfig.Password,
+			Host:     mqConfig.Host,
+		})
 	default:
 		return nil, fmt.Errorf("invalid plugin type: %s", options.Type)
 	}

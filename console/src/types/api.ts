@@ -220,7 +220,7 @@ export enum FlowNodeStatus {
 }
 
 export interface Runner {
-  id: number
+  id: string
   uid: string
   listenUrl: string
   version: string
@@ -234,23 +234,34 @@ export interface Runner {
   onlineTimestamp: number
   offlineTimestamp: number
   online: number
-  state: number
+  state: string
+  message: string
+  createAt: number
+}
+
+export interface EndpointProperty {
+  type: string
+  kind: string
+  value: string
+  default: string
 }
 
 export interface Endpoint {
   id: number
-  taskType: number
+  taskType: number | string
   type: string
   name: string
   description: string
-  mode: number
+  mode: number | string
   httpUrl: string
   metadata: Record<string, string>
   targets: string[]
   headers: Record<string, string>
-  properties: Record<string, unknown>
+  properties: Record<string, EndpointProperty>
   dataObjects: Record<string, unknown>
-  results: Record<string, unknown>
+  results: Record<string, EndpointProperty>
+  createAt: number
+  updateAt: number
 }
 
 export interface ListResponse<T> {

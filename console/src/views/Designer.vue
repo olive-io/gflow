@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   Loader2,
   Save,
@@ -22,8 +23,8 @@ import 'bpmn-js/dist/assets/diagram-js.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-codes.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css'
-import { definitionsApi } from '@/api'
-import type { Definitions } from '@/types/api'
+import { definitionsApi, endpointsApi } from '@/api'
+import type { Definitions, Endpoint } from '@/types/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -36,10 +37,14 @@ const editingDefinition = ref<Definitions | null>(null)
 const processName = ref('')
 const processKey = ref('')
 const processDescription = ref('')
-const selectedElement = ref<{ id: string; businessObject?: { name?: string; $attrs?: Record<string, string> } } | null>(null)
+const selectedElement = ref<{ id: string; type: string; businessObject?: { name?: string; $attrs?: Record<string, string> } } | null>(null)
 const saving = ref(false)
 const deploying = ref(false)
 const zoom = ref(1)
+
+const endpoints = ref<Endpoint[]>([])
+const selectedEndpointId = ref<string | null>(null)
+const loadingEndpoints = ref(false)
 
 const defaultDiagram = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
@@ -108,6 +113,18 @@ async function loadDefinition() {
   return null
 }
 
+async function loadEndpoints() {
+  loadingEndpoints.value = true
+  try {
+    const response = await endpointsApi.list({ size: 100 })
+    endpoints.value = response.endpoints || []
+  } catch (error) {
+    console.error('Failed to load endpoints:', error)
+  } finally {
+    loadingEndpoints.value = false
+  }
+}
+
 function initModeler(initialContent?: string | null) {
   if (!canvasRef.value) return
 
@@ -125,12 +142,22 @@ function initModeler(initialContent?: string | null) {
     console.error('Failed to import XML:', error)
   })
 
-  bpmnModeler.on('selection.changed', (e: { newSelection: Array<{ id: string; businessObject?: { name?: string; $attrs?: Record<string, string> } }> }) => {
-    selectedElement.value = e.newSelection[0] || null
+  bpmnModeler.on('selection.changed', (e: { newSelection: Array<{ id: string; type: string; businessObject?: { name?: string; $attrs?: Record<string, string> } }> }) => {
+    const element = e.newSelection[0]
+    selectedElement.value = element || null
+    
+    if (element) {
+      const bo = element.businessObject
+      const endpointId = bo?.$attrs?.['gflow:endpoint']
+      if (endpointId) {
+        selectedEndpointId.value = endpointId
+      } else {
+        selectedEndpointId.value = null
+      }
+    }
   })
   
   bpmnModeler.on('element.changed', () => {
-    // 元素变化时可以更新属性面板
   })
 }
 
@@ -222,12 +249,58 @@ function handleFitViewport() {
   zoom.value = 1
 }
 
+function handleEndpointChange(endpointId: string) {
+  if (!selectedElement.value || !bpmnModeler) return
+  
+  const modeling = bpmnModeler.get('modeling') as { updateProperties: (element: unknown, props: Record<string, string>) => void } | undefined
+  if (modeling && selectedElement.value) {
+    if (endpointId) {
+      const endpoint = endpoints.value.find(e => String(e.id) === endpointId)
+      if (endpoint) {
+        modeling.updateProperties(selectedElement.value, {
+          'gflow:endpoint': endpointId,
+          name: endpoint.name || selectedElement.value.businessObject?.name || ''
+        })
+      }
+    } else {
+      modeling.updateProperties(selectedElement.value, {
+        'gflow:endpoint': ''
+      })
+    }
+  }
+}
+
+function getTaskTypeLabel(taskType: number | string) {
+  if (typeof taskType === 'string') {
+    return taskType
+  }
+  const types: Record<number, string> = {
+    11: 'Task',
+    12: 'SendTask',
+    13: 'ReceiveTask',
+    14: 'ServiceTask',
+    15: 'UserTask',
+    16: 'ScriptTask',
+    17: 'ManualTask',
+    18: 'CallActivity',
+    19: 'BusinessRuleTask',
+  }
+  return types[taskType] || 'Unknown'
+}
+
+const isTaskElement = computed(() => {
+  if (!selectedElement.value) return false
+  const type = selectedElement.value.type
+  return ['bpmn:task', 'bpmn:serviceTask', 'bpmn:sendTask', 'bpmn:receiveTask', 'bpmn:userTask', 'bpmn:scriptTask', 'bpmn:manualTask', 'bpmn:businessRuleTask', 'bpmn:callActivity'].includes(type)
+})
+
 onMounted(async () => {
   await nextTick()
   setTimeout(async () => {
     const content = await loadDefinition()
     initModeler(content)
   }, 100)
+  loadEndpoints()
 })
 
 onUnmounted(() => {
@@ -347,6 +420,36 @@ watch(() => route.params.id, async (newId) => {
               <div class="space-y-2">
                 <Label>元素名称</Label>
                 <Input :value="selectedElement.businessObject?.name || ''" placeholder="请输入名称" />
+              </div>
+              
+              <!-- Endpoint Selection for Task elements -->
+              <div v-if="isTaskElement" class="space-y-2">
+                <Label>关联接口</Label>
+                <Select 
+                  :model-value="selectedEndpointId ?? undefined" 
+                  @update:model-value="handleEndpointChange"
+                  :disabled="loadingEndpoints"
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择要调用的接口..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">无</SelectItem>
+                    <SelectItem 
+                      v-for="endpoint in endpoints" 
+                      :key="endpoint.id" 
+                      :value="String(endpoint.id)"
+                    >
+                      <div class="flex flex-col">
+                        <span class="font-medium">{{ endpoint.name || `Endpoint #${endpoint.id}` }}</span>
+                        <span class="text-xs text-muted-foreground">{{ getTaskTypeLabel(endpoint.taskType) }} - {{ endpoint.httpUrl || 'No URL' }}</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p class="text-xs text-muted-foreground">
+                  选择接口后，该任务将调用对应的服务
+                </p>
               </div>
             </div>
             

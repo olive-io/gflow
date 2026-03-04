@@ -67,6 +67,7 @@ type Client struct {
 
 	bpmnClient   pb.BpmnRPCClient
 	systemClient pb.SystemRPCClient
+	authClient   pb.AuthRPCClient
 
 	done chan struct{}
 }
@@ -132,6 +133,7 @@ func NewClient(cfg *Config) (*Client, error) {
 
 	bpmnClient := pb.NewBpmnRPCClient(conn)
 	systemClient := pb.NewSystemRPCClient(conn)
+	authClient := pb.NewAuthRPCClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.DialTimeout)
 	defer cancel()
@@ -147,6 +149,7 @@ func NewClient(cfg *Config) (*Client, error) {
 		conn:         conn,
 		bpmnClient:   bpmnClient,
 		systemClient: systemClient,
+		authClient:   authClient,
 		done:         make(chan struct{}, 1),
 	}
 
@@ -318,6 +321,39 @@ func (c *Client) ExecuteProcess(ctx context.Context, options *ExecuteProcessRequ
 		return nil, parseErr(err)
 	}
 	return resp.Process, nil
+}
+
+func (c *Client) GetProcess(ctx context.Context, id int64) (*types.Process, []*types.FlowNode, error) {
+	req := &pb.GetProcessRequest{Id: id}
+	opts := c.buildCallOptions()
+	resp, err := c.bpmnClient.GetProcess(ctx, req, opts...)
+	if err != nil {
+		return nil, nil, parseErr(err)
+	}
+	return resp.Process, resp.Activities, nil
+}
+
+func (c *Client) Login(ctx context.Context, username, password string) (*types.Token, error) {
+	req := &pb.LoginRequest{
+		Username: username,
+		Password: password,
+	}
+	opts := c.buildCallOptions()
+	resp, err := c.authClient.Login(ctx, req, opts...)
+	if err != nil {
+		return nil, parseErr(err)
+	}
+	return resp.Token, nil
+}
+
+func (c *Client) GetSelf(ctx context.Context) (*types.User, *types.Role, []*types.Policy, error) {
+	req := &pb.GetSelfRequest{}
+	opts := c.buildCallOptions()
+	resp, err := c.authClient.GetSelf(ctx, req, opts...)
+	if err != nil {
+		return nil, nil, nil, parseErr(err)
+	}
+	return resp.User, resp.Role, resp.Policies, nil
 }
 
 func (c *Client) Close() error {

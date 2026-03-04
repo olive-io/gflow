@@ -26,6 +26,7 @@ import {
   User,
   Settings,
   Workflow,
+  Globe,
 } from 'lucide-vue-next'
 import { cn } from '@/lib/utils'
 
@@ -38,7 +39,8 @@ const menuItems = [
   { path: '/dashboard', name: '仪表盘', icon: LayoutDashboard },
   { path: '/definitions', name: '流程定义', icon: FileText },
   { path: '/processes', name: '流程实例', icon: GitBranch },
-  { path: '/runners', name: 'Runner 管理', icon: Server },
+  { path: '/system', name: '组件管理', icon: Server },
+  { path: '/endpoints', name: '接口管理', icon: Globe },
   { path: '/users', name: '用户管理', icon: Users },
   { path: '/audit-logs', name: '审计日志', icon: ScrollText },
 ]

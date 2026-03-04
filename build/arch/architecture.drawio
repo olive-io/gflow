@@ -1,0 +1,127 @@
+<mxfile host="app.diagrams.net" modified="2024-03-04T12:00:00.000Z" agent="GFlow" version="22.1.0" type="device">
+  <diagram name="系统架构图" id="system-architecture">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Client Group -->
+        <mxCell id="client-group" value="客户端" style="swimlane;horizontal=1;startSize=30;fillColor=#4FC3F7;strokeColor=#0288D1;fontColor=#FFFFFF;fontStyle=1;fontSize=14;rounded=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="200" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="browser" value="浏览器" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#81D4FA;strokeColor=#0288D1;fontColor=#01579B;fontStyle=1;" vertex="1" parent="client-group">
+          <mxGeometry x="20" y="45" width="70" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="swagger" value="Swagger UI" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#81D4FA;strokeColor=#0288D1;fontColor=#01579B;fontStyle=1;" vertex="1" parent="client-group">
+          <mxGeometry x="110" y="45" width="70" height="50" as="geometry" />
+        </mxCell>
+        
+        <!-- Console Group -->
+        <mxCell id="console-group" value="前端控制台 (Vue 3)" style="swimlane;horizontal=1;startSize=30;fillColor=#66BB6A;strokeColor=#2E7D32;fontColor=#FFFFFF;fontStyle=1;fontSize=14;rounded=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="280" y="40" width="400" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="dashboard" value="仪表盘" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#A5D6A7;strokeColor=#2E7D32;fontColor=#1B5E20;fontStyle=1;" vertex="1" parent="console-group">
+          <mxGeometry x="10" y="45" width="70" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="designer" value="流程设计器" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#A5D6A7;strokeColor=#2E7D32;fontColor=#1B5E20;fontStyle=1;" vertex="1" parent="console-group">
+          <mxGeometry x="90" y="45" width="70" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="endpoints" value="接口管理" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#A5D6A7;strokeColor=#2E7D32;fontColor=#1B5E20;fontStyle=1;" vertex="1" parent="console-group">
+          <mxGeometry x="170" y="45" width="70" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="processes" value="流程实例" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#A5D6A7;strokeColor=#2E7D32;fontColor=#1B5E20;fontStyle=1;" vertex="1" parent="console-group">
+          <mxGeometry x="250" y="45" width="70" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="system" value="组件管理" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#A5D6A7;strokeColor=#2E7D32;fontColor=#1B5E20;fontStyle=1;" vertex="1" parent="console-group">
+          <mxGeometry x="330" y="45" width="60" height="50" as="geometry" />
+        </mxCell>
+        
+        <!-- GFlow Server Group -->
+        <mxCell id="server-group" value="GFlow Server" style="swimlane;horizontal=1;startSize=30;fillColor=#5C6BC0;strokeColor=#303F9F;fontColor=#FFFFFF;fontStyle=1;fontSize=14;rounded=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="280" y="200" width="400" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="api" value="REST/gRPC API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#9FA8DA;strokeColor=#303F9F;fontColor=#1A237E;fontStyle=1;" vertex="1" parent="server-group">
+          <mxGeometry x="20" y="45" width="100" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="auth" value="认证授权" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#9FA8DA;strokeColor=#303F9F;fontColor=#1A237E;fontStyle=1;" vertex="1" parent="server-group">
+          <mxGeometry x="130" y="45" width="80" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="scheduler" value="调度器" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#9FA8DA;strokeColor=#303F9F;fontColor=#1A237E;fontStyle=1;" vertex="1" parent="server-group">
+          <mxGeometry x="220" y="45" width="80" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="dispatch" value="分发器" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#9FA8DA;strokeColor=#303F9F;fontColor=#1A237E;fontStyle=1;" vertex="1" parent="server-group">
+          <mxGeometry x="310" y="45" width="80" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="dao" value="数据访问层" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#9FA8DA;strokeColor=#303F9F;fontColor=#1A237E;fontStyle=1;" vertex="1" parent="server-group">
+          <mxGeometry x="20" y="110" width="100" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="server-plugins" value="服务端插件 (HTTP/gRPC/RabbitMQ)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CE93D8;strokeColor=#7B1FA2;fontColor=#4A148C;fontStyle=1;" vertex="1" parent="server-group">
+          <mxGeometry x="130" y="110" width="260" height="45" as="geometry" />
+        </mxCell>
+        
+        <!-- GFlow Runner Group -->
+        <mxCell id="runner-group" value="GFlow Runner" style="swimlane;horizontal=1;startSize=30;fillColor=#AB47BC;strokeColor=#7B1FA2;fontColor=#FFFFFF;fontStyle=1;fontSize=14;rounded=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="720" y="200" width="300" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="executor" value="任务执行器" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CE93D8;strokeColor=#7B1FA2;fontColor=#4A148C;fontStyle=1;" vertex="1" parent="runner-group">
+          <mxGeometry x="20" y="45" width="100" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="plugin-mgr" value="插件管理器" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CE93D8;strokeColor=#7B1FA2;fontColor=#4A148C;fontStyle=1;" vertex="1" parent="runner-group">
+          <mxGeometry x="130" y="45" width="100" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="runner-plugins" value="执行器插件&#xa;(Script/Send/Receive/Service)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F48FB1;strokeColor=#C2185B;fontColor=#880E4F;fontStyle=1;" vertex="1" parent="runner-group">
+          <mxGeometry x="20" y="110" width="260" height="45" as="geometry" />
+        </mxCell>
+        
+        <!-- Storage Group -->
+        <mxCell id="storage-group" value="存储层" style="swimlane;horizontal=1;startSize=30;fillColor=#FF8A65;strokeColor=#E64A19;fontColor=#FFFFFF;fontStyle=1;fontSize=14;rounded=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="440" width="200" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="mysql" value="MySQL/PostgreSQL" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#FFAB91;strokeColor=#E64A19;fontColor=#BF360C;fontStyle=1;" vertex="1" parent="storage-group">
+          <mxGeometry x="20" y="35" width="80" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="redis" value="Redis" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#FFAB91;strokeColor=#E64A19;fontColor=#BF360C;fontStyle=1;" vertex="1" parent="storage-group">
+          <mxGeometry x="110" y="35" width="70" height="55" as="geometry" />
+        </mxCell>
+        
+        <!-- External Services Group -->
+        <mxCell id="external-group" value="外部服务" style="swimlane;horizontal=1;startSize=30;fillColor=#EC407A;strokeColor=#C2185B;fontColor=#FFFFFF;fontStyle=1;fontSize=14;rounded=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="720" y="440" width="300" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="rabbitmq-ext" value="RabbitMQ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F48FB1;strokeColor=#C2185B;fontColor=#880E4F;fontStyle=1;" vertex="1" parent="external-group">
+          <mxGeometry x="20" y="40" width="80" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="http-service" value="HTTP 服务" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F48FB1;strokeColor=#C2185B;fontColor=#880E4F;fontStyle=1;" vertex="1" parent="external-group">
+          <mxGeometry x="110" y="40" width="80" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="grpc-service" value="gRPC 服务" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F48FB1;strokeColor=#C2185B;fontColor=#880E4F;fontStyle=1;" vertex="1" parent="external-group">
+          <mxGeometry x="200" y="40" width="80" height="45" as="geometry" />
+        </mxCell>
+        
+        <!-- Connections -->
+        <mxCell id="conn1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0288D1;strokeWidth=3;" edge="1" parent="1" source="browser" target="dashboard">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0288D1;strokeWidth=3;" edge="1" parent="1" source="swagger" target="api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#303F9F;strokeWidth=3;" edge="1" parent="1" source="api" target="auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#303F9F;strokeWidth=3;" edge="1" parent="1" source="scheduler" target="dispatch">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7B1FA2;strokeWidth=3;" edge="1" parent="1" source="dispatch" target="executor">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#E64A19;strokeWidth=3;" edge="1" parent="1" source="dao" target="mysql">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C2185B;strokeWidth=3;" edge="1" parent="1" source="runner-plugins" target="rabbitmq-ext">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

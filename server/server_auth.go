@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/casbin/casbin/v2"
+	"github.com/casbin/casbin/v3"
 	gwrt "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"go.uber.org/zap"

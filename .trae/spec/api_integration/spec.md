@@ -20,6 +20,15 @@ cd _output
 # gRPC: localhost:6551 (如果配置了)
 ```
 
+```bash
+# 进入输出目录
+cd _output
+
+# 启动 GFlow 执行器
+./gflow_runner --config runner.toml
+
+```
+
 ### 1.2 前端服务
 
 ```bash

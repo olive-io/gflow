@@ -304,9 +304,13 @@ func (s *systemGRPCServer) RunnerDispatch(stream pb.SystemRPC_RunnerDispatchServ
 		}
 		runner = runnerMsg
 		runner.ListenUrl = listenURL
+		runner.Online = 1
+		runner.OnlineTimestamp = time.Now().UnixMilli()
 		_, _ = s.runnerDao.Create(ctx, runner)
 	} else {
 		runner.ListenUrl = listenURL
+		runner.Online = 1
+		runner.OnlineTimestamp = time.Now().UnixMilli()
 		_ = s.runnerDao.Update(ctx, runner.Id, runner)
 	}
 
@@ -382,6 +386,19 @@ LOOP:
 		zap.String("listen-url", runner.ListenUrl),
 		zap.String("hostname", runner.Hostname),
 	)
+
+	// 更新 runner 状态为离线（使用新的 context，因为原来的 context 已被取消）
+	runner.Online = 0
+	runner.OfflineTimestamp = time.Now().UnixMilli()
+	updateCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	// 使用 UpdateFields 强制更新 Online 字段（GORM 默认不更新零值）
+	if err := s.runnerDao.UpdateFields(updateCtx, runner.Id, map[string]any{
+		"online":            0,
+		"offline_timestamp": runner.OfflineTimestamp,
+	}); err != nil {
+		lg.Error("update runner offline status", zap.Error(err))
+	}
 
 	return nil
 }

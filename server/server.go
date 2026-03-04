@@ -33,7 +33,9 @@ import (
 	gwrt "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/tmc/grpc-websocket-proxy/wsproxy"
+	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
@@ -298,7 +300,7 @@ func (s *Server) buildHandler(ctx context.Context) (http.Handler, error) {
 	}
 
 	sopts := []grpc.ServerOption{
-		grpc.ChainUnaryInterceptor(validateInterceptor, authInterceptor, adminInterceptor),
+		grpc.ChainUnaryInterceptor(loggingInterceptor, validateInterceptor, authInterceptor, adminInterceptor),
 		grpc.KeepaliveEnforcementPolicy(kaep),
 		grpc.KeepaliveParams(kasp),
 	}
@@ -437,6 +439,7 @@ func (s *Server) buildGRPCConn() (*grpc.ClientConn, error) {
 		grpc.WithTransportCredentials(creds),
 		grpc.WithKeepaliveParams(kacp),
 		grpc.WithIdleTimeout(defaultTimeout),
+		grpc.WithNoProxy(),
 		grpc.WithChainUnaryInterceptor(func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 			httpPath, ok := gwrt.HTTPPathPattern(ctx)
 			if ok {
@@ -467,6 +470,49 @@ func grpcWithHttp(gh *grpc.Server, hh http.Handler) http.Handler {
 			hh.ServeHTTP(w, r)
 		}
 	}), h2s)
+}
+
+func loggingInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	start := time.Now()
+
+	// 获取 HTTP 方法和路径
+	md, _ := metadata.FromIncomingContext(ctx)
+	httpMethod := "UNKNOWN"
+	httpPath := info.FullMethod
+	if methods := md.Get(httpMethodKey); len(methods) > 0 {
+		httpMethod = methods[0]
+	}
+	if paths := md.Get(httpPathKey); len(paths) > 0 {
+		httpPath = paths[0]
+	}
+
+	lg := otelzap.L()
+	lg.Info("request started",
+		zap.String("method", httpMethod),
+		zap.String("path", httpPath),
+		zap.String("grpc_method", info.FullMethod),
+	)
+
+	rsp, err := handler(ctx, req)
+
+	duration := time.Since(start)
+	statusCode := codes.OK
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			statusCode = st.Code()
+		}
+	}
+
+	lg.Info("request completed",
+		zap.String("method", httpMethod),
+		zap.String("path", httpPath),
+		zap.String("grpc_method", info.FullMethod),
+		zap.String("status", statusCode.String()),
+		zap.Duration("duration", duration),
+		zap.Error(err),
+	)
+
+	return rsp, err
 }
 
 func validateInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {

@@ -393,14 +393,31 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 				if ok {
 					fid = *id
 				}
+				var fname string
+				name, ok := elem.Name()
+				if ok {
+					fname = *name
+				}
 				node, exists := nodeMapping[fid]
-				if exists {
-					if node.EndTime == 0 {
-						node.EndTime = time.Now().UnixMilli()
+				if !exists {
+					node = &types.FlowNode{
+						Name:      fname,
+						FlowId:    fid,
+						FlowType:  parseElementType(elem),
+						StartTime: time.Now().UnixMilli(),
+						ProcessId: stat.Id,
+						Stage:     types.FlowNode_Ready,
 					}
-					node.Stage = types.FlowNode_Finish
+					nodeMapping[fid] = node
+					stat.FlowNodes = append(stat.FlowNodes, node)
 					sch.setFlowNode(node)
 				}
+				if node.EndTime == 0 {
+					node.EndTime = time.Now().UnixMilli()
+				}
+				node.Stage = types.FlowNode_Finish
+				node.Status = types.FlowNode_Success
+				sch.setFlowNode(node)
 
 			case bpmn.CompletionTrace:
 				elem := tt.Node
@@ -409,14 +426,31 @@ func (sch *Scheduler) execute(ctx context.Context, stat *ProcessStat) error {
 				if ok {
 					fid = *id
 				}
+				var fname string
+				name, ok := elem.Name()
+				if ok {
+					fname = *name
+				}
 				node, exists := nodeMapping[fid]
-				if exists {
-					if node.EndTime == 0 {
-						node.EndTime = time.Now().UnixMilli()
+				if !exists {
+					node = &types.FlowNode{
+						Name:      fname,
+						FlowId:    fid,
+						FlowType:  parseElementType(elem),
+						StartTime: time.Now().UnixMilli(),
+						ProcessId: stat.Id,
+						Stage:     types.FlowNode_Ready,
 					}
-					node.Stage = types.FlowNode_Finish
+					nodeMapping[fid] = node
+					stat.FlowNodes = append(stat.FlowNodes, node)
 					sch.setFlowNode(node)
 				}
+				if node.EndTime == 0 {
+					node.EndTime = time.Now().UnixMilli()
+				}
+				node.Stage = types.FlowNode_Finish
+				node.Status = types.FlowNode_Success
+				sch.setFlowNode(node)
 
 			case bpmn.TaskTrace:
 				act := tt.GetActivity()

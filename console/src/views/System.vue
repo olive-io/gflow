@@ -74,15 +74,15 @@ function handlePageSizeChange(size: number) {
   fetchRunners()
 }
 
-function enableRunner(id: number) {
+function enableRunner(id: string | number) {
   console.log('Enable:', id)
 }
 
-function disableRunner(id: number) {
+function disableRunner(id: string | number) {
   console.log('Disable:', id)
 }
 
-function restartRunner(id: number) {
+function restartRunner(id: string | number) {
   console.log('Restart:', id)
 }
 
@@ -100,19 +100,17 @@ onMounted(() => {
 
 <template>
   <div class="space-y-6">
-    <!-- Header -->
     <div>
-      <h1 class="text-2xl font-bold">Runner 管理</h1>
-      <p class="text-muted-foreground mt-1">管理流程执行器节点</p>
+      <h1 class="text-2xl font-bold">组件管理</h1>
+      <p class="text-muted-foreground mt-1">管理系统运行组件</p>
     </div>
 
-    <!-- Stats -->
     <div class="grid gap-4 md:grid-cols-3">
       <Card>
         <CardContent class="p-4">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-muted-foreground">在线 Runner</p>
+              <p class="text-sm text-muted-foreground">在线组件</p>
               <p class="text-2xl font-bold text-green-600">{{ onlineCount }}</p>
             </div>
             <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
@@ -125,7 +123,7 @@ onMounted(() => {
         <CardContent class="p-4">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-muted-foreground">总 Runner 数</p>
+              <p class="text-sm text-muted-foreground">总组件数</p>
               <p class="text-2xl font-bold">{{ runners.length }}</p>
             </div>
             <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -138,7 +136,7 @@ onMounted(() => {
         <CardContent class="p-4">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-muted-foreground">离线 Runner</p>
+              <p class="text-sm text-muted-foreground">离线组件</p>
               <p class="text-2xl font-bold text-red-600">{{ offlineCount }}</p>
             </div>
             <div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
@@ -149,7 +147,6 @@ onMounted(() => {
       </Card>
     </div>
 
-    <!-- Filters -->
     <Card>
       <CardContent class="p-4">
         <div class="flex flex-col md:flex-row gap-4">
@@ -157,7 +154,7 @@ onMounted(() => {
             <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               v-model="searchQuery"
-              placeholder="搜索 Runner 名称或地址..."
+              placeholder="搜索组件名称或地址..."
               class="pl-9"
               @keyup.enter="handleSearch"
             />
@@ -166,12 +163,10 @@ onMounted(() => {
       </CardContent>
     </Card>
 
-    <!-- Loading state -->
     <div v-if="loading" class="flex items-center justify-center py-12">
       <Loader2 class="w-8 h-8 animate-spin text-muted-foreground" />
     </div>
 
-    <!-- Table -->
     <Card v-else>
       <CardContent class="p-0">
         <Table>
@@ -189,7 +184,7 @@ onMounted(() => {
           <TableBody>
             <TableRow v-if="filteredRunners.length === 0">
               <TableCell colspan="7" class="text-center text-muted-foreground py-8">
-                暂无 Runner
+                暂无组件
               </TableCell>
             </TableRow>
             <TableRow v-for="runner in filteredRunners" :key="runner.id">
@@ -243,7 +238,6 @@ onMounted(() => {
       </CardContent>
     </Card>
 
-    <!-- Pagination -->
     <Pagination
       :page="currentPage"
       :page-size="pageSize"

@@ -23,7 +23,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/casbin/casbin/v2"
+	"github.com/casbin/casbin/v3"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"google.golang.org/grpc"

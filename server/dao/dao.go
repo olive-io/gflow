@@ -156,7 +156,21 @@ func (dao *InnerDao[T]) Create(ctx context.Context, value *T) (int64, error) {
 func (dao *InnerDao[T]) Update(ctx context.Context, id int64, value any) error {
 	session := dao.NewSession(ctx).Model(dao.newTarget())
 
-	err := session.Where("id = ?", id).UpdateColumns(value).Error
+	err := session.Where("id = ?", id).Updates(value).Error
+	if err != nil {
+		return err
+	}
+	if session.RowsAffected == 0 {
+		return fmt.Errorf("%w: get by id %d", gorm.ErrRecordNotFound, id)
+	}
+
+	return nil
+}
+
+func (dao *InnerDao[T]) UpdateFields(ctx context.Context, id int64, fields map[string]any) error {
+	session := dao.NewSession(ctx).Model(dao.newTarget())
+
+	err := session.Where("id = ?", id).UpdateColumns(fields).Error
 	if err != nil {
 		return err
 	}
