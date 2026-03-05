@@ -1,120 +1,87 @@
-import { useUserStore } from '@/stores'
+import axios from 'axios';
+import type { AxiosInstance } from 'axios';
+import NProgress from 'nprogress';
+import 'nprogress/nprogress.css';
+import { useUserStore } from '../stores/user';
 
-const BASE_URL = '/v1'
+NProgress.configure({ showSpinner: false, speed: 500 });
 
-export interface ApiResponse<T> {
-  data?: T
-  error?: string
-  message?: string
-}
+const BASE_URL = '/v1';
 
-export interface ApiError {
-  code: number
-  message: string
-  details?: string
-}
+let requestsCounter = 0;
 
 class ApiClient {
-  private baseUrl: string
+  private client: AxiosInstance;
 
-  constructor(baseUrl: string = BASE_URL) {
-    this.baseUrl = baseUrl
-  }
+  constructor() {
+    this.client = axios.create({
+      baseURL: BASE_URL,
+      timeout: 30000,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-  private getHeaders(): HeadersInit {
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    }
-
-    const userStore = useUserStore()
-    if (userStore.token) {
-      headers['Authorization'] = `Bearer ${userStore.token}`
-    }
-
-    return headers
-  }
-
-  private async handleResponse<T>(response: Response): Promise<T> {
-    if (!response.ok) {
-      if (response.status === 401) {
-        const userStore = useUserStore()
-        userStore.logout()
-        window.location.href = '/login'
-        throw new Error('Unauthorized')
+    this.client.interceptors.request.use((config) => {
+      if (requestsCounter === 0) {
+        NProgress.start();
       }
+      requestsCounter++;
 
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `HTTP Error: ${response.status}`)
-    }
+      const token = useUserStore.getState().token;
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
 
-    if (response.status === 204) {
-      return {} as T
-    }
-
-    return response.json()
-  }
-
-  async get<T>(path: string, params?: Record<string, string | number | boolean>): Promise<T> {
-    let url = `${this.baseUrl}${path}`
-    if (params) {
-      const searchParams = new URLSearchParams()
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          searchParams.append(key, String(value))
+    this.client.interceptors.response.use(
+      (response) => {
+        requestsCounter--;
+        if (requestsCounter === 0) {
+          NProgress.done();
         }
-      })
-      const queryString = searchParams.toString()
-      if (queryString) {
-        url += `?${queryString}`
+        return response;
+      },
+      (error) => {
+        requestsCounter--;
+        if (requestsCounter === 0) {
+          NProgress.done();
+        }
+
+        if (error.response?.status === 401) {
+          useUserStore.getState().logout();
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
       }
-    }
+    );
+  }
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: this.getHeaders(),
-    })
-
-    return this.handleResponse<T>(response)
+  async get<T>(path: string, params?: Record<string, unknown>): Promise<T> {
+    const response = await this.client.get<T>(path, { params });
+    return response.data;
   }
 
   async post<T>(path: string, body?: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body: body ? JSON.stringify(body) : undefined,
-    })
-
-    return this.handleResponse<T>(response)
+    const response = await this.client.post<T>(path, body);
+    return response.data;
   }
 
   async put<T>(path: string, body?: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      method: 'PUT',
-      headers: this.getHeaders(),
-      body: body ? JSON.stringify(body) : undefined,
-    })
-
-    return this.handleResponse<T>(response)
+    const response = await this.client.put<T>(path, body);
+    return response.data;
   }
 
   async patch<T>(path: string, body?: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      method: 'PATCH',
-      headers: this.getHeaders(),
-      body: body ? JSON.stringify(body) : undefined,
-    })
-
-    return this.handleResponse<T>(response)
+    const response = await this.client.patch<T>(path, body);
+    return response.data;
   }
 
-  async delete<T>(path: string): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      method: 'DELETE',
-      headers: this.getHeaders(),
-    })
-
-    return this.handleResponse<T>(response)
+  async delete<T>(path: string, params?: Record<string, unknown>): Promise<T> {
+    const response = await this.client.delete<T>(path, { params });
+    return response.data;
   }
 }
 
-export const apiClient = new ApiClient()
+export const apiClient = new ApiClient();

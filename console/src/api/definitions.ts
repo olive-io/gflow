@@ -1,40 +1,39 @@
-import { http } from '@/lib/http'
-import type { Definitions } from '@/types/api'
+import { apiClient } from './client';
+import type { Definitions } from '../types';
 
 export interface ListDefinitionsParams {
-  page?: number
-  size?: number
-  uid?: string
-  name?: string
+  page?: number;
+  size?: number;
+  uid?: string;
+  name?: string;
+  [key: string]: unknown;
 }
 
 export interface ListDefinitionsResponse {
-  definitionsList: Definitions[]
-  total: number
+  definitionsList: Definitions[];
+  total: number | string;
 }
 
 export interface DeployDefinitionsRequest {
-  metadata?: Record<string, string>
-  content: string
-  description?: string
+  metadata?: Record<string, string>;
+  content: string;
+  description?: string;
 }
 
 export const definitionsApi = {
-  list: async (params?: ListDefinitionsParams): Promise<ListDefinitionsResponse> => {
-    return http.get<ListDefinitionsResponse>('/v1/definitions', params)
+  list: (params?: ListDefinitionsParams) =>
+    apiClient.get<ListDefinitionsResponse>('/definitions', params),
+
+  get: (uid: string, version?: number) => {
+    const params = version ? { version } : undefined;
+    return apiClient.get<{ definitions: Definitions }>(`/definitions/${uid}`, params);
   },
 
-  get: async (uid: string, version?: number): Promise<{ definitions: Definitions }> => {
-    const params = version ? { version } : undefined
-    return http.get<{ definitions: Definitions }>(`/v1/definitions/${uid}`, params)
-  },
+  deploy: (data: DeployDefinitionsRequest) =>
+    apiClient.post<{ definitions: Definitions }>('/definitions', data),
 
-  deploy: async (data: DeployDefinitionsRequest): Promise<{ definitions: Definitions }> => {
-    return http.post<{ definitions: Definitions }>('/v1/definitions', data)
+  remove: (uid: string, version?: number) => {
+    const params = version ? { version } : undefined;
+    return apiClient.delete<{ definitions: Definitions }>(`/definitions/${uid}`, params);
   },
-
-  remove: async (uid: string, version?: number): Promise<{ definitions: Definitions }> => {
-    const params = version ? { version } : undefined
-    return http.delete<{ definitions: Definitions }>(`/v1/definitions/${uid}`, params)
-  },
-}
+};

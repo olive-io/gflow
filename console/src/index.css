@@ -1,0 +1,2158 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --gflow-font: 'Manrope', 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --gflow-bg: #f2f6fc;
+  --gflow-bg-radial: radial-gradient(circle at 12% 10%, rgba(82, 142, 244, 0.2) 0%, rgba(82, 142, 244, 0) 35%), radial-gradient(circle at 88% 18%, rgba(38, 193, 168, 0.18) 0%, rgba(38, 193, 168, 0) 32%);
+  --gflow-surface: rgba(255, 255, 255, 0.88);
+  --gflow-surface-border: rgba(206, 220, 242, 0.9);
+  --gflow-text-main: #0f274a;
+  --gflow-text-muted: #5f7392;
+  --gflow-primary: #1d4ed8;
+  --gflow-primary-soft: rgba(29, 78, 216, 0.14);
+  --gflow-shadow: 0 14px 40px rgba(22, 64, 130, 0.12);
+}
+
+.dark {
+  --gflow-bg: #0a1120;
+  --gflow-bg-radial: radial-gradient(circle at 8% 10%, rgba(72, 117, 211, 0.28) 0%, rgba(72, 117, 211, 0) 35%), radial-gradient(circle at 90% 18%, rgba(35, 153, 145, 0.22) 0%, rgba(35, 153, 145, 0) 32%);
+  --gflow-surface: rgba(16, 26, 48, 0.82);
+  --gflow-surface-border: rgba(52, 75, 120, 0.75);
+  --gflow-text-main: #d8e2f2;
+  --gflow-text-muted: #93a7c8;
+  --gflow-primary: #7bb4ff;
+  --gflow-primary-soft: rgba(123, 180, 255, 0.18);
+  --gflow-shadow: 0 16px 42px rgba(6, 13, 28, 0.5);
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--gflow-font);
+  color: var(--gflow-text-main);
+  background: var(--gflow-bg-radial), var(--gflow-bg);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: var(--gflow-primary);
+}
+
+.ant-typography {
+  color: var(--gflow-text-main);
+}
+
+.ant-btn,
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-select-selector,
+.ant-picker,
+.ant-tag,
+.ant-modal-content,
+.ant-dropdown .ant-dropdown-menu,
+.ant-popover .ant-popover-inner,
+.ant-message-notice-content {
+  box-shadow: none;
+}
+
+.ant-card,
+.gflow-glass-card {
+  border: 1px solid var(--gflow-surface-border) !important;
+  background: var(--gflow-surface);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--gflow-shadow);
+}
+
+.ant-table-wrapper .ant-table,
+.ant-table-wrapper .ant-table-container,
+.ant-table-wrapper .ant-table-thead > tr > th,
+.ant-table-wrapper .ant-table-tbody > tr > td {
+  background: transparent !important;
+}
+
+.ant-table-wrapper .ant-table-thead > tr > th {
+  color: var(--gflow-text-muted) !important;
+  font-weight: 600;
+}
+
+/* Remove Card/Table gap globally */
+.ant-card .ant-card-body:has(> .ant-table-wrapper) {
+  padding: 0 !important;
+}
+
+.gflow-page-head {
+  margin-bottom: 18px;
+}
+
+.gflow-page-head .ant-typography {
+  margin: 0;
+}
+
+.gflow-toolbar {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.gflow-list-page .ant-card,
+.gflow-detail-page .ant-card {
+  border-radius: 16px;
+}
+
+.gflow-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.gflow-detail-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--gflow-surface-border);
+  background: var(--gflow-surface);
+}
+
+.gflow-status-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gflow-dashboard-page .ant-statistic-content {
+  display: flex;
+  align-items: center;
+}
+
+.gflow-dashboard-page .ant-statistic-title {
+  margin-bottom: 14px;
+}
+
+.gflow-main-layout {
+  min-height: 100vh;
+  background: transparent !important;
+}
+
+.gflow-main-sider {
+  overflow: auto;
+  height: 100vh;
+  position: fixed !important;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  padding: 8px;
+  background: linear-gradient(160deg, rgba(24, 58, 126, 0.95), rgba(16, 90, 130, 0.88)) !important;
+  border-right: 1px solid rgba(195, 216, 249, 0.22);
+  box-shadow: 12px 0 32px rgba(8, 20, 44, 0.24);
+}
+
+.gflow-main-logo {
+  height: 68px;
+  margin: 4px 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f6fbff;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-radius: 16px;
+  border: 1px solid rgba(236, 244, 255, 0.2);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.gflow-main-logo.is-collapsed {
+  font-size: 18px;
+}
+
+.gflow-main-logo-icon {
+  font-size: 28px;
+  margin-right: 10px;
+}
+
+.gflow-main-logo.is-collapsed .gflow-main-logo-icon {
+  margin-right: 0;
+}
+
+.gflow-main-sider .ant-menu {
+  background: transparent !important;
+  border-inline-end: none !important;
+}
+
+.gflow-main-sider .ant-menu-item-group-title {
+  padding: 10px 12px 6px !important;
+  color: rgba(228, 238, 255, 0.72) !important;
+  font-size: 12px !important;
+  font-weight: 600;
+}
+
+.gflow-main-sider .ant-menu-item,
+.gflow-main-sider .ant-menu-submenu-title {
+  margin: 6px 0 !important;
+  border-radius: 12px;
+}
+
+.gflow-main-frame {
+  transition: margin-left 0.25s ease;
+  background: transparent !important;
+}
+
+.gflow-main-sider-user {
+  margin: 14px 8px 0;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #f5f9ff;
+}
+
+.gflow-main-sider-user-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.gflow-main-sider-user-role {
+  margin-top: 2px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.gflow-main-header {
+  height: 74px;
+  padding: 0 26px;
+  margin: 16px 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 12px;
+  z-index: 20;
+  border-radius: 18px;
+  border: 1px solid var(--gflow-surface-border);
+  background: var(--gflow-surface) !important;
+  backdrop-filter: blur(12px);
+  box-shadow: var(--gflow-shadow);
+}
+
+.gflow-main-header .ant-breadcrumb {
+  font-size: 13px;
+}
+
+.gflow-main-header .ant-breadcrumb-link {
+  color: var(--gflow-text-muted);
+}
+
+.gflow-main-trigger {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 12px;
+}
+
+.gflow-main-theme-btn {
+  border-radius: 12px;
+}
+
+.gflow-main-user {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  transition: background 0.2s ease;
+}
+
+.gflow-main-user:hover {
+  background: var(--gflow-primary-soft);
+}
+
+.gflow-main-user-avatar {
+  background: linear-gradient(140deg, #2f73f6, #26c1a8) !important;
+}
+
+.gflow-main-date-chip {
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #f8fbff;
+  border: 1px solid #e7edf7;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.gflow-main-content {
+  margin: 16px;
+  overflow: initial;
+}
+
+.gflow-main-content-inner {
+  min-height: calc(100vh - 136px);
+  padding: 26px;
+  border-radius: 20px;
+  border: 1px solid var(--gflow-surface-border);
+  background: var(--gflow-surface);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--gflow-shadow);
+  animation: gflow-fade-up 0.35s ease;
+}
+
+.gflow-designer-page {
+  background: var(--gflow-bg-radial), var(--gflow-bg) !important;
+}
+
+.gflow-designer-toolbar {
+  backdrop-filter: blur(10px);
+}
+
+.gflow-designer-body {
+  padding: 10px;
+  gap: 10px;
+}
+
+.gflow-designer-canvas-wrap {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--gflow-surface-border);
+  box-shadow: var(--gflow-shadow);
+}
+
+.gflow-designer-panel {
+  border-radius: 16px !important;
+  border: 1px solid var(--gflow-surface-border) !important;
+  box-shadow: var(--gflow-shadow) !important;
+}
+
+.gflow-login-page {
+  min-height: 100vh;
+}
+
+.gflow-login-brand {
+  background: linear-gradient(150deg, #0f3f9f 0%, #1766c9 45%, #0f9191 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  padding: 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+.gflow-login-brand-glow {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.gflow-login-brand-glow.one {
+  top: -120px;
+  right: -80px;
+  width: 360px;
+  height: 360px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.gflow-login-brand-glow.two {
+  bottom: -160px;
+  left: -140px;
+  width: 420px;
+  height: 420px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.gflow-login-brand-glow.three {
+  top: 30%;
+  left: 12%;
+  width: 170px;
+  height: 170px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.gflow-login-brand-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 520px;
+  animation: gflow-fade-up 0.5s ease;
+}
+
+.gflow-login-brand-icon-wrap {
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 24px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(12px);
+}
+
+.gflow-login-brand-icon {
+  font-size: 46px;
+}
+
+.gflow-login-brand-title,
+.gflow-login-brand-subtitle {
+  color: #fff !important;
+}
+
+.gflow-login-brand-title {
+  margin: 0 !important;
+  font-size: 52px !important;
+  letter-spacing: 0.04em;
+}
+
+.gflow-login-brand-subtitle {
+  margin: 14px 0 8px !important;
+  font-weight: 500 !important;
+  line-height: 1.35;
+}
+
+.gflow-login-brand-desc {
+  margin-bottom: 40px !important;
+  color: rgba(245, 251, 255, 0.86) !important;
+  font-size: 16px;
+  max-width: 560px;
+}
+
+.gflow-login-feature-grid {
+  max-width: 420px;
+  margin: 0 auto 26px;
+}
+
+.gflow-login-reviewers {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.gflow-login-reviewers .ant-avatar {
+  border: 2px solid rgba(255, 255, 255, 0.6);
+}
+
+.gflow-login-reviewers-text {
+  color: rgba(245, 251, 255, 0.85) !important;
+  font-size: 13px;
+}
+
+.gflow-login-feature-item {
+  padding: 20px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+
+.gflow-login-feature-item:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.gflow-login-feature-icon-wrap {
+  width: 42px;
+  height: 42px;
+  margin: 0 auto 12px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.gflow-login-feature-title {
+  display: block;
+  margin-bottom: 4px;
+  color: #fff !important;
+}
+
+.gflow-login-feature-desc {
+  color: rgba(245, 251, 255, 0.72) !important;
+  font-size: 12px;
+}
+
+.gflow-login-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 44px;
+  background: rgba(247, 251, 255, 0.82);
+}
+
+.dark .gflow-login-panel {
+  background: rgba(9, 16, 30, 0.75);
+}
+
+.gflow-login-form-wrap {
+  width: 100%;
+  max-width: 380px;
+  padding: 34px 28px;
+  border-radius: 20px;
+  border: 1px solid var(--gflow-surface-border);
+  background: var(--gflow-surface);
+  box-shadow: var(--gflow-shadow);
+}
+
+.gflow-login-form-head {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.gflow-login-form-brand {
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.gflow-login-form-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #1f66e5, #16b2b2);
+  box-shadow: 0 8px 20px rgba(26, 92, 197, 0.3);
+}
+
+.gflow-login-form-logo-icon {
+  color: #fff;
+  font-size: 27px;
+}
+
+.gflow-login-form-brand .ant-typography {
+  margin: 0;
+}
+
+.gflow-login-form-title {
+  margin: 0 !important;
+  font-weight: 600 !important;
+}
+
+.gflow-login-form-hint {
+  margin-top: 8px;
+  display: block;
+}
+
+.gflow-login-actions-line {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gflow-login-actions-line a {
+  font-size: 12px;
+  color: var(--gflow-primary);
+}
+
+.gflow-login-form-wrap .ant-form-item {
+  margin-bottom: 18px;
+}
+
+.gflow-login-form-wrap .ant-form-item-label > label {
+  color: var(--gflow-text-main);
+  font-weight: 600;
+}
+
+.gflow-login-form-wrap .ant-input,
+.gflow-login-form-wrap .ant-input-affix-wrapper {
+  height: 44px;
+}
+
+.gflow-login-form-submit-wrap {
+  margin-bottom: 10px !important;
+}
+
+.gflow-login-form-submit {
+  height: 48px !important;
+  font-size: 16px;
+  border-radius: 12px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.gflow-login-tip {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--gflow-surface-border);
+}
+
+.gflow-login-default {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.gflow-login-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.gflow-login-links a {
+  font-size: 12px;
+  color: var(--gflow-text-muted);
+}
+
+.gflow-login-tip .ant-typography {
+  font-size: 13px;
+}
+
+.gflow-dashboard-intro {
+  margin-top: 24px;
+}
+
+.gflow-stitch-kpi {
+  min-height: 126px;
+}
+
+.gflow-stitch-kpi .ant-typography {
+  margin: 0;
+}
+
+.gflow-stitch-kpi-content {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gflow-stitch-kpi-content .anticon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(37, 99, 235, 0.14);
+  color: #1d4ed8;
+  font-size: 18px;
+}
+
+.gflow-stitch-kpi-content h3.ant-typography {
+  margin: 0 !important;
+}
+
+.gflow-kpi-trend {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #16a34a;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.gflow-kpi-trend.is-down {
+  color: #dc2626;
+}
+
+.gflow-stat-card .ant-statistic-title {
+  color: var(--gflow-text-muted);
+}
+
+.gflow-stat-icon {
+  padding: 9px;
+  margin-right: 8px;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+.gflow-stat-icon.definitions {
+  color: #245fcd;
+  background: rgba(53, 118, 229, 0.16);
+}
+
+.gflow-stat-icon.processes {
+  color: #118c5a;
+  background: rgba(46, 185, 121, 0.14);
+}
+
+.gflow-stat-icon.runners {
+  color: #c17800;
+  background: rgba(242, 182, 53, 0.18);
+}
+
+.gflow-stat-icon.users {
+  color: #7041cc;
+  background: rgba(140, 102, 225, 0.16);
+}
+
+.gflow-gradient {
+  background: linear-gradient(135deg, #1f66e5 0%, #16b2b2 100%);
+}
+
+@keyframes gflow-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 992px) {
+  .gflow-main-frame {
+    margin-left: 88px !important;
+  }
+
+  .gflow-main-header,
+  .gflow-main-content {
+    margin-left: 14px;
+    margin-right: 14px;
+  }
+
+  .gflow-main-content-inner {
+    padding: 18px;
+    min-height: calc(100vh - 126px);
+  }
+
+  .gflow-login-panel {
+    padding: 28px 16px;
+  }
+
+  .gflow-login-form-wrap {
+    padding: 28px 20px;
+  }
+
+  .gflow-login-reviewers {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .gflow-detail-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 576px) {
+  .gflow-main-header {
+    padding: 0 14px;
+  }
+
+  .gflow-main-header-user span,
+  .gflow-main-header-theme-btn span {
+    display: none;
+  }
+
+  .gflow-toolbar .ant-space {
+    width: 100%;
+  }
+
+  .gflow-toolbar .ant-input {
+    width: 100%;
+  }
+
+  .gflow-toolbar .ant-input-affix-wrapper {
+    width: 100% !important;
+  }
+
+  .gflow-login-links {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+}
+
+/* Stitch pixel overrides */
+.light {
+  --gflow-bg: #f3f6fb;
+  --gflow-bg-radial: none;
+  --gflow-surface: #ffffff;
+  --gflow-surface-border: #e7edf7;
+  --gflow-text-main: #0f172a;
+  --gflow-text-muted: #64748b;
+  --gflow-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+}
+
+.gflow-main-sider {
+  padding: 0;
+  background: #1e293b !important;
+  border-right: 0;
+  box-shadow: none;
+}
+
+.gflow-main-sider .ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.gflow-main-sider .ant-menu {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 16px 0;
+}
+
+.gflow-main-sider .ant-menu-item-group-title {
+  padding: 16px 8px 8px !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.gflow-main-sider .ant-menu-item {
+  height: 46px;
+  line-height: 46px;
+  border-radius: 10px;
+  font-weight: 500;
+  color: #cbd5e1 !important;
+  margin: 2px 0 !important;
+  padding-inline: 14px !important;
+}
+
+.gflow-main-sider .ant-menu-item .ant-menu-item-icon,
+.gflow-main-sider .ant-menu-item .anticon {
+  color: #94a3b8;
+}
+
+.gflow-main-sider .ant-menu-item:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.gflow-main-sider .ant-menu-item:hover .ant-menu-item-icon,
+.gflow-main-sider .ant-menu-item:hover .anticon {
+  color: #ffffff;
+}
+
+.gflow-main-sider .ant-menu-item-selected {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-left: 4px solid #0d9488;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  padding-left: 10px !important;
+}
+
+.gflow-main-sider .ant-menu-item-selected .ant-menu-item-icon,
+.gflow-main-sider .ant-menu-item-selected .anticon {
+  color: #ffffff;
+}
+
+.gflow-main-sider .ant-menu-item-selected::after {
+  display: none;
+}
+
+.gflow-main-logo {
+  height: auto;
+  margin: 0;
+  padding: 24px;
+  border-radius: 0;
+  border: 0;
+  background: transparent;
+  backdrop-filter: none;
+  justify-content: flex-start;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.gflow-main-logo-icon {
+  width: 32px;
+  height: 32px;
+  margin-right: 10px;
+  border-radius: 4px;
+  background: #0d9488;
+  color: #ffffff;
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gflow-main-sider-user {
+  margin: auto 0 0;
+  border-radius: 0;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  padding: 16px;
+  color: #e2e8f0;
+}
+
+.gflow-main-sider-user-clickable {
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.gflow-main-sider-user-clickable:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.gflow-main-sider-user .gflow-main-user-avatar {
+  border: 1px solid #475569;
+}
+
+.gflow-main-sider-user-name {
+  color: #ffffff;
+}
+
+.gflow-main-sider-user-role {
+  color: #64748b;
+}
+
+.gflow-main-header {
+  height: 64px;
+  padding: 0 32px;
+  margin: 0;
+  top: 0;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff !important;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+.dark .gflow-main-header {
+  border-bottom-color: #1e293b;
+  background: #0f172a !important;
+}
+
+.gflow-main-header .ant-breadcrumb {
+  font-size: 14px;
+}
+
+.gflow-main-header .ant-breadcrumb-link {
+  color: #94a3b8;
+}
+
+.dark .gflow-main-header .ant-breadcrumb-link {
+  color: #64748b;
+}
+
+.gflow-main-header .ant-breadcrumb li:last-child .ant-breadcrumb-link {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.dark .gflow-main-header .ant-breadcrumb li:last-child .ant-breadcrumb-link {
+  color: #e2e8f0;
+}
+
+.gflow-main-header-bell {
+  font-size: 20px;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.dark .gflow-main-header-bell {
+  color: #94a3b8;
+}
+
+.gflow-main-header-bell:hover {
+  color: #0d9488;
+}
+
+.gflow-main-collapse-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  color: #64748b;
+}
+
+.dark .gflow-main-collapse-btn {
+  color: #94a3b8;
+}
+
+.gflow-main-collapse-btn:hover {
+  color: #0f172a !important;
+  background: #f1f5f9 !important;
+}
+
+.dark .gflow-main-collapse-btn:hover {
+  color: #e2e8f0 !important;
+  background: #1e293b !important;
+}
+
+.gflow-main-header-divider {
+  width: 1px;
+  height: 24px;
+  background: #e2e8f0;
+}
+
+.dark .gflow-main-header-divider {
+  background: #334155;
+}
+
+.gflow-main-header-date {
+  color: #334155;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dark .gflow-main-header-date {
+  color: #cbd5e1;
+}
+
+.gflow-main-header-theme-btn {
+  height: 34px;
+  border-radius: 6px;
+  color: #64748b;
+}
+
+.dark .gflow-main-header-theme-btn {
+  color: #94a3b8;
+}
+
+.gflow-main-header-theme-btn:hover {
+  color: #0f172a !important;
+  background: #f1f5f9 !important;
+}
+
+.dark .gflow-main-header-theme-btn:hover {
+  color: #e2e8f0 !important;
+  background: #1e293b !important;
+}
+
+.gflow-main-header-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 64px;
+  padding: 0 10px;
+  border-radius: 0;
+  cursor: pointer;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dark .gflow-main-header-user {
+  color: #cbd5e1;
+}
+
+.gflow-main-header-user:hover {
+  background: #f1f5f9;
+}
+
+.dark .gflow-main-header-user:hover {
+  background: #1e293b;
+}
+
+.gflow-main-header-user.ant-dropdown-open {
+  background: #f1f5f9;
+}
+
+.dark .gflow-main-header-user.ant-dropdown-open {
+  background: #1e293b;
+}
+
+.gflow-main-header {
+  height: 64px;
+  margin-top: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.gflow-main-content-inner {
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+}
+
+.gflow-glass-card .ant-table-thead > tr > th {
+  background: #f8fbff !important;
+  color: #475569 !important;
+  font-weight: 600;
+}
+
+.gflow-glass-card .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #eef3fb;
+}
+
+.gflow-main-footer {
+  background: transparent !important;
+  color: var(--gflow-text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 24px 16px !important;
+  font-size: 12px;
+}
+
+.gflow-main-footer a {
+  color: var(--gflow-text-muted);
+}
+
+.gflow-page-head {
+  margin-bottom: 14px;
+}
+
+.gflow-page-head h4.ant-typography {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.gflow-toolbar {
+  padding: 12px;
+  border: 1px solid var(--gflow-surface-border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.dark .gflow-toolbar {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+.dark .gflow-toolbar .ant-input,
+.dark .gflow-toolbar .ant-input-affix-wrapper,
+.dark .gflow-toolbar .ant-select-selector,
+.dark .gflow-toolbar .ant-picker {
+  background: #111b30 !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+.dark .gflow-toolbar .ant-input::placeholder,
+.dark .gflow-toolbar .ant-input-affix-wrapper input::placeholder {
+  color: #64748b !important;
+}
+
+.dark .gflow-toolbar .ant-input-prefix,
+.dark .gflow-toolbar .ant-input-suffix,
+.dark .gflow-toolbar .ant-select-arrow,
+.dark .gflow-toolbar .ant-picker-suffix,
+.dark .gflow-toolbar .ant-picker-separator {
+  color: #64748b !important;
+}
+
+.dark .gflow-toolbar .ant-select-selection-placeholder,
+.dark .gflow-toolbar .ant-picker-input > input::placeholder {
+  color: #64748b !important;
+}
+
+.dark .gflow-toolbar .ant-select-selection-item,
+.dark .gflow-toolbar .ant-picker-input > input {
+  color: #cbd5e1 !important;
+}
+
+.dark .gflow-toolbar .ant-btn-default {
+  background: #111b30;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+.dark .gflow-toolbar .ant-btn-default:hover {
+  background: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+.gflow-login-page {
+  background: #f5f7fc;
+}
+
+.gflow-login-brand {
+  background: linear-gradient(160deg, #0f3f9f 0%, #1e4fb4 55%, #2c6fd4 100%);
+}
+
+.gflow-login-form-wrap {
+  border-radius: 14px;
+  padding: 30px 24px;
+  box-shadow: 0 8px 28px rgba(30, 64, 175, 0.1);
+}
+
+.gflow-login-form-submit {
+  height: 46px !important;
+}
+
+.gflow-stitch-kpi {
+  border-radius: 12px !important;
+}
+
+.gflow-detail-hero {
+  border-radius: 12px;
+}
+
+.gflow-designer-toolbar {
+  border-bottom: 1px solid #e5e7eb !important;
+  background: #fff !important;
+}
+
+.gflow-designer-body {
+  padding: 12px;
+}
+
+.gflow-designer-canvas-wrap {
+  border-radius: 12px;
+}
+
+#nprogress {
+  pointer-events: none;
+}
+
+#nprogress .bar {
+  background: #3b82f6;
+  position: fixed;
+  z-index: 9999;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+}
+
+#nprogress .peg {
+  display: block;
+  position: absolute;
+  right: 0px;
+  width: 100px;
+  height: 100%;
+  box-shadow: 0 0 10px #3b82f6, 0 0 5px #3b82f6;
+  opacity: 1;
+  transform: rotate(3deg) translate(0px, -4px);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1f1f1f;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #434343;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.gflow-gradient {
+  background: linear-gradient(135deg, #137fec 0%, #0e6ad1 100%);
+}
+
+/* BPMN Designer Styles - Light Theme */
+.bpmn-js-palette {
+  background: #ffffff !important;
+  border-right: 1px solid #d9d9d9 !important;
+}
+
+/* Global font weight fix for all BPMN elements */
+.bpmn-designer-canvas text,
+.bpmn-designer-canvas tspan,
+.bpmn-designer-canvas .djs-label,
+.bpmn-designer-canvas .djs-element text,
+.bpmn-designer-canvas .djs-element tspan,
+.bpmn-designer-canvas .djs-element .djs-label,
+.bpmn-designer-canvas svg text {
+  font-weight: normal !important;
+}
+
+.bpmn-js-palette .entry {
+  border-radius: 4px !important;
+}
+
+.bpmn-js-palette .entry:hover {
+  background: #f5f5f5 !important;
+}
+
+.bpmn-js-palette .separator {
+  border-top: 1px solid #d9d9d9 !important;
+  margin: 4px 8px !important;
+}
+
+.bpmn-designer-canvas .djs-container {
+  background: #f5f5f5 !important;
+}
+
+.djs-palette {
+  background: #ffffff !important;
+  border: 1px solid #d9d9d9 !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.djs-palette .entry {
+  border-radius: 4px !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.djs-palette .entry:hover {
+  background-color: #f5f5f5 !important;
+}
+
+.djs-palette-separator {
+  border-top: 1px solid #d9d9d9 !important;
+  margin: 4px 8px !important;
+}
+
+.djs-context-pad {
+  background: #ffffff !important;
+  border: 1px solid #d9d9d9 !important;
+  border-radius: 4px !important;
+}
+
+.djs-context-pad .entry {
+  border-radius: 4px !important;
+}
+
+.djs-context-pad .entry:hover {
+  background-color: #f5f5f5 !important;
+}
+
+.djs-element .djs-visual path,
+.djs-element .djs-visual rect,
+.djs-element .djs-visual circle,
+.djs-element .djs-visual ellipse,
+.djs-element .djs-visual polygon,
+.djs-element .djs-visual polyline,
+.djs-element .djs-visual line {
+  stroke: #333333 !important;
+}
+
+.djs-element .djs-visual text,
+.djs-element .djs-visual .djs-label {
+  fill: #333333 !important;
+  font-weight: normal !important;
+  font-family: var(--gflow-font) !important;
+}
+
+.djs-element .djs-hit,
+.djs-element .djs-hit * {
+  fill: transparent !important;
+  stroke: transparent !important;
+}
+
+.djs-connection .djs-visual {
+  stroke: #666666 !important;
+}
+
+.djs-element.hover .djs-visual,
+.djs-element.selected .djs-visual {
+  stroke: #1677ff !important;
+}
+
+.djs-resize-handle {
+  stroke: #1677ff !important;
+  fill: #ffffff !important;
+}
+
+.djs-dragger .djs-visual {
+  stroke: #1677ff !important;
+  fill: #1677ff !important;
+  fill-opacity: 0.2 !important;
+}
+
+.djs-dragger .djs-visual text {
+  fill: #1677ff !important;
+}
+
+.djs-overlay-container,
+.djs-drag-group {
+  background: transparent !important;
+}
+
+/* Light theme element fills */
+.bpmn-designer-canvas .djs-element .djs-visual rect,
+.bpmn-designer-canvas .djs-element .djs-visual circle,
+.bpmn-designer-canvas .djs-element .djs-visual ellipse,
+.bpmn-designer-canvas .djs-element .djs-visual polygon {
+  fill: #ffffff !important;
+}
+
+.bpmn-designer-canvas .djs-element .djs-visual path[fill="none"] {
+  fill: none !important;
+}
+
+/* BPMN Designer Styles - Dark Theme */
+.dark .bpmn-js-palette {
+  background: #1f1f1f !important;
+  border-right: 1px solid #424242 !important;
+}
+
+.dark .bpmn-js-palette .entry:hover {
+  background: #303030 !important;
+}
+
+.dark .bpmn-js-palette .separator {
+  border-top: 1px solid #424242 !important;
+}
+
+/* Dark theme canvas background */
+.dark .bpmn-designer-canvas,
+.dark .bpmn-designer-canvas .djs-container,
+.dark .bpmn-designer-canvas .viewport,
+.dark .bpmn-designer-canvas svg {
+  background: #141414 !important;
+}
+
+.dark .bpmn-designer-canvas .layer-overlays,
+.dark .bpmn-designer-canvas .layer-plane {
+  background: transparent !important;
+}
+
+.dark .djs-palette {
+  background: #1f1f1f !important;
+  border: 1px solid #424242 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .djs-palette .entry:hover {
+  background-color: #303030 !important;
+}
+
+.dark .djs-palette-separator {
+  border-top: 1px solid #424242 !important;
+}
+
+.dark .djs-context-pad {
+  background: #1f1f1f !important;
+  border: 1px solid #424242 !important;
+}
+
+.dark .djs-context-pad .entry:hover {
+  background-color: #303030 !important;
+}
+
+.dark .djs-element .djs-visual path,
+.dark .djs-element .djs-visual rect,
+.dark .djs-element .djs-visual circle,
+.dark .djs-element .djs-visual ellipse,
+.dark .djs-element .djs-visual polygon,
+.dark .djs-element .djs-visual polyline,
+.dark .djs-element .djs-visual line {
+  stroke: #e0e0e0 !important;
+}
+
+.dark .djs-element .djs-visual text,
+.dark .djs-element .djs-visual .djs-label {
+  fill: #e0e0e0 !important;
+  font-weight: normal !important;
+  font-family: var(--gflow-font) !important;
+}
+
+/* Dark theme additional font weight fixes */
+.dark .djs-element .djs-visual .djs-label-title,
+.dark .djs-element .djs-visual .djs-label-external,
+.dark .djs-element .djs-visual .label {
+  font-weight: normal !important;
+}
+
+.dark .djs-element.bpmn-shape .djs-visual text,
+.dark .djs-element.bpmn-shape .djs-visual .djs-label {
+  font-weight: normal !important;
+  font-family: var(--gflow-font) !important;
+}
+
+.dark .djs-connection .djs-visual {
+  stroke: #a0a0a0 !important;
+}
+
+.dark .djs-element.hover .djs-visual,
+.dark .djs-element.selected .djs-visual {
+  stroke: #1677ff !important;
+}
+
+.dark .djs-resize-handle {
+  stroke: #1677ff !important;
+  fill: #1f1f1f !important;
+}
+
+.dark .djs-dragger .djs-visual {
+  stroke: #1677ff !important;
+  fill: #1677ff !important;
+  fill-opacity: 0.2 !important;
+}
+
+.dark .djs-dragger .djs-visual text {
+  fill: #1677ff !important;
+}
+
+.dark .djs-overlay-container,
+.dark .djs-drag-group {
+  background: transparent !important;
+}
+
+/* BPMN Palette Icons - Dark Theme */
+.dark .djs-palette .entry:before {
+  color: #e0e0e0 !important;
+}
+
+.dark .bjs-powered-by {
+  background: #1f1f1f !important;
+  border-color: #424242 !important;
+}
+
+.dark .bjs-powered-by svg {
+  fill: #e0e0e0 !important;
+}
+
+/* BPMN Label Edit - Dark Theme */
+.dark .djs-direct-editing-parent {
+  background: #1f1f1f !important;
+  border-color: #424242 !important;
+}
+
+.dark .djs-direct-editing-content {
+  background: #141414 !important;
+  color: #e0e0e0 !important;
+  border-color: #424242 !important;
+}
+
+/* BPMN Popup Menu - Dark Theme */
+.dark .djs-popup {
+  background: #1f1f1f !important;
+  border: 1px solid #424242 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .djs-popup .entry {
+  color: #e0e0e0 !important;
+  border-color: #424242 !important;
+}
+
+.dark .djs-popup .entry:hover {
+  background: #303030 !important;
+}
+
+.dark .djs-popup .entry.selected {
+  background: #1677ff !important;
+  color: #ffffff !important;
+}
+
+.dark .djs-popup-search input {
+  background: #141414 !important;
+  border-color: #424242 !important;
+  color: #e0e0e0 !important;
+}
+
+.dark .djs-popup-search input::placeholder {
+  color: #666 !important;
+}
+
+/* BPMN Search - Dark Theme */
+.dark .djs-search-container {
+  background: #1f1f1f !important;
+  border-color: #424242 !important;
+}
+
+.dark .djs-search-container input {
+  background: #141414 !important;
+  color: #e0e0e0 !important;
+  border-color: #424242 !important;
+}
+
+.dark .djs-search-container input::placeholder {
+  color: #666 !important;
+}
+
+/* BPMN Minimap - Dark Theme */
+.dark .djs-minimap {
+  background: #1f1f1f !important;
+  border-color: #424242 !important;
+}
+
+.dark .djs-minimap .viewport {
+  border-color: #1677ff !important;
+  background: rgba(22, 119, 255, 0.1) !important;
+}
+
+/* BPMN Align and Distribute - Dark Theme */
+.dark .djs-align-distribute-buttons {
+  background: #1f1f1f !important;
+  border-color: #424242 !important;
+}
+
+.dark .djs-align-distribute-buttons .entry:hover {
+  background: #303030 !important;
+}
+
+/* Additional Dark Theme Fixes */
+.dark .djs-element .djs-visual rect,
+.dark .djs-element .djs-visual circle,
+.dark .djs-element .djs-visual ellipse,
+.dark .djs-element .djs-visual polygon,
+.dark .djs-element .djs-visual path {
+  stroke: #e0e0e0 !important;
+}
+
+/* Dark theme element fills - override white backgrounds */
+.dark .djs-element .djs-visual rect,
+.dark .djs-element .djs-visual circle,
+.dark .djs-element .djs-visual ellipse,
+.dark .djs-element .djs-visual polygon {
+  fill: #1f1f1f !important;
+}
+
+.dark .djs-element .djs-visual path[fill="none"] {
+  fill: none !important;
+}
+
+/* Keep connection paths with no fill */
+.dark .djs-connection .djs-visual path {
+  fill: none !important;
+  stroke: #a0a0a0 !important;
+}
+
+.dark .djs-element .djs-outline {
+  stroke: #424242 !important;
+}
+
+.dark .djs-hit,
+.dark .djs-hit * {
+  fill: transparent !important;
+  stroke: transparent !important;
+}
+
+/* Dark theme specific element adjustments */
+.dark .djs-element.selected .djs-visual rect,
+.dark .djs-element.selected .djs-visual circle,
+.dark .djs-element.selected .djs-visual ellipse,
+.dark .djs-element.selected .djs-visual polygon {
+  stroke: #1677ff !important;
+}
+
+.dark .djs-element.hover .djs-visual rect,
+.dark .djs-element.hover .djs-visual circle,
+.dark .djs-element.hover .djs-visual ellipse,
+.dark .djs-element.hover .djs-visual polygon {
+  stroke: #1677ff !important;
+}
+
+/* Fix for event elements (circles) */
+.dark .djs-element .djs-visual circle.djs-hit {
+  fill: transparent !important;
+}
+
+/* Fix for gateway elements (diamond/polygon) */
+.dark .djs-element .djs-visual polygon {
+  fill: #1f1f1f !important;
+  stroke: #e0e0e0 !important;
+}
+
+/* BPMN Tooltip - Dark Theme */
+.dark .djs-tooltip {
+  background: #1f1f1f !important;
+  border-color: #424242 !important;
+  color: #e0e0e0 !important;
+}
+
+/* BPMN Error/Warning highlights - Dark Theme */
+.dark .djs-element .djs-visual .djs-error,
+.dark .djs-element .djs-visual .djs-warning {
+  stroke: #ff4d4f !important;
+}
+
+/* BPMN Drag Preview - Dark Theme */
+.dark .djs-drag-preview {
+  background: #1f1f1f !important;
+  border-color: #424242 !important;
+}
+
+.dark .djs-drag-preview .djs-visual {
+  stroke: #1677ff !important;
+}
+
+/* Grid background for dark theme */
+.dark .bpmn-designer-canvas .djs-container svg {
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px) !important;
+  background-size: 20px 20px !important;
+}
+
+/* Grid background for light theme */
+.bpmn-designer-canvas .djs-container svg {
+  background-image: 
+    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px) !important;
+  background-size: 20px 20px !important;
+}
+
+/* BPMN Properties Panel - Dark Theme */
+.dark .djs-properties-panel {
+  background: #1f1f1f !important;
+  border-color: #424242 !important;
+  color: #e0e0e0 !important;
+}
+
+.dark .djs-properties-panel .bio-properties-panel-input {
+  background: #141414 !important;
+  border-color: #424242 !important;
+  color: #e0e0e0 !important;
+}
+
+.dark .djs-properties-panel .bio-properties-panel-label {
+  color: #a0a0a0 !important;
+}
+
+/* BPMN Context Menu - Dark Theme */
+.dark .djs-popup .djs-popup-body {
+  background: #1f1f1f !important;
+}
+
+.dark .djs-popup .djs-popup-group-header {
+  color: #a0a0a0 !important;
+  border-color: #424242 !important;
+}
+
+/* Fix for BPMN icons in dark theme */
+.dark .djs-palette-entries .entry:before,
+.dark .djs-context-pad .entry:before {
+  color: #e0e0e0 !important;
+}
+
+.dark .djs-palette-entries .entry:hover:before,
+.dark .djs-context-pad .entry:hover:before {
+  color: #1677ff !important;
+}
+
+/* Login page redesign */
+.gflow-login-page {
+  min-height: 100vh;
+  padding: 24px;
+  background: #f0f2f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gflow-login-shell {
+  width: min(1100px, 100%);
+  min-height: 640px;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+}
+
+.dark .gflow-login-page {
+  background: #0b1220;
+}
+
+.dark .gflow-login-shell {
+  background: #0f172a;
+  box-shadow: 0 24px 64px rgba(2, 6, 23, 0.6);
+}
+
+.gflow-login-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #001529;
+}
+
+.gflow-login-hero-pattern {
+  position: absolute;
+  inset: 0;
+  opacity: 0.3;
+  background-image: radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.07) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.gflow-login-hero-glow {
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  filter: blur(75px);
+}
+
+.gflow-login-hero-glow.one {
+  top: -90px;
+  left: -90px;
+  background: rgba(0, 82, 204, 0.35);
+}
+
+.gflow-login-hero-glow.two {
+  right: -90px;
+  bottom: -90px;
+  background: rgba(0, 181, 173, 0.28);
+}
+
+.gflow-login-hero-content,
+.gflow-login-hero-proof {
+  z-index: 1;
+}
+
+.gflow-login-hero-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 58px;
+}
+
+.gflow-login-hero-logo-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #0052cc;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 22px;
+}
+
+.gflow-login-hero-logo-text.ant-typography {
+  margin: 0;
+  color: #fff;
+}
+
+.gflow-login-hero-title.ant-typography {
+  margin: 0;
+  color: #fff;
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.gflow-login-hero-title.ant-typography span {
+  color: #00b5ad;
+}
+
+.gflow-login-hero-divider {
+  width: 48px;
+  height: 4px;
+  margin-top: 14px;
+  border-radius: 999px;
+  background: #00b5ad;
+}
+
+.gflow-login-hero-desc.ant-typography {
+  margin-top: 16px;
+  max-width: 290px;
+  font-size: 18px;
+  font-weight: 300;
+  line-height: 1.7;
+  color: rgba(226, 232, 240, 0.9);
+}
+
+.gflow-login-hero-proof {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gflow-login-hero-proof .ant-avatar {
+  border: 2px solid #001529;
+}
+
+.gflow-login-hero-proof-text.ant-typography {
+  color: rgba(226, 232, 240, 0.8);
+  font-size: 12px;
+}
+
+.gflow-login-hero-proof-text.ant-typography span {
+  display: block;
+  margin-bottom: 2px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.gflow-login-panel {
+  padding: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+}
+
+.dark .gflow-login-panel {
+  background: #0f172a;
+}
+
+.gflow-login-form-wrap {
+  width: min(360px, 100%);
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.gflow-login-form-head {
+  margin-bottom: 38px;
+  text-align: left;
+}
+
+.gflow-login-form-title.ant-typography {
+  margin-bottom: 8px;
+  color: #0f172a;
+  font-size: 30px;
+  line-height: 1.2;
+}
+
+.gflow-login-form-hint.ant-typography {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.gflow-login-form-wrap .ant-form-item-label > label {
+  font-weight: 600;
+  color: #334155;
+}
+
+.gflow-login-form-wrap .ant-form-item {
+  margin-bottom: 12px;
+}
+
+.gflow-login-form-wrap .ant-form-item-label {
+  padding-bottom: 4px;
+}
+
+.gflow-login-form-wrap .ant-input,
+.gflow-login-form-wrap .ant-input-affix-wrapper {
+  height: 42px;
+  border-radius: 8px;
+  border-color: #e2e8f0;
+}
+
+.gflow-login-form-wrap .ant-input-affix-wrapper {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.gflow-login-form-wrap .ant-input-affix-wrapper > input.ant-input {
+  height: 40px;
+}
+
+.gflow-login-form-wrap .ant-input-affix-wrapper .ant-input-prefix,
+.gflow-login-form-wrap .ant-input-affix-wrapper .ant-input-suffix {
+  color: #94a3b8;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+}
+
+.gflow-login-form-wrap .ant-input-affix-wrapper .ant-input-prefix {
+  margin-right: 10px;
+}
+
+.gflow-login-form-wrap .ant-input-affix-wrapper .ant-input-prefix .anticon,
+.gflow-login-form-wrap .ant-input-affix-wrapper .ant-input-suffix .anticon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.gflow-login-form-wrap .ant-input-affix-wrapper:focus,
+.gflow-login-form-wrap .ant-input-affix-wrapper-focused,
+.gflow-login-form-wrap .ant-input:focus {
+  border-color: #0052cc;
+  box-shadow: 0 0 0 4px rgba(0, 82, 204, 0.1);
+}
+
+.gflow-login-form-wrap .ant-input-affix-wrapper-focused .ant-input-prefix,
+.gflow-login-form-wrap .ant-input-affix-wrapper:focus-within .ant-input-prefix {
+  color: #0052cc;
+}
+
+.gflow-login-actions-line {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gflow-login-actions-line a {
+  font-size: 12px;
+  color: #0052cc;
+  font-weight: 600;
+}
+
+.gflow-login-form-submit {
+  height: 48px !important;
+  border-radius: 8px !important;
+  font-size: 16px;
+  font-weight: 600;
+  background: #0052cc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.gflow-login-form-submit:hover {
+  background: #0045b5 !important;
+}
+
+.gflow-login-tip {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.gflow-login-links {
+  gap: 20px;
+}
+
+.gflow-login-links a {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.gflow-login-links a:hover {
+  color: #0052cc;
+}
+
+/* Dark theme table and selection */
+.dark .ant-table-wrapper .ant-table,
+.dark .ant-table-wrapper .ant-table-container,
+.dark .ant-table-wrapper .ant-table-thead > tr > th,
+.dark .ant-table-wrapper .ant-table-tbody > tr > td {
+  background: #0f172a !important;
+  color: #cbd5e1 !important;
+  border-color: #1e293b !important;
+}
+
+.dark .ant-table-wrapper .ant-table-thead > tr > th {
+  background: #111b30 !important;
+  color: #94a3b8 !important;
+}
+
+.dark .gflow-glass-card .ant-table-tbody > tr > td {
+  border-bottom-color: #1e293b !important;
+}
+
+.dark .ant-table-wrapper .ant-table-tbody > tr:hover > td {
+  background: #162235 !important;
+}
+
+.dark .ant-table-wrapper .ant-table-tbody > tr.ant-table-row-selected > td {
+  background: rgba(13, 148, 136, 0.16) !important;
+}
+
+.dark .ant-table-wrapper .ant-table-tbody > tr.ant-table-row-selected:hover > td {
+  background: rgba(13, 148, 136, 0.22) !important;
+}
+
+.dark .ant-table-wrapper .ant-table-cell-row-hover {
+  background: #162235 !important;
+}
+
+.dark .ant-table-wrapper .ant-empty-description,
+.dark .ant-table-wrapper .ant-pagination-total-text,
+.dark .ant-table-wrapper .ant-table-placeholder,
+.dark .ant-table-wrapper .ant-table-column-sorter,
+.dark .ant-table-wrapper .ant-table-filter-trigger {
+  color: #64748b !important;
+}
+
+.dark .ant-table-wrapper .ant-pagination .ant-pagination-item,
+.dark .ant-table-wrapper .ant-pagination .ant-pagination-prev .ant-pagination-item-link,
+.dark .ant-table-wrapper .ant-pagination .ant-pagination-next .ant-pagination-item-link {
+  background: #111b30;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+.dark .ant-table-wrapper .ant-pagination .ant-pagination-item-active {
+  border-color: #0d9488;
+}
+
+.dark .ant-table-wrapper .ant-pagination .ant-pagination-item-active a {
+  color: #2dd4bf;
+}
+
+.dark .ant-table-wrapper .ant-checkbox-inner {
+  background: #0f172a;
+  border-color: #475569;
+}
+
+.dark .ant-table-wrapper .ant-checkbox-checked .ant-checkbox-inner,
+.dark .ant-table-wrapper .ant-checkbox-indeterminate .ant-checkbox-inner {
+  background: #0d9488;
+  border-color: #0d9488;
+}
+
+.dark .ant-table-wrapper .ant-checkbox-wrapper:hover .ant-checkbox-inner,
+.dark .ant-table-wrapper .ant-checkbox:hover .ant-checkbox-inner,
+.dark .ant-table-wrapper .ant-checkbox-input:focus + .ant-checkbox-inner {
+  border-color: #2dd4bf;
+}
+
+@media (max-width: 768px) {
+  .gflow-login-page {
+    padding: 12px;
+  }
+
+  .gflow-login-shell {
+    min-height: auto;
+    grid-template-columns: 1fr;
+  }
+
+  .gflow-login-hero {
+    display: none;
+  }
+
+  .gflow-login-panel {
+    padding: 28px 18px;
+  }
+
+  .gflow-login-form-wrap {
+    width: 100%;
+  }
+
+  .gflow-login-form-head {
+    text-align: center;
+  }
+
+  .gflow-login-form-title.ant-typography {
+    font-size: 28px;
+  }
+}
